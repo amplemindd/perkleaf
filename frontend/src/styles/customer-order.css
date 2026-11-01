@@ -1,0 +1,1488 @@
+
+/* =========================================================
+   AMPLEMIND CAFE - PREMIUM CUSTOMER ORDERING
+   LIGHT THEME ONLY
+   Desktop + Tablet + Mobile
+   Compatible with existing CustomerOrder.jsx
+========================================================= */
+
+:root {
+  --co-green: #14532d;
+  --co-green-dark: #103f25;
+  --co-green-light: #eaf4ec;
+  --co-mint: #f3f8f4;
+  --co-white: #ffffff;
+  --co-text: #202923;
+  --co-muted: #7d8980;
+  --co-border: #e8eee9;
+  --co-shadow: 0 4px 18px rgba(20, 83, 45, .06);
+  --co-shadow-hover: 0 10px 28px rgba(20, 83, 45, .11);
+  --co-radius: 13px;
+}
+
+/* =========================================================
+   1. GLOBAL CUSTOMER PAGE
+========================================================= */
+
+.co-wrap,
+.co-wrap * {
+  box-sizing: border-box;
+}
+
+.co-wrap {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0 0 115px;
+  overflow-x: clip;
+  background: #ffffff;
+  color: var(--co-text);
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.co-wrap button,
+.co-wrap input {
+  font: inherit;
+}
+
+.co-wrap button {
+  touch-action: manipulation;
+}
+
+.co-wrap img {
+  max-width: 100%;
+}
+
+/* =========================================================
+   2. RESTAURANT HEADER
+========================================================= */
+
+.co-head {
+  width: 100%;
+  min-height: 148px;
+  padding: 22px max(20px, calc((100% - 1080px) / 2));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: var(--co-green);
+  color: #ffffff;
+  box-shadow: 0 5px 18px rgba(20, 83, 45, .12);
+}
+
+.co-brand {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.co-brand > div {
+  min-width: 0;
+}
+
+.co-logo {
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  object-fit: cover;
+  background: #ffffff;
+  border: 2px solid rgba(255,255,255,.5);
+  border-radius: 12px;
+}
+
+.co-brand small {
+  display: block;
+  margin-bottom: 5px;
+  color: #d7e9dc;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .8px;
+}
+
+.co-brand h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(20px, 3vw, 27px);
+  font-weight: 850;
+  line-height: 1.3;
+  letter-spacing: .3px;
+}
+
+.co-brand p {
+  margin: 10px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e3efe6;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   3. CALL CASHIER BELL
+========================================================= */
+
+.co-bell {
+  width: 58px;
+  min-width: 58px;
+  height: 58px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: rgba(255,255,255,.10);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,.32);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.co-bell span {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.co-bell:hover {
+  background: rgba(255,255,255,.2);
+}
+
+.co-bell:active {
+  transform: scale(.95);
+}
+
+.co-bell:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   4. SUCCESS / NOTIFICATION
+========================================================= */
+
+.co-notice,
+.co-confirm {
+  width: calc(100% - 36px);
+  max-width: 1044px;
+  margin: 16px auto;
+  padding: 15px 18px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: #edf7ef;
+  color: var(--co-green);
+  border: 1px solid #d9ebdd;
+  border-radius: 11px;
+}
+
+.co-notice {
+  min-height: 58px;
+}
+
+.co-notice span {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.co-notice button {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--co-green);
+  border: none;
+  border-radius: 50%;
+  font-size: 23px;
+  cursor: pointer;
+}
+
+.co-confirm {
+  min-height: 85px;
+}
+
+.co-confirm > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.co-confirm b {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.co-confirm span {
+  font-size: 14px;
+  color: #54715c;
+}
+
+/* =========================================================
+   5. SEARCH SECTION
+========================================================= */
+
+.co-search-section {
+  width: 100%;
+  max-width: 1080px;
+  margin: 23px auto 17px;
+  padding: 0 18px;
+}
+
+.co-search {
+  width: 100%;
+  height: 54px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f6f9f6;
+  border: 1px solid #e4ebe5;
+  border-radius: 12px;
+  color: #627267;
+  transition: .2s;
+}
+
+.co-search:focus-within {
+  background: #ffffff;
+  border-color: var(--co-green);
+  box-shadow: 0 0 0 3px rgba(20,83,45,.07);
+}
+
+.co-search input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  outline: none;
+  border: none;
+  background: transparent;
+  color: var(--co-text);
+  font-size: 15px;
+}
+
+.co-search input::placeholder {
+  color: #9aa59c;
+}
+
+.co-search input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.co-search button {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--co-muted);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* =========================================================
+   6. CATEGORY NAVIGATION
+========================================================= */
+
+.co-cats {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto 19px;
+  padding: 0 18px 7px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.co-cats::-webkit-scrollbar {
+  display: none;
+}
+
+.co-cats button {
+  min-height: 47px;
+  flex: 0 0 auto;
+  padding: 0 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  background: #ffffff;
+  color: #4f5e53;
+  border: 1px solid #e1e9e2;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.co-cats button.active {
+  background: var(--co-green);
+  color: #ffffff;
+  border-color: var(--co-green);
+  box-shadow: 0 4px 12px rgba(20,83,45,.16);
+}
+
+.co-cats button:hover:not(.active) {
+  background: var(--co-green-light);
+  color: var(--co-green);
+  border-color: #c9dfcd;
+}
+
+.co-cats button:active {
+  transform: scale(.97);
+}
+
+/* =========================================================
+   7. RESULTS HEADING
+========================================================= */
+
+.co-results {
+  width: 100%;
+  max-width: 1044px;
+  min-height: 45px;
+  margin: 0 auto;
+  padding: 5px 18px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.co-results b {
+  color: #25342a;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.co-results span {
+  padding: 5px 11px;
+  background: #edf5ef;
+  color: var(--co-green);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   8. PRODUCT GRID / LIST
+========================================================= */
+
+.co-products {
+  width: 100%;
+  max-width: 1044px;
+  margin: 0 auto;
+  padding: 0 18px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+/* =========================================================
+   9. INDIVIDUAL PRODUCT
+========================================================= */
+
+.co-product {
+  width: 100%;
+  min-width: 0;
+  min-height: 125px;
+  padding: 18px 12px;
+  display: grid;
+  grid-template-columns: 78px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 17px;
+  background: #ffffff;
+  border-bottom: 1px solid #edf1ed;
+  transition: background .2s;
+}
+
+.co-product:hover {
+  background: #fbfdfb;
+}
+
+/* =========================================================
+   10. PRODUCT IMAGE
+========================================================= */
+
+.co-product-image {
+  width: 78px;
+  height: 78px;
+  display: block;
+  flex-shrink: 0;
+  object-fit: cover;
+  object-position: center;
+  background: #edf4ee;
+  border: 1px solid #e2ebe3;
+  border-radius: 13px;
+}
+
+/* =========================================================
+   11. PRODUCT IMAGE FALLBACK ICON
+   Actual JSX: .co-noimg
+========================================================= */
+
+.co-noimg {
+  width: 78px;
+  height: 78px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  overflow: hidden;
+  background: #eaf3ec;
+  color: var(--co-green);
+  border: 1px solid #dceade;
+  border-radius: 13px;
+}
+
+.co-noimg svg {
+  width: 31px;
+  height: 31px;
+  stroke-width: 1.7;
+}
+
+.co-noimg span {
+  max-width: 90%;
+  overflow: hidden;
+  color: #54715c;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   12. PRODUCT DETAILS
+========================================================= */
+
+.co-product-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+}
+
+.co-product-info b {
+  width: 100%;
+  color: #202923;
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.co-product-info p {
+  width: 100%;
+  margin: 0;
+  color: #869188;
+  font-size: 12px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.co-product-info strong {
+  margin-top: 2px;
+  color: var(--co-green);
+  font-size: 19px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+/* =========================================================
+   13. PRODUCT QUANTITY / ADD
+   Actual JSX uses buttons directly inside .co-qty
+========================================================= */
+
+.co-qty {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.co-qty button {
+  min-width: 103px;
+  min-height: 44px;
+  padding: 9px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: var(--co-green);
+  border: 1.5px solid var(--co-green);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.co-qty button:hover {
+  background: var(--co-green);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(20,83,45,.13);
+}
+
+.co-qty button:active {
+  transform: scale(.95);
+}
+
+/* Quantity number */
+
+.co-qty b {
+  min-width: 22px;
+  color: var(--co-green);
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* When minus and plus buttons are present */
+
+.co-qty button:has(+ b),
+.co-qty b + button {
+  min-width: 37px;
+  width: 37px;
+  height: 37px;
+  min-height: 37px;
+  padding: 0;
+  border-radius: 9px;
+  font-size: 20px;
+}
+
+/* =========================================================
+   14. PRIMARY BUTTON
+========================================================= */
+
+.co-primary-btn {
+  min-height: 44px;
+  padding: 10px 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--co-green);
+  color: #ffffff;
+  border: 1px solid var(--co-green);
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.co-primary-btn:hover {
+  background: var(--co-green-dark);
+}
+
+/* =========================================================
+   15. EMPTY / LOADING / ERROR
+========================================================= */
+
+.co-empty,
+.co-loading,
+.co-error {
+  width: 100%;
+  min-height: 260px;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.co-empty {
+  color: #718077;
+}
+
+.co-empty h3 {
+  margin: 0;
+  color: #26352a;
+  font-size: 19px;
+}
+
+.co-empty p {
+  margin: 0;
+  color: #87928a;
+  font-size: 14px;
+}
+
+.co-loading {
+  min-height: 65vh;
+  color: var(--co-green);
+}
+
+.co-loading p {
+  color: #728076;
+  font-size: 14px;
+}
+
+.co-error {
+  min-height: 65vh;
+  color: #b42318;
+}
+
+.co-error h2 {
+  margin: 0;
+  color: #8f2525;
+  font-size: 22px;
+}
+
+.co-error p {
+  color: #8b5555;
+  font-size: 14px;
+}
+
+/* =========================================================
+   16. STICKY BOTTOM CART
+   Actual JSX: .co-cart-info
+========================================================= */
+
+.co-cart {
+  position: fixed;
+  z-index: 50;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  min-height: 83px;
+  padding: 12px max(18px, calc((100% - 1044px)/2));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--co-green);
+  color: #ffffff;
+  border-top: 1px solid rgba(255,255,255,.15);
+  box-shadow: 0 -5px 22px rgba(20,83,45,.16);
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.co-cart-info {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.co-cart-info b {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.co-cart-info span {
+  color: #d8e9dc;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.co-cart > button {
+  min-width: 155px;
+  min-height: 48px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: #ffffff;
+  color: var(--co-green);
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.co-cart > button:hover {
+  background: #eaf3ec;
+  transform: translateY(-1px);
+}
+
+.co-cart > button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   17. CHECKOUT OVERLAY
+========================================================= */
+
+.co-checkout-overlay {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  padding: 18px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow-y: auto;
+  background: rgba(15,35,22,.56);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* =========================================================
+   18. CHECKOUT BOTTOM SHEET
+========================================================= */
+
+.co-checkout {
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  max-height: 88dvh;
+  padding: 23px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #ffffff;
+  color: var(--co-text);
+  border-radius: 21px 21px 0 0;
+  box-shadow: 0 -10px 40px rgba(0,0,0,.15);
+  animation: coSlideUp .25s ease both;
+}
+
+@keyframes coSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(35px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
+   19. CHECKOUT HEADER
+========================================================= */
+
+.co-checkout-header {
+  width: 100%;
+  padding-bottom: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--co-border);
+}
+
+.co-checkout-header h2 {
+  margin: 0;
+  color: #202923;
+  font-size: 22px;
+  font-weight: 850;
+}
+
+.co-checkout-header p {
+  margin: 5px 0 0;
+  color: #859087;
+  font-size: 13px;
+}
+
+.co-checkout-header > button {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: #f2f7f3;
+  color: var(--co-green);
+  border: 1px solid #e3ebe4;
+  border-radius: 50%;
+  font-size: 23px;
+  cursor: pointer;
+}
+
+/* =========================================================
+   20. CHECKOUT PRODUCT ITEMS
+========================================================= */
+
+.co-checkout-items {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.co-checkout-item {
+  width: 100%;
+  min-width: 0;
+  padding: 14px 0;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #edf1ed;
+}
+
+.co-checkout-item > div:first-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.co-checkout-item > div:first-child b {
+  color: #27352b;
+  font-size: 14px;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.co-checkout-item > div:first-child small {
+  color: #859188;
+  font-size: 12px;
+}
+
+.co-checkout-item > strong {
+  color: var(--co-green);
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* CHECKOUT QUANTITY */
+
+.co-checkout-qty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.co-checkout-qty button {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  color: var(--co-green);
+  border: 1px solid #cbdccc;
+  border-radius: 7px;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.co-checkout-qty b {
+  min-width: 18px;
+  color: #27352b;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* =========================================================
+   21. CUSTOMER DETAILS
+========================================================= */
+
+.co-customer-details {
+  width: 100%;
+  padding: 19px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.co-customer-details h3 {
+  margin: 0 0 3px;
+  color: #27352b;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.co-customer-details input {
+  width: 100%;
+  min-height: 47px;
+  padding: 12px 14px;
+  background: #f7faf7;
+  color: #202923;
+  border: 1px solid #e0e9e1;
+  border-radius: 9px;
+  outline: none;
+  font-size: 14px;
+  transition: .2s;
+}
+
+.co-customer-details input:focus {
+  background: #ffffff;
+  border-color: var(--co-green);
+  box-shadow: 0 0 0 3px rgba(20,83,45,.07);
+}
+
+.co-customer-details input::placeholder {
+  color: #9aa59c;
+}
+
+/* =========================================================
+   22. TOTAL
+========================================================= */
+
+.co-total {
+  width: 100%;
+  margin: 0 0 15px;
+  padding: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #e8eee9;
+}
+
+.co-total span {
+  color: #536158;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.co-total b {
+  color: var(--co-green);
+  font-size: 23px;
+  font-weight: 850;
+}
+
+/* =========================================================
+   23. PLACE ORDER
+========================================================= */
+
+.co-place-order {
+  width: 100%;
+  min-height: 53px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--co-green);
+  color: #ffffff;
+  border: none;
+  border-radius: 11px;
+  font-size: 15px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.co-place-order:hover {
+  background: var(--co-green-dark);
+  box-shadow: 0 5px 15px rgba(20,83,45,.15);
+}
+
+.co-place-order:active {
+  transform: scale(.99);
+}
+
+.co-place-order:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   24. PAYMENT NOTE
+========================================================= */
+
+.co-payment-note {
+  margin: 13px 0 0;
+  color: #89958c;
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   25. FOOTER
+========================================================= */
+
+.co-foot {
+  width: 100%;
+  padding: 25px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.co-foot p {
+  margin: 0;
+  color: #627267;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.co-foot small {
+  color: #9ba69e;
+  font-size: 11px;
+}
+
+/* =========================================================
+   26. TABLET RESPONSIVE
+========================================================= */
+
+@media (min-width: 651px) and (max-width: 1024px) {
+
+  .co-head {
+    padding: 22px 25px;
+  }
+
+  .co-products {
+    padding: 0 25px;
+  }
+
+  .co-product {
+    grid-template-columns: 75px minmax(0,1fr) auto;
+    gap: 15px;
+  }
+
+  .co-product-image,
+  .co-noimg {
+    width: 75px;
+    height: 75px;
+  }
+}
+
+/* =========================================================
+   27. MOBILE RESPONSIVE
+========================================================= */
+
+@media (max-width: 650px) {
+
+  .co-wrap {
+    padding-bottom: 105px;
+  }
+
+  .co-head {
+    min-height: 145px;
+    padding: 20px 17px;
+    gap: 12px;
+  }
+
+  .co-brand {
+    gap: 10px;
+  }
+
+  .co-logo {
+    width: 47px;
+    height: 47px;
+  }
+
+  .co-brand small {
+    font-size: 11px;
+  }
+
+  .co-brand h1 {
+    font-size: 19px;
+  }
+
+  .co-brand p {
+    margin-top: 8px;
+    font-size: 14px;
+  }
+
+  .co-bell {
+    width: 47px;
+    min-width: 47px;
+    height: 47px;
+    border-radius: 10px;
+  }
+
+  .co-search-section {
+    margin: 18px auto 15px;
+    padding: 0 14px;
+  }
+
+  .co-search {
+    height: 49px;
+    padding: 0 13px;
+    border-radius: 10px;
+  }
+
+  .co-search input {
+    font-size: 14px;
+  }
+
+  .co-cats {
+    padding: 0 14px 7px;
+    margin-bottom: 14px;
+    gap: 8px;
+  }
+
+  .co-cats button {
+    min-height: 43px;
+    padding: 0 14px;
+    font-size: 13px;
+    border-radius: 9px;
+  }
+
+  .co-results {
+    padding: 4px 14px 12px;
+    min-height: 40px;
+  }
+
+  .co-results b {
+    font-size: 17px;
+  }
+
+  .co-results span {
+    font-size: 11px;
+  }
+
+  .co-products {
+    padding: 0 14px;
+  }
+
+  .co-product {
+    min-height: 112px;
+    grid-template-columns: 64px minmax(0,1fr) auto;
+    gap: 11px;
+    padding: 16px 0;
+  }
+
+  .co-product-image,
+  .co-noimg {
+    width: 64px;
+    height: 64px;
+    border-radius: 13px;
+  }
+
+  .co-noimg svg {
+    width: 27px;
+    height: 27px;
+  }
+
+  .co-noimg span {
+    font-size: 8px;
+  }
+
+  .co-product-info {
+    gap: 5px;
+  }
+
+  .co-product-info b {
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .co-product-info p {
+    font-size: 11px;
+  }
+
+  .co-product-info strong {
+    font-size: 16px;
+  }
+
+  .co-qty {
+    gap: 5px;
+  }
+
+  .co-qty button {
+    min-width: 76px;
+    min-height: 39px;
+    padding: 7px 9px;
+    border-radius: 9px;
+    font-size: 12px;
+  }
+
+  .co-qty button:has(+ b),
+  .co-qty b + button {
+    min-width: 29px;
+    width: 29px;
+    height: 29px;
+    min-height: 29px;
+    padding: 0;
+    font-size: 17px;
+  }
+
+  .co-qty b {
+    min-width: 17px;
+    font-size: 14px;
+  }
+
+  /* Bottom Cart */
+
+  .co-cart {
+    min-height: 76px;
+    padding: 10px 13px;
+    gap: 10px;
+  }
+
+  .co-cart-info b {
+    font-size: 14px;
+  }
+
+  .co-cart-info span {
+    font-size: 13px;
+  }
+
+  .co-cart > button {
+    min-width: 125px;
+    min-height: 43px;
+    padding: 9px 11px;
+    border-radius: 9px;
+    font-size: 12px;
+  }
+
+  /* Notification */
+
+  .co-notice,
+  .co-confirm {
+    width: calc(100% - 28px);
+    margin: 11px 14px;
+    padding: 12px 13px;
+  }
+
+  .co-notice span {
+    font-size: 13px;
+  }
+
+  .co-confirm b {
+    font-size: 14px;
+  }
+
+  .co-confirm span {
+    font-size: 12px;
+  }
+
+  /* Checkout */
+
+  .co-checkout-overlay {
+    padding: 0;
+  }
+
+  .co-checkout {
+    max-width: 100%;
+    max-height: 90dvh;
+    padding: 20px 17px;
+    border-radius: 19px 19px 0 0;
+  }
+
+  .co-checkout-header h2 {
+    font-size: 20px;
+  }
+
+  .co-checkout-item {
+    gap: 8px;
+  }
+
+  .co-checkout-item > div:first-child b {
+    font-size: 13px;
+  }
+
+  .co-checkout-item > strong {
+    font-size: 13px;
+  }
+
+  .co-checkout-qty {
+    gap: 5px;
+  }
+
+  .co-checkout-qty button {
+    width: 27px;
+    height: 27px;
+  }
+
+  .co-total b {
+    font-size: 21px;
+  }
+
+  .co-place-order {
+    min-height: 50px;
+    font-size: 14px;
+  }
+
+  .co-foot {
+    padding: 20px 12px;
+  }
+}
+
+/* =========================================================
+   28. SMALL MOBILE
+========================================================= */
+
+@media (max-width: 380px) {
+
+  .co-head {
+    min-height: 130px;
+    padding: 17px 12px;
+  }
+
+  .co-logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .co-brand h1 {
+    font-size: 16px;
+  }
+
+  .co-brand small {
+    font-size: 10px;
+  }
+
+  .co-brand p {
+    font-size: 12px;
+  }
+
+  .co-bell {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+  }
+
+  .co-search-section,
+  .co-products {
+    padding-left: 11px;
+    padding-right: 11px;
+  }
+
+  .co-cats {
+    padding-left: 11px;
+    padding-right: 11px;
+  }
+
+  .co-product {
+    grid-template-columns: 53px minmax(0,1fr) auto;
+    gap: 8px;
+    min-height: 98px;
+  }
+
+  .co-product-image,
+  .co-noimg {
+    width: 53px;
+    height: 53px;
+    border-radius: 11px;
+  }
+
+  .co-product-info b {
+    font-size: 12px;
+  }
+
+  .co-product-info strong {
+    font-size: 15px;
+  }
+
+  .co-qty button {
+    min-width: 66px;
+    min-height: 36px;
+    padding: 6px;
+    font-size: 11px;
+  }
+
+  .co-qty button:has(+ b),
+  .co-qty b + button {
+    min-width: 25px;
+    width: 25px;
+    height: 27px;
+    min-height: 27px;
+  }
+
+  .co-cart {
+    padding: 9px 10px;
+    gap: 7px;
+  }
+
+  .co-cart-info b {
+    font-size: 12px;
+  }
+
+  .co-cart-info span {
+    font-size: 12px;
+  }
+
+  .co-cart > button {
+    min-width: 105px;
+    font-size: 11px;
+    padding: 8px;
+  }
+}
+
+/* =========================================================
+   29. VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 320px) {
+
+  .co-product {
+    grid-template-columns: 45px minmax(0,1fr) auto;
+    gap: 6px;
+  }
+
+  .co-product-image,
+  .co-noimg {
+    width: 45px;
+    height: 45px;
+  }
+
+  .co-product-info b {
+    font-size: 11px;
+  }
+
+  .co-qty button {
+    min-width: 59px;
+    font-size: 10px;
+  }
+
+  .co-cart > button {
+    min-width: 93px;
+  }
+}
+
+/* =========================================================
+   30. ACCESSIBILITY
+========================================================= */
+
+.co-wrap button:focus-visible,
+.co-wrap input:focus-visible {
+  outline: 2px solid #16a34a;
+  outline-offset: 3px;
+}
+
+.co-wrap button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .co-wrap *,
+  .co-checkout {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* =========================================================
+   END CUSTOMER ORDER CSS
+========================================================= */

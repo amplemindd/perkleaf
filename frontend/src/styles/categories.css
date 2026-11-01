@@ -1,0 +1,5 @@
+.icons{display:none}
+.page .tabs{margin-bottom:16px}
+/* delete (trash) icon button: no square border, only the red icon */
+.btn.ico.dng.flat,.btn.ico.dng.flat:hover,.btn.ico.dng.flat:active{border:0;background:none;box-shadow:none;color:var(--err)}
+.btn.ico.dng.flat:hover{color:#B91C1C;transform:scale(1.15)}

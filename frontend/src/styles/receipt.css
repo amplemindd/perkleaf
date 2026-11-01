@@ -1,0 +1,17 @@
+.receipt{background:#fff;color:#000;border:1px dashed #888;border-radius:6px;padding:14px;max-width:320px;margin:0 auto;font-family:"Courier New",monospace;font-size:12.5px}
+.receipt.p58{max-width:240px;font-size:11px}
+.r-c{text-align:center}
+.r-c h4{margin:2px 0;font-size:16px;letter-spacing:.05em}
+.r-c p{margin:2px 0;font-size:11px}
+.r-cup{font-size:26px}
+.r-logo{max-height:56px;max-width:140px}
+.receipt hr{border:0;border-top:1px dashed #000;margin:8px 0}
+.r-kv{display:flex;justify-content:space-between;gap:10px;padding:1px 0}
+.r-kv span:first-child{flex:1}
+.r-total{font-size:16px;font-weight:700}
+.r-t{width:100%;border-collapse:collapse;font-size:12px}
+.r-t th{text-align:left;border-bottom:1px solid #000;padding:2px}
+.r-t td{padding:2px;vertical-align:top}
+.r-t th:nth-child(n+2),.r-t td:nth-child(n+2){text-align:right}
+.r-foot p{font-size:11px}
+.r-code{margin-top:6px;letter-spacing:.2em;font-size:11px}

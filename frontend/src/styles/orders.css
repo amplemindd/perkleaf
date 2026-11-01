@@ -1,0 +1,4 @@
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.pill{background:var(--w);border:1.5px solid var(--bd);border-radius:99px;padding:5px 12px;font-size:13px;font-weight:600}
+.pill i{font-style:normal;color:var(--tx2)}
+.pill.on{background:var(--lg);border-color:var(--g);color:var(--dg)}

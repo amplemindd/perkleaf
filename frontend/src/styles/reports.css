@@ -1,0 +1,2 @@
+.kpis.k6{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.lg-row i,div.lg i{width:10px;height:10px;display:inline-block}

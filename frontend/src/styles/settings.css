@@ -1,0 +1,8 @@
+.stabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px}
+.stab{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:104px;padding:10px 12px;background:var(--w);border:1.5px solid var(--bd);border-radius:12px;font-size:12px;font-weight:600;white-space:nowrap}
+.stab span{font-size:18px}
+.stab.on{background:var(--dg);color:#fff;border-color:var(--dg)}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start}
+.sgrid .card{margin:0}
+.sgrid .form-grid{grid-template-columns:1fr}
+.logo-row,.qrrow{margin-bottom:10px}
