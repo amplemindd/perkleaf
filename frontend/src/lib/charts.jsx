@@ -30,6 +30,7 @@ export function Donut({ data = [], center, size = 170 }) {
     <div className="donut">
       <svg viewBox="0 0 160 160" width={size} height={size} role="img" aria-label="Distribution chart">
         <circle cx="80" cy="80" r={r} fill="none" className="donut-bg" strokeWidth="22" />
+        {total === 0 && <circle cx="80" cy="80" r={r} fill="none" className="donut-half" strokeWidth="22" strokeDasharray={`${C / 2} ${C / 2}`} transform="rotate(-90 80 80)" />}
         {total > 0 && data.map((d, i) => { const len = (d.value / total) * C, el = <circle key={i} cx="80" cy="80" r={r} fill="none" stroke={d.color || COLORS[i % COLORS.length]} strokeWidth="22" strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-acc} transform="rotate(-90 80 80)"><title>{`${d.label}: ${d.value}`}</title></circle>; acc += len; return el; })}
         {center && <><text x="80" y="78" textAnchor="middle" className="dn-big">{center.big}</text><text x="80" y="95" textAnchor="middle" className="dn-sm">{center.small}</text></>}
       </svg>

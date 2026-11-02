@@ -268,7 +268,7 @@ export default function Shell({ admin, children }) {
               />
             </span>
             <span className="bname">
-              <b>{String(name).toUpperCase()}</b>
+              <b>{(() => { const w = String(name).toUpperCase().split(" "); return w.length > 1 ? <>{w.slice(0, -1).join(" ")} <span className="bn-acc">{w[w.length - 1]}</span></> : w[0]; })()}</b>
               <small>{settings.tagline}</small>
             </span>
           </A>
@@ -480,6 +480,12 @@ export default function Shell({ admin, children }) {
                 </div>
               )}
             </div>
+            {admin && (
+              <A to="/admin/notifications" className="hbtn" aria-label="Inbox" title="Notifications">
+                <Icon n="mail" size={22} />
+                {unread > 0 && <span className="bdg">{unread}</span>}
+              </A>
+            )}
             <A
               to={admin ? "/admin/settings" : "/admin-login"}
               className="hbtn"
@@ -557,6 +563,19 @@ export default function Shell({ admin, children }) {
                 <Icon n="grid" size={19} />
                 <em>All Items</em>
               </button>
+            </div>
+          )}
+          {admin && (
+            <div className="side-art" aria-hidden="true">
+              <svg viewBox="0 0 200 120" fill="none">
+                <path d="M84 30c-4 4 4 7 0 12M96 26c-4 4 4 7 0 12M108 30c-4 4 4 7 0 12" stroke="#bff0a8" strokeWidth="3" strokeLinecap="round" />
+                <path d="M30 96c-14-6-18-22-10-34 12 2 20 14 10 34z" fill="#5fd34a" />
+                <path d="M166 92c14-4 20-20 12-32-12 0-22 12-12 32z" fill="#3fb83a" />
+                <path d="M62 52h62v18a28 28 0 0 1-28 28h-6a28 28 0 0 1-28-28z" fill="#fff" />
+                <ellipse cx="93" cy="52" rx="31" ry="6" fill="#2fa12f" />
+                <path d="M124 58h6a10 10 0 0 1 0 20h-9" stroke="#fff" strokeWidth="6" strokeLinecap="round" />
+                <ellipse cx="93" cy="104" rx="52" ry="8" fill="#e3f5da" />
+              </svg>
             </div>
           )}
           {admin && (

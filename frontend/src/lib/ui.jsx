@@ -69,8 +69,8 @@ export const Avatar = ({ name, size = 34 }) => {
   const ini = String(name || "?").split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   return <span className="avatar" style={{ width: size, height: size, fontSize: size * 0.4 }}>{ini}</span>;
 };
-export const RangePicker = ({ from, to, onChange, presets = true }) => {
-  const [active, setActive] = useState("");
+export const RangePicker = ({ from, to, onChange, presets = true, initial = "" }) => {
+  const [active, setActive] = useState(initial);
   const set = (n) => { setActive(n); onChange(preset(n)); };
   return (
     <div className="range">

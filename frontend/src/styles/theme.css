@@ -1,0 +1,82 @@
+/* ===== Amplemind Cafe theme (loaded last; overrides base look) ===== */
+:root { --hh: 78px; --sw: 255px; --acc: #7ee04a; --gdeep: #0b4a1a; }
+body { background: #f6faf6; }
+
+/* ---------- top bar ---------- */
+.app .hdr { background: linear-gradient(90deg, #0b4a1a 0%, #0e6221 45%, #0b521c 100%); gap: 18px; padding: 0 22px; box-shadow: 0 3px 14px rgba(0,0,0,.28); }
+.app .hamb { padding: 8px; }
+.app .blogo { background: none; box-shadow: none; color: #fff; height: 52px; min-width: 52px; padding: 0; }
+.app .bname b { font-size: 27px; letter-spacing: .06em; font-weight: 800; }
+.app .bname b .bn-acc { color: var(--acc); }
+.app .bname small { color: #eafbe3; letter-spacing: .34em; font-size: 11px; margin-top: 3px; }
+.app .hsearch { max-width: 625px; height: 46px; border-radius: 10px; padding: 0 16px; margin-left: 10px; }
+.app .hsearch input { font-size: 15px; }
+.app .hright { gap: 16px; }
+.app .ordic { gap: 14px; padding-right: 18px; border-right: 1px solid rgba(255,255,255,.28); }
+.app .hbtn { border-radius: 50%; width: 44px; height: 44px; background: none; }
+.app .hbtn:hover { background: rgba(255,255,255,.14); }
+.app .hbtn.plat.swiggy, .app .hbtn.plat.zomato { width: 46px; height: 46px; }
+.app .bdg { background: #38c92a; color: #fff; border: 2px solid #0d5a1f; min-width: 22px; height: 22px; border-radius: 11px; font-size: 12px; font-weight: 700; top: -9px; right: -9px; display: grid; place-items: center; padding: 0 4px; }
+.app .hbtn .bdg, .app .hbtn.plat .bdg { background: #38c92a !important; color: #fff !important; }
+.app .clock { padding: 0 6px; border-left: 1px solid rgba(255,255,255,.28); padding-left: 18px; gap: 10px; }
+.app .clock b { font-size: 14px; }
+.app .uw { border-left: 1px solid rgba(255,255,255,.28); padding-left: 18px; }
+.app .uav { background: #43c43a; color: #fff; border-radius: 8px; font-weight: 700; }
+
+/* ---------- sidebar ---------- */
+.app .side { background: linear-gradient(180deg, #0d5a20 0%, #0b4b1a 55%, #093b14 100%); padding: 16px 12px 0; box-shadow: 2px 0 14px rgba(0,0,0,.18); }
+.app .nav { height: 50px; border-radius: 12px; font-size: 15.5px; font-weight: 500; gap: 14px; padding: 0 14px; margin: 3px 0; color: #fff; }
+.app .nav:hover { background: rgba(255,255,255,.1); }
+.app .nav.on, .app .nav.on:hover { background: #dcf7cf; color: #0d5a20; font-weight: 700; box-shadow: none; }
+.app .nav.on svg { color: #14801c; }
+.app .nbdg, .app .nav.on .nbdg { background: #34c924 !important; color: #fff !important; min-width: 28px !important; height: 28px; border-radius: 14px; display: grid; place-items: center; font-size: 13px; font-weight: 700; margin-left: auto; padding: 0 7px !important; box-shadow: none !important; }
+.side-art { margin-top: auto; padding: 14px 0 8px; display: flex; justify-content: center; opacity: .95; }
+.side-art svg { width: 190px; height: auto; }
+.app .nav.lo { border-top: 1px solid rgba(255,255,255,.2); border-radius: 0; margin: 4px -12px 0; padding: 0 26px; height: 58px; }
+
+/* ---------- dashboard ---------- */
+.dash { padding: 22px 28px 34px; }
+.dash .ph { position: relative; align-items: center; margin-bottom: 18px; }
+.dash .ph-t { display: flex; align-items: center; gap: 14px; position: relative; z-index: 1; }
+.dash .ph-cup svg { width: 62px; height: 62px; display: block; }
+.dash .ph h1 { font-size: 32px; font-weight: 700; line-height: 1.1; }
+.dash .ph p { font-size: 15px; margin: 2px 0 0; }
+.dash .ph-art { position: absolute; left: 25%; top: -22px; width: 370px; height: 112px; opacity: .5; pointer-events: none; }
+.dash .range { position: relative; z-index: 1; gap: 12px; }
+.dash .range .btn { height: 42px; border-radius: 8px; padding: 0 18px; font-weight: 600; font-size: 15px; background: #fff; border: 1px solid #dbe8d8; color: #17211b; box-shadow: 0 1px 4px rgba(20,83,45,.08); }
+.dash .range .btn.pri { background: #14801c; border-color: #14801c; color: #fff; }
+.dash .range input[type=date] { height: 42px; border-radius: 8px; font-size: 15px; background: #fff; border: 1px solid #dbe8d8; }
+
+.dash .kpis { gap: 22px; margin-bottom: 20px; }
+.dash .kpi { position: relative; border-radius: 6px; padding: 22px 24px; gap: 18px; background: #fff; border: 1px solid #e3eee3; box-shadow: 0 2px 12px rgba(20,83,45,.09); align-items: center; }
+.dash .kpi .kpi-i { width: auto; height: auto; background: none !important; color: #17891a !important; }
+.dash .kpi .kpi-i svg { width: 56px; height: 56px; stroke-width: 1.5; }
+.dash .kpi-t small { font-size: 16px; color: #17211b; font-weight: 500; }
+.dash .kpi-t b { font-size: 32px; font-weight: 700; display: block; line-height: 1.2; }
+.dash .kpi-d { font-size: 14px; }
+.dash .kpi::after { content: ""; position: absolute; right: 0; top: 18%; height: 64%; width: 2px; background: linear-gradient(#d4f1c9, #62bf4e); }
+
+.dash .card { border-radius: 6px; border: 1px solid #e0ece0; box-shadow: 0 2px 12px rgba(20,83,45,.09); overflow: hidden; background: #fff; }
+.dash .card-h { background: linear-gradient(90deg, #14761a, #1a8c1d); height: 48px; padding: 0 18px; border-bottom: 0; display: flex; align-items: center; justify-content: space-between; }
+.dash .card-h h3 { color: #fff; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 12px; margin: 0; }
+.dash .card-h h3 svg { width: 26px; height: 26px; flex: none; }
+.dash .card-h .lnk, .dash .card-h a { color: #fff; font-weight: 700; }
+.dash .card-h .muted { background: #fff; color: #17211b; padding: 5px 12px; border-radius: 6px; font-weight: 600; font-size: 14px; }
+.dash .card-h .btn { background: #fff; color: #14801c; border-color: #fff; }
+
+.dash .donut-bg { stroke: #a9ec90; }
+.dash .donut-half { stroke: #12c40a; }
+.dash .donut .legend .muted { color: #17211b; }
+
+.dash .mtiles { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+.dash .mt { border-radius: 8px; padding: 12px 6px 8px; background: #dff6d3; border: 1px solid #b9e6a6; gap: 4px; align-items: center; }
+.dash .mt b { font-size: 20px; }
+.dash .mt svg { color: #14801c; margin-top: 2px; }
+.dash .mt.occupied { background: #fde1e1; border-color: #f2a9a9; }
+.dash .mt.occupied svg { color: #dc2626; }
+.dash .mt.reserved svg { color: #d97706; }
+
+@media (max-width: 1280px) { .dash .ph-art { display: none; } }
+@media (max-width: 900px) { .app .side-art { display: none; } }
+
+@media (max-height: 900px) { .app .nav { height: 44px; margin: 2px 0; } .app .side-art { display: none; } }
