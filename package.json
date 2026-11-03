@@ -1,0 +1,18 @@
+
+{
+  "name": "brew-and-bite-pos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Brew & Bite POS System",
+  "scripts": {
+    "build": "npm install --prefix frontend && npm run build --prefix frontend",
+    "start": "node backend-node/server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.9",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.5.0",
+    "mysql2": "^3.24.6"
+  }
+}
