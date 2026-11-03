@@ -1,4 +1,3 @@
-
 "use strict";
 
 // Brew & Bite - Native Node.js HTTP Server
@@ -13,6 +12,7 @@ const path = require("path");
 
 const { migrate } = require("./lib/migrate");
 const core = require("./lib/core");
+const { createStatic } = require("./lib/static");
 
 // Existing API Routes
 require("./routes/auth");
@@ -40,6 +40,11 @@ const ALLOWED_ORIGINS = (
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+// Built React app (frontend/build). Set FRONTEND_DIR in .env to use another folder.
+const serveStatic = createStatic(
+  process.env.FRONTEND_DIR || path.join(__dirname, "..", "frontend", "build")
+);
 
 // Supported File Types
 const MIME = {
@@ -152,6 +157,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // Website (React build) - every non-API page
+    if (serveStatic(req, res, url)) return;
+
     // Invalid Route
     core.send(res, 404, {
       success: false,
@@ -214,9 +222,8 @@ const server = http.createServer(async (req, res) => {
     console.log("------------------------------------");
     console.log("Brew & Bite API Started Successfully");
     console.log("------------------------------------");
-    console.log(`Local API: http://localhost:${PORT}`);
-    console.log(`Network API: http://10.193.102.214:${PORT}`);
-    console.log(`Health Check: http://10.193.102.214:${PORT}/api/health`);
+    console.log(`Listening on port ${PORT}`);
+    console.log(`Health Check: /api/health`);
     console.log("------------------------------------");
   });
 

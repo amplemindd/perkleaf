@@ -1,4 +1,8 @@
-const RAW_API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+// Live site (GoDaddy): website and API share one domain, so "/api" is enough.
+// Local development uses http://localhost:5000/api unless REACT_APP_API_URL is set.
+const RAW_API_URL =
+  process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === "production" ? "/api" : "http://localhost:5000/api");
 const isLocalHost = (h) => h === "localhost" || h === "127.0.0.1";
 // When the app is opened from another device (e.g. a customer's phone scanning the table QR),
 // "localhost" in the API url would point at that phone itself. Use the host the page was
