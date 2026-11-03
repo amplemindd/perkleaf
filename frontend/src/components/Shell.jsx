@@ -11,7 +11,6 @@ import {
 import { api, fmtTime, img, money, ago, TYPES } from "../lib/api";
 import { SafeImg, useClickAway } from "../lib/ui";
 import PlatIcon from "./PlatIcon";
-import "../styles/shell.css";
 
 const PN = { swiggy: "Swiggy", zomato: "Zomato" };
 const PUBLIC = [

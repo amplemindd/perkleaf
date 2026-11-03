@@ -4,7 +4,6 @@ import { api, img } from "../lib/api";
 import { useAuth, useDebounced, useFetch, useShell, useUI } from "../lib/store";
 import { Badge, Empty, ErrorBox, Field, ImagePick, Loading, Modal, Tabs, Toggle } from "../lib/ui";
 import MenuItems from "./MenuItems";
-import "../styles/categories.css";
 
 const blank = { name: "", description: "", is_active: true, show_in_pos: true, tax_rate_id: "", image: "", image_url: "" };
 

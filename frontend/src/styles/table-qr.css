@@ -1,0 +1,60 @@
+/* ---------- Table detail panel: spacing ---------- */
+.side-panel .btn.pri.block { margin-bottom: 16px; }
+.side-panel .chips2 { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin-top: 4px; margin-bottom: 18px; }
+.side-panel .chips2 .chip2,
+.side-panel .chips2 .badge { margin: 0; flex: 0 0 auto; white-space: nowrap; padding: 4px 8px; font-size: 12px; gap: 4px; }
+/* if the panel is ever too narrow, only the time chip shrinks (with ...) instead of wrapping */
+.side-panel .chips2 .chip2:nth-of-type(2) { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- Customer QR popup ---------- */
+.qrm-card {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 20px 22px 16px; background: #fff; color: #17211b;
+  border: 1px solid #c9dfcd; border-radius: 16px;
+}
+.qrm-brand b { display: block; font-size: 22px; font-weight: 800; color: #14532d; letter-spacing: .3px; }
+.qrm-brand span { display: block; margin-top: 4px; font-size: 11px; font-weight: 600; letter-spacing: 3px; color: #15803d; }
+.qrm-table {
+  margin: 12px 0 14px; padding: 8px 22px; border-radius: 999px;
+  background: #15803d; color: #fff; font-size: 15px; font-weight: 800; letter-spacing: .5px;
+}
+.qrm-img { padding: 12px; border: 2px solid #d7e3da; border-radius: 14px; background: #fff; line-height: 0; }
+.qrm-img img { width: 190px; height: 190px; display: block; }
+.qrm-title { margin: 14px 0 2px; font-size: 24px; font-weight: 800; color: #14532d; }
+.qrm-sub { margin: 0; font-size: 13.5px; color: #64748b; }
+.qrm-steps { list-style: none; margin: 14px 0 0; padding: 0; width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.qrm-steps li { display: flex; gap: 12px; align-items: flex-start; }
+.qrm-steps .n {
+  flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%;
+  background: #15803d; color: #fff; font-size: 13px; font-weight: 800;
+  display: grid; place-items: center;
+}
+.qrm-steps b { display: block; font-size: 13.5px; font-weight: 650; line-height: 1.35; }
+.qrm-steps small { display: block; margin-top: 2px; font-size: 12.5px; color: #64748b; line-height: 1.35; }
+.qrm-help {
+  margin-top: 14px; padding-top: 10px; width: 100%;
+  border-top: 1px solid #e5e7eb; font-size: 13px; font-weight: 650; color: #14532d;
+}
+.qrm-powered { margin-top: 8px; font-size: 11px; color: #94a3b8; }
+.qrm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.qrm-actions .btn { justify-content: center; min-height: 44px; }
+@media (max-width: 480px) {
+  .qrm-card { padding: 20px 14px 16px; }
+  .qrm-img img { width: 180px; height: 180px; }
+}
+
+/* ---------- Print: only the QR card ---------- */
+@media print {
+  body.print-qr * { visibility: hidden !important; }
+  body.print-qr .qrm-card,
+  body.print-qr .qrm-card * { visibility: visible !important; }
+  body.print-qr .qrm-card {
+    position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+    width: 380px; border: 2px solid #c9dfcd; box-shadow: none;
+  }
+}
+
+/* warning shown when the QR link points to localhost */
+.qrm-warn { margin-bottom: 12px; padding: 10px 12px; border: 1px solid #fecaca; background: #fef2f2; color: #991b1b; font-size: 12.5px; line-height: 1.45; }
+.qrm-warn b { display: block; margin-bottom: 2px; }
+.qrm-warn code { background: #fee2e2; padding: 0 4px; font-size: 12px; }

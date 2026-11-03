@@ -4,7 +4,6 @@ import { cap, fmtDate, fmtTime, money, num, preset, TYPES } from "../lib/api";
 import { A, navigate, useFetch } from "../lib/store";
 import { Badge, ErrorBox, Loading, Panel, RangePicker, Stat } from "../lib/ui";
 import { Bars, Combo, Donut } from "../lib/charts";
-import "../styles/dashboard.css";
 
 const TCOL = { dine_in: "#14532D", pickup: "#2563EB", delivery: "#D97706", online: "#9333EA" };
 const PCOL = { cash: "#15803D", upi: "#2563EB", card: "#D97706", wallet: "#9333EA" };
@@ -45,7 +44,7 @@ export default function Dashboard() {
   if (!d.data) return <div className="page"><Loading /></div>;
   const x = d.data, k = x.kpis, ch = x.change, totT = x.types.reduce((s, t) => s + t.n, 0), totP = x.payments.reduce((s, t) => s + t.amount, 0);
   const tc = (s) => x.tables.filter((t) => t.status === s).length;
-  const barData = bars === "daily" ? x.last7.map((b) => ({ label: b.label.slice(0, 5), value: b.sales })) : x.weekly.map((w) => ({ label: w.label, value: w.sales }));
+  const barData = bars === "daily" ? x.last7.map((b) => ({ label: b.label, value: b.sales })) : x.weekly.map((w) => ({ label: w.label, value: w.sales }));
   return (
     <div className="page dash">
       <div className="ph"><HeadArt /><div className="ph-t"><span className="ph-cup"><CupIcon /></span><div><h1>Dashboard</h1><p className="muted">Live overview of your café · {fmtDate(x.range.from)}{x.range.from !== x.range.to ? ` – ${fmtDate(x.range.to)}` : ""}</p></div></div><RangePicker {...r} onChange={setR} initial="today" /></div>
@@ -62,7 +61,7 @@ export default function Dashboard() {
       </div>
       <div className="g3b">
         <Panel title={<T ic="table">Table Status</T>} right={<A to="/admin/tables" className="lnk">View All</A>}>
-          <div className="lg"><i style={{ background: "#15803D" }} /> Available ({tc("available")}) <i style={{ background: "#DC2626" }} /> Occupied ({tc("occupied")}) <i style={{ background: "#D97706" }} /> Reserved ({tc("reserved")}) <i style={{ background: "#2563EB" }} /> Cleaning ({tc("cleaning")})</div>
+          <div className="lg"><span className="li"><i style={{ background: "#15803D" }} /> Available ({tc("available")})</span><span className="li"><i style={{ background: "#DC2626" }} /> Occupied ({tc("occupied")})</span><span className="li"><i style={{ background: "#D97706" }} /> Reserved ({tc("reserved")})</span><span className="li"><i style={{ background: "#2563EB" }} /> Cleaning ({tc("cleaning")})</span></div>
           <div className="mtiles">{x.tables.map((t) => <button key={t.id} className={`mt ${t.status}`} onClick={() => navigate("/admin/tables")} title={cap(t.status)}><b>{t.name}</b><small>{t.order_id ? `${t.bill_no} · ${money(t.order_total)}` : t.status === "reserved" ? t.reserved_time || "Reserved" : cap(t.status)}</small><Icon n="table" size={22} /></button>)}</div>
         </Panel>
         <Panel title={<T ic="receipt">Recent Orders</T>} right={<A to="/admin/orders" className="lnk">View All</A>} pad={false}><div className="table-wrap"><table className="tbl sm"><thead><tr><th>#</th><th>Time</th><th>Table</th><th>Type</th><th>Total</th><th>Status</th></tr></thead>
@@ -85,4 +84,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

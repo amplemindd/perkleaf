@@ -1,0 +1,10 @@
+/* Customer menu search: only the outer bar shows the focus ring, not the inner input */
+.co-search input,
+.co-search input:focus,
+.co-search input:focus-visible {
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 0;
+}

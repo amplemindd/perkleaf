@@ -3,7 +3,6 @@ import React, { useRef, useState } from "react";
 import { api, money, saveCSV, cap, img } from "../lib/api";
 import { useAuth, useDebounced, useFetch, useShell, useUI } from "../lib/store";
 import { Empty, ErrorBox, Field, Loading, Menu, Toggle } from "../lib/ui";
-import "../styles/menu.css";
 
 const Veg = ({ t }) => (
   <span className={`vmark ${t}`}>

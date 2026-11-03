@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import Icon from "../lib/icons";
 import { api, img, setToken } from "../lib/api";
 import { navigate, useAuth } from "../lib/store";
-import "../styles/waiter.css";
 
 export default function WaiterLogin() {
   const { user, can, refresh, settings } = useAuth();

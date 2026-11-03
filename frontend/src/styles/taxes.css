@@ -1,2 +1,426 @@
-.kpi select{padding:5px 8px;font-size:12px}
-.note.pad{padding:12px 16px}
+/* =========================================
+   AMPLEMIND CAFE - TAXES / GST SETTINGS
+   WHITE + GREEN + LIGHT GREY THEME
+========================================= */
+
+/* Main page */
+.app .page {
+  background: #ffffff;
+  color: #202923;
+}
+
+/* Page heading */
+.app .page .ph {
+  margin-bottom: 20px;
+}
+
+.app .page .ph h1 {
+  color: #17211b;
+  font-size: 28px;
+  font-weight: 750;
+  margin-bottom: 5px;
+}
+
+.app .page .ph p {
+  color: #77847c;
+  font-size: 14px;
+}
+
+/* KPI cards */
+.app .page .kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.app .page .kpi,
+.app .page .kpis .card {
+  background: #ffffff;
+  border: 1px solid #d9e3dc;
+  border-radius: 2px;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.045);
+  transition: 0.2s ease;
+}
+
+.app .page .kpi {
+  min-height: 108px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.app .page .kpi:hover,
+.app .page .kpis .card:hover {
+  border-color: #b8cbbd;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.08);
+}
+
+.app .page .kpi .kpi-i {
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e5f5e9;
+  color: #15803d;
+  border-radius: 2px;
+}
+
+.app .page .kpi .kpi-i svg {
+  width: 27px;
+  height: 27px;
+}
+
+.app .page .kpi .kpi-t {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.app .page .kpi .kpi-t small {
+  color: #718078;
+  font-size: 13px;
+}
+
+.app .page .kpi .kpi-t b {
+  color: #17211b;
+  font-size: 25px;
+  font-weight: 750;
+}
+
+.app .page .kpi select {
+  padding: 5px 8px;
+  font-size: 12px;
+  margin-left: auto;
+}
+
+/* KPI icon colors */
+.app .page .kpi.t-green .kpi-i {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.app .page .kpi.t-amber .kpi-i {
+  background: #fff4cc;
+  color: #806000;
+}
+
+/* Tabs */
+.app .page .tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+  border-bottom: 0;
+}
+
+.app .page .tabs button {
+  min-height: 43px;
+  padding: 10px 17px;
+  background: #ffffff;
+  color: #26352b;
+  border: 1px solid #d5e1d8;
+  border-radius: 0;
+  font-size: 14px;
+  font-weight: 650;
+  transition: 0.2s ease;
+}
+
+.app .page .tabs button:hover {
+  background: #edf7ef;
+  color: #14532d;
+  border-color: #15803d;
+}
+
+.app .page .tabs button.on,
+.app .page .tabs button.active {
+  background: #14532d;
+  color: #ffffff;
+  border-color: #14532d;
+}
+
+/* Two column layout */
+.app .page .two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr);
+  align-items: start;
+  gap: 18px;
+}
+
+/* Panels and cards */
+.app .page .card,
+.app .page .panel {
+  background: #ffffff;
+  border: 1px solid #d7e1da;
+  border-radius: 2px;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.045);
+  overflow: hidden;
+}
+
+.app .page .card-h,
+.app .page .panel-h {
+  padding: 17px 19px;
+  background: #ffffff;
+  border-bottom: 1px solid #e1e8e3;
+}
+
+.app .page .card-h h3,
+.app .page .panel h3 {
+  margin: 0;
+  color: #17211b;
+  font-size: 18px;
+  font-weight: 750;
+}
+
+.app .page .card-b {
+  padding: 18px;
+}
+
+/* Tables */
+.app .page .tbl {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.app .page .tbl thead th {
+  padding: 13px 14px;
+  background: #edf7ef;
+  color: #526257;
+  border-bottom: 1px solid #d5e2d8;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.app .page .tbl tbody td {
+  padding: 14px;
+  color: #354239;
+  border-bottom: 1px solid #e5ebe6;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.app .page .tbl tbody tr {
+  background: #ffffff;
+  transition: background 0.2s ease;
+}
+
+.app .page .tbl tbody tr:hover {
+  background: #f3f9f4;
+}
+
+.app .page .tbl tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.app .page .tbl tbody td b {
+  color: #202923;
+  font-weight: 700;
+}
+
+/* Action buttons */
+.app .page .macts {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.app .page .btn {
+  border: 1px solid #d5e1d8;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #26352b;
+  transition: 0.2s ease;
+}
+
+.app .page .btn:hover {
+  background: #edf7ef;
+  border-color: #15803d;
+}
+
+.app .page .btn.pri {
+  background: #15803d;
+  color: #ffffff;
+  border-color: #15803d;
+}
+
+.app .page .btn.pri:hover {
+  background: #14532d;
+  border-color: #14532d;
+}
+
+.app .page .btn.dng {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.app .page .btn.dng:hover {
+  background: #fff1f1;
+  border-color: #dc2626;
+}
+
+/* Form fields */
+.app .page .card-b input,
+.app .page .card-b select,
+.app .page .card-b textarea,
+.app .page .panel select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  color: #26352b;
+  background: #ffffff;
+  border: 1px solid #d5e1d8;
+  border-radius: 2px;
+  outline: none;
+  font-size: 14px;
+}
+
+.app .page .card-b textarea {
+  min-height: 68px;
+  resize: vertical;
+}
+
+.app .page .card-b input:focus,
+.app .page .card-b select:focus,
+.app .page .card-b textarea:focus,
+.app .page .panel select:focus {
+  border-color: #15803d;
+  box-shadow: 0 0 0 2px rgba(21, 128, 61, 0.08);
+}
+
+/* Form labels */
+.app .page .card-b label {
+  color: #26352b;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+/* Notes */
+.app .page .note {
+  color: #718078;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 14px 0;
+}
+
+.app .page .note.pad {
+  padding: 12px 16px;
+  background: #f4f8f5;
+  border-bottom: 1px solid #e0e8e2;
+}
+
+/* Selects */
+.app .page select {
+  border-color: #d5e1d8;
+  border-radius: 2px;
+}
+
+.app .page select:focus {
+  border-color: #15803d;
+  outline: none;
+}
+
+/* Toggle alignment */
+.app .page .kpi > .toggle,
+.app .page .kpi > button {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Action area */
+.app .page .sp-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.app .page .sp-actions .btn.pri {
+  min-height: 44px;
+  padding: 10px 20px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .app .page .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app .page .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .app .page .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .app .page .kpi {
+    padding: 10px;
+    gap: 8px;
+    min-height: 85px;
+  }
+
+  .app .page .kpi .kpi-i {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  .app .page .kpi .kpi-t b {
+    font-size: 19px;
+  }
+
+  .app .page .tbl {
+    min-width: 650px;
+  }
+
+  .app .page .table-wrap {
+    overflow-x: auto;
+  }
+
+  .app .page .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .app .page .tabs button {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .app .page .kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Remove background boxes from GST KPI icons */
+.app .page .kpi .kpi-i {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  color: #15803d !important;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0;
+}
+
+/* Icon only */
+.app .page .kpi .kpi-i svg {
+  width: 30px;
+  height: 40px;
+  color: #15803d !important;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}

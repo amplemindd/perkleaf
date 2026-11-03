@@ -4,7 +4,6 @@ import { api, cap, fmtDT, fmtTime, money, preset, saveCSV, TYPES, TYPE_ICON, img
 import { navigate, takeHandoff, useAuth, useDebounced, useFetch, useShell, useUI } from "../lib/store";
 import { Badge, Empty, ErrorBox, Loading, Menu, Pager, RangePicker, SafeImg, Tabs } from "../lib/ui";
 import { ReceiptModal } from "../components/Receipt";
-import "../styles/orders.css";
 
 const FLOW = { pending: ["preparing", "ready", "completed"], preparing: ["ready", "completed"], ready: ["completed"], completed: [], cancelled: [] };
 const STATUSES = ["pending", "preparing", "ready", "completed", "cancelled"];

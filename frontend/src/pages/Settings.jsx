@@ -1,10 +1,12 @@
 import Icon from "../lib/icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { api, downloadFile, fmtDT, img, ORIGIN } from "../lib/api";
 import PlatIcon from "../components/PlatIcon";
 import { A, useAuth, useFetch, useUI } from "../lib/store";
 import { Field, ImagePick, Panel, Toggle } from "../lib/ui";
-import "../styles/settings.css";
+import { FONTS, fontStack } from "../i18n/fonts";
+import { setLanguage } from "../i18n";
+import { COLOR_CHOICES, applyAppearance, effective, localSet } from "../lib/borders";
 
 const TZ = ["Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Europe/London", "America/New_York", "UTC"];
 const opt = (a) => a.map((x) => (Array.isArray(x) ? x : [x, x]));
@@ -12,8 +14,8 @@ const SEC = {
   info: ["Restaurant Information", "Basic information about your café", [["company_name", "Company / software name (waiter app)", "text"], ["restaurant_name", "Restaurant Name * (shown in the header)", "text"], ["tagline", "Tagline (shown under the name)", "text"], ["phone", "Phone Number", "text"], ["support_phone", "Support phone (waiter Call Support)", "text"], ["support_whatsapp", "Support WhatsApp number (waiter Chat Support)", "text"], ["email", "Email Address", "text"], ["address", "Address", "area"], ["gstin", "GSTIN (tax registration)", "text"]]],
   business: ["Business Settings", "Configure business hours and basic options", [["timezone", "Time Zone", "select", opt(TZ)], ["open_time", "Open Time", "time"], ["close_time", "Close Time", "time"], ["week_off", "Week Off", "select", opt(["None", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])],
     ["dine_in_enabled", "Dine In Enabled", "bool"], ["takeaway_enabled", "Takeaway (Pick Up) Enabled", "bool"], ["delivery_enabled", "Delivery Enabled", "bool"], ["online_enabled", "Online Orders", "bool"]]],
-  theme: ["Theme & Appearance", "Customize the look and feel", [["dark_mode", "Dark Mode", "bool"], ["sidebar_style", "Sidebar Style", "select", opt([["expanded", "Expanded"], ["collapsed", "Collapsed"]])], ["font", "Primary Font", "select", opt(["Poppins", "Inter", "Roboto", "Open Sans"])],
-    ["language", "Language", "select", opt(["English", "Hindi", "Marathi"])], ["date_format", "Date Format", "select", opt(["DD Mon YYYY", "DD/MM/YYYY", "MM/DD/YYYY"])], ["currency", "Currency", "select", opt([["INR", "INR (₹)"]])]]],
+  theme: ["Theme & Appearance", "Customize the look and feel", [["dark_mode", "Dark Mode", "bool"], ["border_color", "Border Colour", "select", opt(COLOR_CHOICES.map((c) => [c.value, c.label]))], ["icon_color", "Icon Colour", "select", opt(COLOR_CHOICES.map((c) => [c.value, c.label]))], ["sidebar_style", "Sidebar Style", "select", opt([["expanded", "Expanded"], ["collapsed", "Collapsed"]])], ["font", "Primary Font", "select", opt(FONTS.map((f) => [f.value, f.label]))],
+    ["language", "Language", "select", opt([["English", "English"], ["Hindi", "हिन्दी (Hindi)"], ["Marathi", "मराठी (Marathi)"]])], ["date_format", "Date Format", "select", opt(["DD Mon YYYY", "DD/MM/YYYY", "MM/DD/YYYY"])], ["currency", "Currency", "select", opt([["INR", "INR (₹)"]])]]],
   pos: ["POS Settings", "Configure billing and order settings", [["auto_print", "Auto Print Bill", "bool"], ["auto_tax", "Auto Calculate Tax", "bool"], ["allow_discounts", "Allow Discounts", "bool"], ["require_table", "Require Table Selection (Dine In)", "bool"],
     ["default_order_type", "Default Order Type", "select", opt([["dine_in", "Dine In"], ["pickup", "Pick Up"], ["delivery", "Delivery"]])], ["default_payment_method", "Default Payment Method", "select", opt([["cash", "Cash"], ["upi", "UPI"], ["card", "Card"]])],
     ["bill_prefix", "Bill Number Prefix", "text"], ["bill_start", "Bill Start From", "num"], ["discount_limit_cashier", "Max discount for cashiers (%)", "num"], ["table_after_bill", "After payment, table becomes", "select", opt([["available", "Available"], ["cleaning", "Cleaning"]])], ["loyalty_per_100", "Loyalty points per ₹100", "num"]]],
@@ -29,7 +31,7 @@ const TABS = [["general", "General", "gear", ["info", "business", "theme"]], ["i
 export default function Settings() {
   const { settings, refresh, can } = useAuth();
   const { toast, ask } = useUI();
-  const [s, setS] = useState({ ...settings });
+  const [s, setS] = useState({ ...settings, border_color: effective(settings, "border_color"), icon_color: effective(settings, "icon_color") });
   const [tab, setTab] = useState("general");
   const [logo, setLogo] = useState("");
   const [qr, setQr] = useState("");
@@ -37,6 +39,22 @@ export default function Settings() {
   const rates = useFetch(can("taxes") ? "/taxes" : "");
   const backups = useFetch(can("backup") ? "/backups" : "");
   const set = (k, v) => setS((x) => ({ ...x, [k]: v }));
+  // Live preview of dark mode / font / language while editing (reverts if you leave without saving)
+  useEffect(() => {
+    const el = document.documentElement;
+    el.dataset.theme = s.dark_mode ? "dark" : "light";
+    el.style.setProperty("--font", fontStack(s.font));
+    setLanguage(s.language || "English");
+    applyAppearance(s);
+  }, [s.dark_mode, s.font, s.language, s.border_color, s.icon_color]);
+  useEffect(() => () => {
+    const el = document.documentElement;
+    el.dataset.theme = settings.dark_mode ? "dark" : "light";
+    el.style.setProperty("--font", fontStack(settings.font));
+    setLanguage(settings.language || "English");
+    applyAppearance(settings);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings]);
   const save = async () => {
     setBusy(true);
     try {
@@ -44,7 +62,8 @@ export default function Settings() {
       if (logo === "remove") body.remove_logo = true; else if (logo) body.logo_data = logo;
       if (qr === "remove") body.remove_qr = true; else if (qr) body.qr_data = qr;
       const r = await api("/settings", { method: "PUT", body });
-      toast("Settings saved."); setS(r.settings); setLogo(""); setQr(""); await refresh();
+      localSet("border_color", s.border_color); localSet("icon_color", s.icon_color);
+      toast("Settings saved."); setS({ ...r.settings, border_color: s.border_color || "default", icon_color: s.icon_color || "default" }); setLogo(""); setQr(""); await refresh();
     } catch (e) { toast(e.message, "err"); } finally { setBusy(false); }
   };
   const field = ([k, label, t, o]) => {
@@ -70,6 +89,25 @@ export default function Settings() {
             {k === "info" && <div className="logo-row"><div><b>Logo (optional)</b><ImagePick value={logo && logo !== "remove" ? logo : logo === "remove" ? "" : img(s.logo_url)} onChange={(v) => setLogo(v || "remove")} label="Upload logo" /></div></div>}
             {k === "tax" && <Field label="Default GST Rate"><select value={s.default_tax_rate_id} onChange={(e) => set("default_tax_rate_id", Number(e.target.value))}><option value={0}>None (0%)</option>{(rates.data?.rates || []).filter((r) => r.is_active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>}
             <div className="form-grid">{SEC[k][2].map(field)}</div>
+            {k === "theme" && [["border_color", "Border Colour"], ["icon_color", "Icon Colour"]].map(([key, label]) => (
+              <div className="border-swatches" key={key}>
+                <small className="muted">{label}</small>
+                <div className="bsw-row">
+                  {COLOR_CHOICES.map((c) => (
+                    <button key={c.value} type="button" title={c.label} aria-label={`${label}: ${c.label}`}
+                      className={`bsw ${(s[key] || "default") === c.value ? "on" : ""}`}
+                      style={{ "--sw": c.hex || "#15803d" }} onClick={() => set(key, c.value)} />
+                  ))}
+                </div>
+              </div>
+            ))}
+            {k === "theme" && (
+              <div className="font-preview" style={{ fontFamily: fontStack(s.font) }}>
+                <small className="muted">Font Preview</small>
+                <div className="fp-big">Brew &amp; Bite – Café POS 0123456789 ₹</div>
+                <div className="fp-dev">ब्रू अँड बाइट – कैफ़े पीओएस · नमस्कार, आपले स्वागत आहे</div>
+              </div>
+            )}
             {k === "pay" && <div className="qrrow"><b>UPI QR code (optional)</b><ImagePick value={qr && qr !== "remove" ? qr : qr === "remove" ? "" : img(s.qr_image_url)} onChange={(v) => setQr(v || "remove")} label="Upload QR image" /></div>}
           </Panel>
         ))}
@@ -99,4 +137,3 @@ export default function Settings() {
     </div>
   );
 }
-

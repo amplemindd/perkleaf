@@ -4,7 +4,6 @@ import { api, fmtDate, money, num, preset, readFile, saveCSV, ymd, img } from ".
 import { useDebounced, useFetch, useShell, useUI } from "../lib/store";
 import { Badge, Empty, ErrorBox, Field, Loading, Pager, RangePicker, Stat } from "../lib/ui";
 import { Bars, Donut } from "../lib/charts";
-import "../styles/expenses.css";
 
 const MODES = ["Cash", "UPI", "Card", "Bank Transfer", "Cheque"];
 const blank = () => ({ expense_date: ymd(), category_id: "", name: "", supplier: "", amount: "", payment_mode: "", notes: "", attachment_data: "" });

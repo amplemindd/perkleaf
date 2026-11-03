@@ -1,1 +1,552 @@
-.cprof{display:flex;gap:14px;align-items:center;margin-bottom:10px}
+
+/* =====================================================
+   AMPLEMIND CAFE - CUSTOMERS PAGE
+   WHITE + GREEN + LIGHT GREY THEME
+===================================================== */
+
+/* Main page */
+
+.app .page.split {
+  background: #ffffff;
+}
+
+.app .page.split .split-main {
+  background: #ffffff;
+  padding: 22px 26px 34px;
+  min-width: 0;
+}
+
+/* Page Header */
+
+.app .page.split .ph {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.app .page.split .ph h1 {
+  color: #17211b;
+  font-size: 30px;
+  font-weight: 750;
+  margin: 0 0 5px;
+}
+
+.app .page.split .ph p {
+  color: #77847c;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Add Customer Button */
+
+.app .page.split .ph .btn.pri {
+  background: #15803d;
+  color: #ffffff;
+  border: 1px solid #15803d;
+  border-radius: 3px;
+  padding: 11px 17px;
+  font-weight: 650;
+  box-shadow: 0 2px 5px rgba(0,0,0,.06);
+  transition: all .2s ease;
+}
+
+.app .page.split .ph .btn.pri:hover {
+  background: #14532d;
+  border-color: #14532d;
+  box-shadow: 0 4px 10px rgba(0,0,0,.10);
+}
+
+/* =====================================================
+   KPI CARDS
+===================================================== */
+
+.app .page.split .kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.app .page.split .kpi {
+  background: #ffffff;
+  border: 1px solid #d9e1db;
+  border-radius: 3px;
+  padding: 17px 19px;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.045);
+  transition: box-shadow .2s ease, border-color .2s ease,
+    transform .2s ease;
+}
+
+.app .page.split .kpi:hover {
+  border-color: #b8c9bc;
+  box-shadow: 0 5px 13px rgba(0,0,0,.09);
+  transform: translateY(-2px);
+}
+
+/* KPI icons - remove background boxes */
+
+.app .page.split .kpi .kpi-i {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: #15803d !important;
+}
+
+.app .page.split .kpi .kpi-i svg {
+  width: 37px;
+  height: 37px;
+  color: #15803d !important;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.app .page.split .kpi-t {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.app .page.split .kpi-t small {
+  color: #718078;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.app .page.split .kpi-t b {
+  color: #17211b;
+  font-size: 25px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.app .page.split .kpi-d {
+  color: #718078;
+  font-size: 11px;
+}
+
+/* =====================================================
+   FILTERS AND EXPORT
+===================================================== */
+
+.app .page.split .filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: #f5f7f5;
+  border: 1px solid #e0e5e1;
+  border-radius: 3px;
+}
+
+.app .page.split .filters select {
+  min-width: 180px;
+  height: 39px;
+  padding: 0 12px;
+  background: #ffffff;
+  color: #26352b;
+  border: 1px solid #d3ddd5;
+  border-radius: 3px;
+  outline: none;
+}
+
+.app .page.split .filters select:focus {
+  border-color: #15803d;
+  box-shadow: 0 0 0 2px rgba(21,128,61,.08);
+}
+
+.app .page.split .filters .sp {
+  flex: 1;
+}
+
+.app .page.split .filters .btn {
+  height: 39px;
+  padding: 0 16px;
+  background: #ffffff;
+  color: #15803d;
+  border: 1px solid #cbd8ce;
+  border-radius: 3px;
+  font-weight: 650;
+  transition: all .2s ease;
+}
+
+.app .page.split .filters .btn:hover {
+  background: #eef8f0;
+  border-color: #15803d;
+  box-shadow: 0 3px 8px rgba(0,0,0,.07);
+}
+
+/* =====================================================
+   CUSTOMER TABLE
+===================================================== */
+
+.app .page.split .card {
+  background: #ffffff;
+  border: 1px solid #d7dfd9;
+  border-radius: 3px;
+  box-shadow: 0 2px 7px rgba(0,0,0,.045);
+  overflow: hidden;
+}
+
+.app .page.split .table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.app .page.split .tbl {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.app .page.split .tbl thead th {
+  background: #edf7ef;
+  color: #34483a;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 14px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid #d1e2d5;
+}
+
+.app .page.split .tbl tbody td {
+  padding: 12px;
+  color: #354239;
+  font-size: 13px;
+  border-bottom: 1px solid #e5eae6;
+  white-space: nowrap;
+}
+
+.app .page.split .tbl tbody tr {
+  background: #ffffff;
+  cursor: pointer;
+  transition: background .18s ease;
+}
+
+.app .page.split .tbl tbody tr:hover {
+  background: #f2f9f3;
+}
+
+.app .page.split .tbl tbody tr.sel {
+  background: #eaf6ed;
+}
+
+.app .page.split .tbl tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.app .page.split .tbl tbody td b {
+  color: #202923;
+  font-weight: 650;
+}
+
+/* Customer Avatar - no extra box */
+
+.app .page.split .tbl tbody td .avatar {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-right: 7px;
+}
+
+/* =====================================================
+   STATUS BADGES
+===================================================== */
+
+.app .page.split .tbl .badge {
+  border-radius: 3px;
+  font-weight: 650;
+}
+
+/* =====================================================
+   PAGINATION
+===================================================== */
+
+.app .page.split .pager {
+  background: #ffffff;
+  border-top: 1px solid #e1e7e2;
+  padding: 13px 16px;
+}
+
+.app .page.split .pager button {
+  background: #ffffff;
+  border: 1px solid #d5dfd8;
+  color: #34483a;
+  border-radius: 3px;
+  transition: all .2s ease;
+}
+
+.app .page.split .pager button:hover {
+  background: #edf7ef;
+  border-color: #15803d;
+}
+
+.app .page.split .pager button.on,
+.app .page.split .pager button.active {
+  background: #15803d;
+  border-color: #15803d;
+  color: #ffffff;
+}
+
+/* =====================================================
+   CUSTOMER DETAIL SIDE PANEL
+===================================================== */
+
+.app .page.split .side-panel {
+  background: #ffffff;
+  border-left: 1px solid #dce4de;
+  box-shadow: -3px 0 12px rgba(0,0,0,.055);
+  padding: 20px;
+}
+
+.app .page.split .sp-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e1e8e2;
+}
+
+.app .page.split .sp-h h3 {
+  color: #17211b;
+  font-size: 20px;
+  font-weight: 750;
+}
+
+.app .page.split .sp-h .x {
+  background: transparent;
+  border: 0;
+  color: #64736a;
+}
+
+.app .page.split .sp-h .x:hover {
+  color: #15803d;
+}
+
+/* Customer Profile */
+
+.app .page.split .cprof {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 14px;
+  background: #f5f8f5;
+  border: 1px solid #e0e7e1;
+}
+
+.app .page.split .cprof b {
+  color: #17211b;
+  font-size: 16px;
+}
+
+.app .page.split .cprof .muted {
+  color: #718078;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.app .page.split .cprof .muted svg {
+  color: #15803d;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}
+
+/* Customer mini stats */
+
+.app .page.split .mini-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.app .page.split .mini-stats > div {
+  padding: 13px;
+  background: #ffffff;
+  border: 1px solid #dce5de;
+  border-radius: 3px;
+  box-shadow: 0 2px 5px rgba(0,0,0,.04);
+}
+
+.app .page.split .mini-stats small {
+  display: block;
+  color: #718078;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.app .page.split .mini-stats b {
+  color: #14532d;
+  font-size: 19px;
+  font-weight: 750;
+}
+
+/* Tabs */
+
+.app .page.split .side-panel .tabs {
+  border-bottom: 1px solid #dce5de;
+}
+
+.app .page.split .side-panel .tabs button {
+  color: #64736a;
+}
+
+.app .page.split .side-panel .tabs button.on {
+  color: #15803d;
+  border-bottom-color: #15803d;
+}
+
+/* Detail action buttons */
+
+.app .page.split .side-panel .btn {
+  border-radius: 3px;
+  border: 1px solid #d5dfd8;
+}
+
+.app .page.split .side-panel .btn.pri {
+  background: #15803d;
+  border-color: #15803d;
+  color: #ffffff;
+}
+
+.app .page.split .side-panel .btn.pri:hover {
+  background: #14532d;
+}
+
+/* =====================================================
+   MODAL / FORM
+===================================================== */
+
+.app .modal input,
+.app .modal select,
+.app .modal textarea {
+  border: 1px solid #d5dfd8;
+  border-radius: 3px;
+  background: #ffffff;
+}
+
+.app .modal input:focus,
+.app .modal select:focus,
+.app .modal textarea:focus {
+  border-color: #15803d;
+  box-shadow: 0 0 0 2px rgba(21,128,61,.08);
+  outline: none;
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 1200px) {
+  .app .page.split .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app .page.split .split-main {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  .app .page.split .split-main {
+    padding: 14px 12px 25px;
+  }
+
+  .app .page.split .ph {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .app .page.split .ph h1 {
+    font-size: 25px;
+  }
+
+  .app .page.split .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .app .page.split .kpi {
+    padding: 11px;
+    min-height: 85px;
+    gap: 8px;
+  }
+
+  .app .page.split .kpi .kpi-i {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+  }
+
+  .app .page.split .kpi .kpi-i svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .app .page.split .kpi-t small {
+    font-size: 11px;
+  }
+
+  .app .page.split .kpi-t b {
+    font-size: 19px;
+  }
+
+  .app .page.split .filters {
+    padding: 9px;
+    gap: 8px;
+  }
+
+  .app .page.split .filters select {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .app .page.split .side-panel {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 400px) {
+  .app .page.split .kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Hide customer avatar / initials box */
+.cprof .avatar,
+.cprof .customer-avatar,
+.cprof .avatar-box {
+  display: none !important;
+}
+
+/* Show only customer full name */
+.cprof {
+  display: block !important;
+  margin-bottom: 0;
+}
+
+.cprof > div {
+  gap: 0 !important;
+}
+
+.cprof strong,
+.cprof .customer-name {
+  margin-left: 0 !important;
+}

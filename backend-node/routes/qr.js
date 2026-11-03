@@ -3,6 +3,8 @@ const crypto = require("crypto");
 const { api, q, one, fail, notify, getSettings, str } = require("../lib/core");
 const { saveOrder, OPEN_SQL } = require("./orders");
 
+const CALL_COOLDOWN_SEC = 15; // customer may ring the bell once per table every 15 seconds
+
 api.get("/api/public/qr/:token", null, async (ctx) => {
   const table = await one(
     "SELECT id, name, capacity, qr_token FROM bb_tables WHERE qr_token = ? AND is_active = 1",
@@ -113,6 +115,21 @@ api.post("/api/public/qr/:token/call", null, async (ctx) => {
     [str(ctx.params.token, 36)],
   );
   if (!table) throw fail(404, "This table QR code is invalid or inactive.");
+
+  // Rate limit: one bell ring per table every CALL_COOLDOWN_SEC seconds, so the
+  // cashier's alert rings once and cannot be spammed (page refresh, many phones...).
+  const lastCall = await one(
+    `SELECT TIMESTAMPDIFF(SECOND, created_at, NOW()) AS age
+     FROM bb_notifications
+     WHERE link_type = 'table' AND link_id = ? AND title LIKE 'Customer Call%'
+     ORDER BY id DESC LIMIT 1`,
+    [table.id],
+  );
+  if (lastCall && Number(lastCall.age) < CALL_COOLDOWN_SEC) {
+    const wait = Math.max(1, CALL_COOLDOWN_SEC - Number(lastCall.age));
+    throw fail(429, `Please wait ${wait}s before calling again.`);
+  }
+
   await notify({
     type: "table",
     title: `Customer Call · Table ${table.name}`,

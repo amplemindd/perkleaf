@@ -11,3 +11,34 @@ div.lg i{width:10px;height:10px;border-radius:3px;display:inline-block}
 .nrow b,.nrow small{display:block}
 .nrow>div{flex:1;min-width:0}
 .udot{width:8px;height:8px;border-radius:50%;background:var(--err);display:inline-block;flex:none}
+
+/* ===== Dashboard fixes (.app prefix so these win over theme.css) ===== */
+
+/* 1. Header art: sits in the free gap, never over the buttons */
+.app .dash .ph-art{left:440px;top:-18px;width:240px;height:auto;opacity:.4;z-index:0}
+@media (max-width:1800px){.app .dash .ph-art{display:none}}
+/* 2. KPI cards: compact height */
+.app .dash .kpis{gap:18px;margin-bottom:14px}
+.app .dash .kpi{min-height:0;padding:10px 18px;gap:12px}
+.app .dash .kpi .kpi-i svg{width:38px;height:38px}
+.app .dash .kpi-t{justify-content:center;gap:0}
+.app .dash .kpi-t small{font-size:14px;line-height:1.3}
+.app .dash .kpi-t b{font-size:24px;line-height:1.2}
+.app .dash .kpi-d{font-size:12px;line-height:1.3}
+
+/* 3. Table Status: legend items stay together, tiles smaller, list scrolls */
+.app .dash div.lg{gap:6px 14px;font-size:12px}
+.app .dash div.lg .li{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.app .dash .mtiles{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;max-height:430px;overflow-y:auto;padding-right:4px}
+.app .dash .mt{padding:8px 4px 6px}
+.app .dash .mt b{font-size:17px}
+
+/* 4. Recent Orders: fits without sideways scroll, Status no longer cut off */
+.app .dash .tbl.sm th,.app .dash .tbl.sm td{padding:7px 6px;font-size:12.5px}
+.app .dash .table-wrap{overflow-x:auto}
+.app .dash .table-wrap::-webkit-scrollbar{height:6px}
+
+/* 5. Three panels in a row: equal height, no margin gap at bottom */
+.app .dash .g3b>.card,.app .dash .g3>.card{margin-bottom:0}
+.app .dash .g3b,.app .dash .g3{margin-bottom:20px}
+

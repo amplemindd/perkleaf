@@ -4,7 +4,6 @@ import { api, cap, fmtDT, fmtDate } from "../lib/api";
 import { useAuth, useFetch, useUI } from "../lib/store";
 import { Avatar, Badge, ErrorBox, Loading, Panel, Tabs } from "../lib/ui";
 import StaffForm, { blankStaff, staffToForm } from "../components/StaffForm";
-import "../styles/users.css";
 
 
 export default function Users() {

@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import Icon from "../lib/icons";
 import { A, navigate, useAuth } from "../lib/store";
 import { img } from "../lib/api";
-import "../styles/login.css";
 
 export default function Login() {
   const {

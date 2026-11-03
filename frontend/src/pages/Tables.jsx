@@ -1,11 +1,13 @@
 import Icon from "../lib/icons";
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { api, cap, elapsed, fmtDT, fmtTime, money } from "../lib/api";
 import { navigate } from "../lib/store";
 import { useAuth, useFetch, useShell, useUI } from "../lib/store";
 import { Badge, Empty, ErrorBox, Field, Loading, Modal, Tabs } from "../lib/ui";
 import { ReceiptModal } from "../components/Receipt";
-import "../styles/tables.css";
+import { QR_BRAND, QR_STEPS, downloadQrCard } from "../lib/qrcard";
+import "../styles/table-qr.css";
 
 const ST = ["available", "occupied", "reserved", "cleaning", "out_of_service"];
 
@@ -90,6 +92,7 @@ function Detail({ id, onClose, refresh, admin }) {
   const [rec, setRec] = useState(false);
   const [move, setMove] = useState(false);
   const [qrData, setQrData] = useState("");
+  const [qrLink, setQrLink] = useState("");
 
   const all = useFetch("/tables");
   const t = d.data?.table;
@@ -105,10 +108,20 @@ function Detail({ id, onClose, refresh, admin }) {
     const baseUrl = process.env.REACT_APP_PUBLIC_URL || window.location.origin;
 
     const url = `${baseUrl}/customer-order/${t.qr_token}`;
+    setQrLink(url);
 
     setQrData(
       `https://api.qrserver.com/v1/create-qr-code/?size=420x420&margin=12&data=${encodeURIComponent(url)}`,
     );
+  };
+  const printQr = () => {
+    document.body.classList.add("print-qr");
+    const done = () => {
+      document.body.classList.remove("print-qr");
+      window.removeEventListener("afterprint", done);
+    };
+    window.addEventListener("afterprint", done);
+    window.print();
   };
   const cancel = async () => {
     const reason = await ask(
@@ -266,74 +279,70 @@ function Detail({ id, onClose, refresh, admin }) {
       )}
 
       
-{qrData && (
-  <div className="qr-side-view">
-    <div className="qr-side-header">
-      <div>
-        <h2>Table {t.name}</h2>
-        <p>Customer QR Ordering</p>
-      </div>
-
-      <button
-        className="btn dng"
-        onClick={() => setQrData("")}
-      >
-        <Icon n="x" /> Close
-      </button>
-    </div>
-
-    <div className="qr-center-content">
-      <div className="qr-professional-card">
-
-        <div className="qr-card-heading">
-          <h2>AMPLEMIND CAFE</h2>
-          <span>CAFÉ & RESTAURANT</span>
-        </div>
-
-        <div className="qr-table-label">
-          TABLE {t.name}
-        </div>
-
-        <div className="qr-image-box">
-          <img
-            src={qrData}
-            alt={`QR Code ${t.name}`}
-          />
-        </div>
-
-        <h3>SCAN & ORDER</h3>
-
-        <p>
-          Scan this QR Code to explore our menu
-          and order directly from your mobile.
-        </p>
-
-        <div className="qr-divider" />
-
-        <div className="qr-action-buttons">
-          <a
-            href={qrData}
-            download={`Table-${t.name}-QR.png`}
-            className="btn pri"
+      {qrData &&
+        createPortal(
+          <Modal
+            title={`Table ${t.name} · Customer QR`}
+            onClose={() => setQrData("")}
+            footer={
+              <>
+                <div className="qrm-actions">
+                  <button className="btn" onClick={printQr}>
+                    <Icon n="print" /> Print QR
+                  </button>
+                  <button
+                    className="btn pri"
+                    onClick={() =>
+                      downloadQrCard(qrData, t.name).catch(() =>
+                        toast("Could not create the image. Use Print QR instead.", "err"),
+                      )
+                    }
+                  >
+                    <Icon n="download" /> Download QR
+                  </button>
+                </div>
+              </>
+            }
           >
-            <Icon n="download" /> Download QR
-          </a>
-
-          <button
-            className="btn"
-            onClick={() => window.print()}
-          >
-            <Icon n="printer" /> Print QR
-          </button>
-        </div>
-
-        <small>Powered by AmpleMind Technologies</small>
-
-      </div>
-    </div>
-  </div>
-)}
-
+            {/localhost|127\.0\.0\.1/i.test(qrLink) && (
+              <div className="qrm-warn">
+                <b>This QR will not open on a customer’s phone.</b>
+                <span>
+                  It points to <code>{qrLink.replace(/\/customer-order\/.*/, "")}</code>, which is only your own
+                  computer. Open this app using your PC’s network address (for example
+                  http://192.168.x.x:3000), or set <code>REACT_APP_PUBLIC_URL</code> to your website
+                  address, then generate the QR again.
+                </span>
+              </div>
+            )}
+            <div className="qrm-card">
+              <div className="qrm-brand">
+                <b>{QR_BRAND.name}</b>
+                <span>{QR_BRAND.sub}</span>
+              </div>
+              <div className="qrm-table">TABLE {t.name}</div>
+              <div className="qrm-img">
+                <img src={qrData} alt={`QR Code ${t.name}`} />
+              </div>
+              <h4 className="qrm-title">SCAN &amp; ORDER</h4>
+              <p className="qrm-sub">Order directly from your mobile — no waiting!</p>
+              <ol className="qrm-steps">
+                {QR_STEPS.map(([en, hi], i) => (
+                  <li key={i}>
+                    <span className="n">{i + 1}</span>
+                    <div>
+                      <b>{en}</b>
+                      <small>{hi}</small>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <div className="qrm-help">Need help? Please ask our staff 🙂</div>
+              <small className="qrm-powered">{QR_BRAND.powered}</small>
+            </div>
+          </Modal>,
+          document.body,
+        )}
 
       {rec && (
         <ReceiptModal orderId={t.order.id} onClose={() => setRec(false)} />
@@ -435,7 +444,7 @@ export default function Tables() {
       }
   };
   return (
-    <div className={`page split ${sel ? "has-panel" : ""}`}>
+    <div className={`page split tables-page ${sel ? "has-panel" : ""}`}>
       <div className="split-main">
         <div className="ph">
           <div>

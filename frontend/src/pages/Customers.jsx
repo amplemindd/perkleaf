@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { api, fmtDate, fmtDT, money, num, saveCSV, cap } from "../lib/api";
 import { navigate, useAuth, useDebounced, useFetch, useShell, useUI } from "../lib/store";
 import { Avatar, Badge, Empty, ErrorBox, Field, Loading, Modal, Pager, Stat, Tabs } from "../lib/ui";
-import "../styles/customers.css";
 
 const blank = { name: "", phone: "", email: "", address: "", birthday: "", notes: "", status: "active" };
 
@@ -58,7 +57,9 @@ export default function Customers() {
         <section className="card"><div className="table-wrap">
           {list.error && !list.data ? <ErrorBox msg={list.error} retry={list.reloadFull} /> : !list.data ? <Loading /> : !list.data.customers.length ? <Empty icon="users" text="No customers found." /> : (
             <table className="tbl"><thead><tr><th>#</th><th>Customer Name</th><th>Phone Number</th><th>Email</th><th>Total Orders</th><th>Total Spent</th><th>Last Visit</th><th>Status</th></tr></thead>
-              <tbody>{list.data.customers.map((c, i) => <tr key={c.id} className={sel === c.id ? "sel" : ""} onClick={() => setSel(c.id)}><td>{(page - 1) * 10 + i + 1}</td><td><Avatar name={c.name} size={28} /> <b>{c.name}</b></td><td>{c.phone || "-"}</td><td>{c.email || "-"}</td><td>{c.total_orders}</td><td>{money(c.total_spent)}</td><td>{c.last_visit ? fmtDate(c.last_visit) : "-"}</td><td><Badge v={c.status} /></td></tr>)}</tbody></table>
+              <tbody>{list.data.customers.map((c, i) => <tr key={c.id} className={sel === c.id ? "sel" : ""} onClick={() => setSel(c.id)}><td>{(page - 1) * 10 + i + 1}</td><td>
+  <b>{c.name}</b>
+</td><td>{c.phone || "-"}</td><td>{c.email || "-"}</td><td>{c.total_orders}</td><td>{money(c.total_spent)}</td><td>{c.last_visit ? fmtDate(c.last_visit) : "-"}</td><td><Badge v={c.status} /></td></tr>)}</tbody></table>
           )}</div>{list.data && <Pager page={page} total={list.data.total} limit={10} onPage={setPage} label="customers" />}</section>
       </div>
       {sel && <Detail id={sel} admin={admin} onClose={() => setSel(null)} onEdit={(c) => setForm({ ...blank, ...c, birthday: c.birthday ? String(c.birthday).slice(0, 10) : "", email: c.email || "", phone: c.phone || "", address: c.address || "", notes: c.notes || "" })} />}

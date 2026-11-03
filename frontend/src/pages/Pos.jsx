@@ -4,7 +4,9 @@ import { api, img, money, TYPES, uid, cap, ago } from "../lib/api";
 import { takeHandoff, useAuth, useDebounced, useFetch, useShell, useUI } from "../lib/store";
 import { Empty, Loading, Modal } from "../lib/ui";
 import { ReceiptModal, KotModal } from "../components/Receipt";
-import "../styles/pos.css";
+
+// icons for the Dine In / Take Away / Delivery buttons
+const TYPE_ICON = { dine_in: "utensils", pickup: "bag", delivery: "truck" };
 
 const stockTag = (p) => (!p.track_stock ? ["In Stock", "ok"] : p.stock_qty <= 0 ? ["Out of Stock", "no"] : p.stock_qty <= p.low_stock_level ? [`Only ${p.stock_qty} left`, "low"] : ["In Stock", "ok"]);
 const blank = { id: null, name: "", phone: "", address: "" };
@@ -193,7 +195,7 @@ export default function Pos() {
       <aside className={`cart ${sheet ? "open" : ""}`}>
         <div className="cart-h"><h3>{title}</h3>{orderId && <span className="hold-tag">On hold</span>}<button className="clear" onClick={clearAll}>Clear All</button><button className="cart-x" onClick={() => setSheet(false)} aria-label="Close"><Icon n="x" /></button></div>
         <div className="cart-body">
-          <div className="seg">{enabledTypes.map((t) => <button key={t} className={type === t ? "on" : ""} onClick={() => { setType(t); if (t !== "dine_in") setTableId(null); }}>{TYPES[t]}</button>)}</div>
+          <div className="seg">{enabledTypes.map((t) => <button key={t} className={type === t ? "on" : ""} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }} onClick={() => { setType(t); if (t !== "dine_in") setTableId(null); }}><Icon n={TYPE_ICON[t]} size={18} />{TYPES[t]}</button>)}</div>
           <div className="ctable">
             <div className="ct-h"><span>ITEMS</span><span>QTY</span><span>PRICE</span><span>ACTIONS</span></div>
             <div className="ct-list">

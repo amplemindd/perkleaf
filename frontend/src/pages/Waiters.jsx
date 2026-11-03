@@ -4,7 +4,6 @@ import { api, fmtDT, fmtDate, img } from "../lib/api";
 import { useFetch, useShell, useUI } from "../lib/store";
 import { Avatar, Badge, Empty, ErrorBox, Loading, Modal, Stat } from "../lib/ui";
 import StaffForm, { blankStaff, staffToForm } from "../components/StaffForm";
-import "../styles/waiters.css";
 
 const Row = ({ k, v }) => <div className="kv"><span>{k}</span><b>{v || "-"}</b></div>;
 

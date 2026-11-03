@@ -4,7 +4,6 @@ import PlatIcon from "../components/PlatIcon";
 import { api, ago, money, fmtTime } from "../lib/api";
 import { A, navigate, takeHandoff, useFetch, useShell, useUI, useAuth } from "../lib/store";
 import { Badge, Empty, ErrorBox, Field, Loading, Modal, Tabs } from "../lib/ui";
-import "../styles/online.css";
 
 const NAME = { swiggy: "Swiggy", zomato: "Zomato" };
 const STATUSES = ["new", "accepted", "preparing", "ready", "dispatched", "delivered", "rejected"];

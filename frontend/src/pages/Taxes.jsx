@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { api, money, preset, fmtDate } from "../lib/api";
 import { useAuth, useFetch, useShell, useUI } from "../lib/store";
 import { Badge, ErrorBox, Field, Loading, Panel, Stat, Tabs, Toggle } from "../lib/ui";
-import "../styles/taxes.css";
 
 const blank = { name: "", rate: "", description: "", is_active: true };
 

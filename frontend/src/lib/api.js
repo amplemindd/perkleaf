@@ -1,5 +1,12 @@
+const RAW_API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+const isLocalHost = (h) => h === "localhost" || h === "127.0.0.1";
+// When the app is opened from another device (e.g. a customer's phone scanning the table QR),
+// "localhost" in the API url would point at that phone itself. Use the host the page was
+// loaded from instead (the PC's IP), so the same build works on the PC and on phones.
 export const API_URL =
-  process.env.REACT_APP_API_URL || "http://10.193.102.214:5000/api";
+  typeof window !== "undefined" && !isLocalHost(window.location.hostname)
+    ? RAW_API_URL.replace(/^(https?:\/\/)(localhost|127\.0\.0\.1)/i, "$1" + window.location.hostname)
+    : RAW_API_URL;
 export const ORIGIN = API_URL.replace(/\/api\/?$/, "");
 const TK = "bbToken";
 export const getToken = () => localStorage.getItem(TK) || "";

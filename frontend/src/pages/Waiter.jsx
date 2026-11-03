@@ -33,6 +33,7 @@ export default function Waiter() {
   const [done, setDone] = useState(null);
   const [drawer, setDrawer] = useState(false);
   const [idem, setIdem] = useState(uid());
+  const [tf, setTf] = useState("all");
   const headRef = useRef(null);
   useEffect(() => {
     const fit = () => {
@@ -123,10 +124,20 @@ export default function Waiter() {
     toast("Data synced.");
     setDrawer(false);
   };
-  const counts = (d?.tables || []).reduce(
+  const allTables = d?.tables || [];
+  const counts = allTables.reduce(
     (m, t) => ({ ...m, [t.status]: (m[t.status] || 0) + 1 }),
     {},
   );
+  const shownTables = allTables.filter(
+    (t) =>
+      tf === "all" ||
+      (tf === "free" && t.status === "available") ||
+      (tf === "busy" && t.status === "occupied"),
+  );
+  const shopName = String(d?.shop || "Amplemind Cafe").trim();
+  const shopWords = shopName.split(/\s+/);
+  const shopLast = shopWords.length > 1 ? shopWords.pop() : "";
 
   return (
     <div className={`wt ${drawer ? "open" : ""}`}>
@@ -138,9 +149,6 @@ export default function Waiter() {
         >
           <Icon n="x" size={24} />
         </button>
-        <div className="wt-logo">
-          <SafeImg src={d?.logo_url ? img(d.logo_url) : ""} size={34} />
-        </div>
         <button className="wt-nav" onClick={sync}>
           <Icon n="refresh" size={19} />
           <span>Sync Data</span>
@@ -198,57 +206,101 @@ export default function Waiter() {
       </aside>
       {drawer && <div className="wt-scrim" onClick={() => setDrawer(false)} />}
 
-      <main className="wt-main">
-        <header className="wt-head" ref={headRef}>
-          <button
-            className="wt-hamb"
-            onClick={() => setDrawer(!drawer)}
-            aria-label="Menu"
-          >
-            <Icon n="menu" size={24} />
-          </button>
-          <div>
-            <h1>{d?.company || "Amplemind-POS"}</h1>
-            <h2>{d?.shop || ""}</h2>
-            <p>
-              <Icon n="user" size={14} /> Waiter: <b>{user.name}</b>
-              {d ? <em> · {d.kots_today} KOT today</em> : null}
-            </p>
+      <header className="wt-head" ref={headRef}>
+        <button
+          className="wt-hamb"
+          onClick={() => setDrawer(!drawer)}
+          aria-label="Menu"
+        >
+          <Icon n="menu" size={22} />
+        </button>
+        <div className="wt-brand">
+          <span className="wt-blogo">
+            <SafeImg src={d?.logo_url ? img(d.logo_url) : ""} size={30} />
+          </span>
+          <div className="wt-bname">
+            <b>
+              {shopWords.join(" ")}
+              {shopLast && <span> {shopLast}</span>}
+            </b>
+            <small>{d?.company || "Amplemind-POS"}</small>
           </div>
-        </header>
+        </div>
+        <div className="wt-who">
+          <span className="wt-av">
+            {String(user.name || "W").trim().charAt(0).toUpperCase()}
+          </span>
+          <div>
+            <b>{user.name}</b>
+            <small>
+              Waiter{d ? ` · ${d.kots_today} KOT today` : ""}
+            </small>
+          </div>
+        </div>
+      </header>
+
+      <main className="wt-main">
 
         {!d ? (
           <Loading />
         ) : step === "tables" ? (
           <section className="wt-sec">
             <div className="wt-title">
-              <h3>Select a table</h3>
-              <div className="wt-leg">
-                <span className="av">Free {counts.available || 0}</span>
-                <span className="oc">Busy {counts.occupied || 0}</span>
+              <div>
+                <h3>Select a table</h3>
+                <p>
+                  Tap a free table to start an order, or a busy one to add more
+                  items.
+                </p>
+              </div>
+              <div className="wt-seg" role="group" aria-label="Filter tables">
+                {[
+                  ["all", "All", allTables.length],
+                  ["free", "Free", counts.available || 0],
+                  ["busy", "Busy", counts.occupied || 0],
+                ].map(([k, l, n]) => (
+                  <button
+                    key={k}
+                    className={tf === k ? "on" : ""}
+                    aria-pressed={tf === k}
+                    onClick={() => setTf(k)}
+                  >
+                    {l}
+                    <i>{n}</i>
+                  </button>
+                ))}
               </div>
             </div>
             <div className="wt-tables">
-              {d.tables.map((t, i) => (
+              {shownTables.map((t) => (
                 <button
                   key={t.id}
                   className={`wt-t ${t.status}`}
-                  style={{ "--i": Math.min(i, 30) }}
                   onClick={() => pick(t)}
                 >
                   <span className="wt-tn">{t.name}</span>
-                  <small>
+                  <small className="wt-st">
+                    <i />
                     {t.order_id
                       ? `${money(t.order_total)} running`
                       : cap(t.status)}
                   </small>
                   <em>
-                    <Icon n="users" size={12} /> {t.capacity}
+                    <Icon n="users" size={13} /> {t.capacity} seats
                   </em>
                 </button>
               ))}
-              {!d.tables.length && (
-                <Empty icon="table" text="No tables found." />
+              {!shownTables.length && (
+                <Empty
+                  icon="table"
+                  text={
+                    allTables.length
+                      ? tf === "free"
+                        ? "No free tables right now."
+                        : "No busy tables right now."
+                      : "No tables found."
+                  }
+                />
               )}
             </div>
           </section>

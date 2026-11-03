@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { api, fmtDT, num, preset, saveCSV } from "../lib/api";
 import { useDebounced, useFetch, useShell, useUI } from "../lib/store";
 import { Avatar, Badge, Empty, ErrorBox, Loading, Pager, RangePicker, Stat } from "../lib/ui";
-import "../styles/audit.css";
 
 function Detail({ id, onClose }) {
   const d = useFetch(`/audit-logs/${id}`, null, [id]);

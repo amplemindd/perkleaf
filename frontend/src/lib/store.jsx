@@ -1,5 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { api, setToken } from "./api";
+import { setLanguage, savedLang } from "../i18n";
+import { applyAppearance } from "./borders";
+import { fontStack } from "../i18n/fonts";
 
 /* ---------- tiny router ---------- */
 let handoff = null;
@@ -64,16 +67,25 @@ export const useAuth = () => useContext(AuthCtx);
 export function AuthProvider({ children }) {
   const [st, setSt] = useState({ loading: true, user: null, settings: {}, error: "" });
   const refresh = useCallback(async () => {
-    try { const d = await api("/auth/me"); setSt({ loading: false, user: d.user, settings: d.settings, error: "" }); }
-    catch (e) { setSt((s) => ({ ...s, loading: false, error: e.message })); }
+try { const d = await api("/auth/me"); setSt({ loading: false, user: d.user, settings: d.settings || {}, error: "" }); }    catch (e) { setSt((s) => ({ ...s, loading: false, error: e.message })); }
   }, []);
   useEffect(() => { refresh(); }, [refresh]);
+  // Apply theme / font / language. Cached in localStorage so the login page (before /auth/me) also uses them.
   useEffect(() => {
-    document.documentElement.dataset.theme = st.settings.dark_mode ? "dark" : "light";
-    document.documentElement.style.setProperty("--font", `${st.settings.font || "Poppins"}, system-ui, -apple-system, "Segoe UI", sans-serif`);
-  }, [st.settings.dark_mode, st.settings.font]);
+    const s = st.settings || {};
+    const loaded = !st.loading && Object.keys(s).length > 0;
+    let dark = s.dark_mode, font = s.font, lang = s.language;
+    try {
+      if (!loaded) { dark = localStorage.getItem("bb_dark") === "1"; font = localStorage.getItem("bb_font") || font; lang = localStorage.getItem("bb_lang_name") || savedLang(); }
+      else { localStorage.setItem("bb_dark", s.dark_mode ? "1" : "0"); if (s.font) localStorage.setItem("bb_font", s.font); if (s.language) localStorage.setItem("bb_lang_name", s.language); }
+    } catch { /* storage optional */ }
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    document.documentElement.style.setProperty("--font", fontStack(font));
+    setLanguage(lang || "English");
+    applyAppearance(s);
+  }, [st.loading, st.settings]);
   const login = async (email, password) => { const d = await api("/auth/login", { method: "POST", body: { email, password } }); setToken(d.token); await refresh(); return d.user; };
-  const logout = async () => { try { await api("/auth/logout", { method: "POST" }); } catch { /* ignore */ } setToken(""); await refresh(); };
+  const logout = async () => { try { await api("/auth/logout", { method: "POST" }); } catch { /* ignore */ } setToken(""); setSt((s) => ({ ...s, loading: false, user: null, error: "" })); };
   const can = (p) => !!st.user && (st.user.permissions.includes("*") || st.user.permissions.includes(p));
   return <AuthCtx.Provider value={{ ...st, refresh, login, logout, can, isStaff: !!st.user && !st.user.public }}>{children}</AuthCtx.Provider>;
 }

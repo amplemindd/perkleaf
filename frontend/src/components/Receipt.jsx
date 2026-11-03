@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { api, fmtDate, fmtTime, money, TYPES, img, cap } from "../lib/api";
 import { useAuth } from "../lib/store";
 import { Modal, Loading } from "../lib/ui";
-import "../styles/receipt.css";
 
 export default function Receipt({ order: o, settings: S }) {
   const inc = o.tax_mode === "inclusive";

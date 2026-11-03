@@ -4,7 +4,6 @@ import { cap, fmtDate, fmtTime, money, num, preset, saveCSV, TYPES } from "../li
 import { useAuth, useFetch } from "../lib/store";
 import { Badge, ErrorBox, Loading, Panel, RangePicker, Stat } from "../lib/ui";
 import { Bars, Combo, Donut, GroupBars } from "../lib/charts";
-import "../styles/reports.css";
 
 const TCOL = { dine_in: "#14532D", pickup: "#2563EB", delivery: "#D97706", online: "#9333EA" };
 const PCOL = { cash: "#15803D", upi: "#2563EB", card: "#D97706", wallet: "#9333EA" };
