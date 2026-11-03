@@ -4,7 +4,6 @@
   "private": true,
   "description": "Brew & Bite POS System",
   "scripts": {
-    "build": "npm install --prefix frontend && CI=false npm run build --prefix frontend",
     "start": "node backend-node/server.js"
   },
   "dependencies": {
