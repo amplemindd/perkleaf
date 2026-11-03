@@ -1,5 +1,12 @@
 const mysql = require("mysql2/promise");
-require("dotenv").config({ quiet: true });
+const path = require("path");
+const dotenv = require("dotenv");
+
+// Load environment variables from backend-node/.env
+dotenv.config({
+  path: path.resolve(__dirname, "../.env"),
+  quiet: true,
+});
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
@@ -10,8 +17,8 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  decimalNumbers: true, // DECIMAL columns come back as numbers
-  dateStrings: true, // DATE/DATETIME come back as plain strings (no timezone shifts)
+  decimalNumbers: true,
+  dateStrings: true,
 });
 
 module.exports = pool;
