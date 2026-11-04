@@ -87,7 +87,7 @@ api.post("/api/public/qr/:token/order", null, async (ctx) => {
   const order = result.order;
   await notify({
     type: "order",
-    title: `QR Order Received! · Table ${table.name}`,
+    title: `QR Order Received! · Table ${table.name}`, force: true,
     message: `${order.bill_no} · ${order.items
       .map((i) => `${i.product_name} x${i.qty}`)
       .join(", ")
@@ -132,7 +132,7 @@ api.post("/api/public/qr/:token/call", null, async (ctx) => {
 
   await notify({
     type: "table",
-    title: `Customer Call · Table ${table.name}`,
+    title: `Customer Call · Table ${table.name}`, force: true,
     message: "Customer is requesting cashier assistance.",
     priority: "urgent",
     link_type: "table",
@@ -145,10 +145,13 @@ api.post("/api/public/qr/:token/call", null, async (ctx) => {
 api.get("/api/qr/events", "pos", async (ctx) => {
   const after = Math.max(0, Number(ctx.query.after) || 0);
   const events = await q(
-    `SELECT id, type, title, message, link_type, link_id, created_at
-    FROM bb_notifications WHERE id > ? AND is_archived = 0
-    AND (title LIKE 'QR Order Received!%' OR title LIKE 'Customer Call · Table%')
-    ORDER BY id ASC LIMIT 30`,
+    `SELECT * FROM (
+       SELECT id, type, title, message, link_type, link_id, created_at
+       FROM bb_notifications
+       WHERE id > ? AND is_archived = 0
+       AND (title LIKE 'QR Order Received!%' OR title LIKE 'Customer Call · Table%')
+       ORDER BY id DESC LIMIT 30
+     ) t ORDER BY id ASC`,
     [after],
   );
   return { events };

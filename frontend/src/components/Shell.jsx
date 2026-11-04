@@ -102,7 +102,7 @@ export default function Shell({ admin, children }) {
     admin && can("notifications") ? "/notifications" : "",
     { limit: 5, status: "unread" },
     [bump],
-    20000,
+    5000,
   );
   const cats = useFetch(admin ? "" : "/categories", { pos: 1 }, [bump], 60000);
   const online = useFetch("/online/summary", null, [bump], 6000);
@@ -110,31 +110,32 @@ export default function Shell({ admin, children }) {
   const qrEvents = useFetch(can("pos") ? "/qr/events" : "", null, [], 2000);
   const [pops, setPops] = useState([]);
   const seen = useRef({ online: null, kot: null, qr: null });
-  const beep = () => {
-    try {
-      const a = new (window.AudioContext || window.webkitAudioContext)(),
-        o = a.createOscillator(),
-        g = a.createGain();
-      o.connect(g);
-      g.connect(a.destination);
-      o.frequency.value = 880;
-      g.gain.setValueAtTime(0.12, a.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + 0.5);
-      o.start();
-      o.stop(a.currentTime + 0.5);
-    } catch {
-      /* sound is optional */
-    }
+  const audioRef = useRef(null);
+  const getCtx = () => {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!audioRef.current) audioRef.current = new AC();
+    if (audioRef.current.state === "suspended") audioRef.current.resume();
+    return audioRef.current;
   };
-  const ringBell = () => {
+  useEffect(() => {
+    const unlock = () => { try { getCtx(); } catch { /* ignore */ } };
+    ["click", "keydown", "touchstart"].forEach((e) => window.addEventListener(e, unlock));
+    return () => ["click", "keydown", "touchstart"].forEach((e) => window.removeEventListener(e, unlock));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const tone = (freq, secs, vol) => {
     try {
-      const a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain();
-      o.connect(g); g.connect(a.destination); o.type = "sine"; o.frequency.value = 880;
-      g.gain.setValueAtTime(0.0001, a.currentTime); g.gain.linearRampToValueAtTime(0.08, a.currentTime + 0.05);
-      g.gain.setValueAtTime(0.08, a.currentTime + 2.75); g.gain.linearRampToValueAtTime(0.0001, a.currentTime + 3);
-      o.start(); o.stop(a.currentTime + 3); o.onended = () => a.close();
+      const a = getCtx(), o = a.createOscillator(), g = a.createGain();
+      o.connect(g); g.connect(a.destination); o.type = "sine"; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, a.currentTime);
+      g.gain.linearRampToValueAtTime(vol, a.currentTime + 0.05);
+      g.gain.setValueAtTime(vol, a.currentTime + secs - 0.25);
+      g.gain.linearRampToValueAtTime(0.0001, a.currentTime + secs);
+      o.start(); o.stop(a.currentTime + secs);
     } catch { /* sound is optional */ }
   };
+  const beep = () => tone(880, 0.5, 0.15);
+  const ringBell = () => tone(880, 3, 0.3);
   const pushPop = useCallback((p) => {
     setPops((l) => [...l.slice(-2), p]);
     beep();

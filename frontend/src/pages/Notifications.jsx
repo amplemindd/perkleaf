@@ -111,7 +111,7 @@ export default function Notifications() {
   const [sel, setSel] = useState(null);
   const [local, setLocal] = useState({});
   const dq = useDebounced(search);
-  const d = useFetch("/notifications", { ...f, q: dq, page, limit: 10 }, [], 20000);
+  const d = useFetch("/notifications", { ...f, q: dq, page, limit: 10 }, [], 3000);
   useEffect(() => setPage(1), [f, dq]);
 
   const data = d.data;

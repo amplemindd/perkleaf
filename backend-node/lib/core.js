@@ -253,7 +253,7 @@ async function notify(d, conn = pool) {
   try {
     const S = await getSettings();
 
-    if (NOTIFY_PREF[d.type] && S[NOTIFY_PREF[d.type]] === false) {
+    if (!d.force && NOTIFY_PREF[d.type] && S[NOTIFY_PREF[d.type]] === false) {
       return;
     }
 
