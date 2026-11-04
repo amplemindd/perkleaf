@@ -1,12 +1,15 @@
 // Which API address to use:
 //  - Live build (npm run build): the website and the API are on the same domain, so use "/api".
-//    A "localhost" address left in a local .env file is ignored here, because it can never
+//    A localhost / LAN address left in a local .env file is ignored here, because it can never
 //    work for visitors on the live site (this caused "Cannot connect to the server").
 //  - Development (npm start): REACT_APP_API_URL, or http://localhost:5000/api.
 const ENV_API = process.env.REACT_APP_API_URL || "";
 const IS_PROD = process.env.NODE_ENV === "production";
+// localhost / LAN addresses only work on the developer's own PC, never on the live site
+const PRIVATE_URL =
+  /^https?:\/\/(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i;
 const RAW_API_URL = IS_PROD
-  ? /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(ENV_API) || !ENV_API
+  ? PRIVATE_URL.test(ENV_API) || !ENV_API
     ? "/api"
     : ENV_API
   : ENV_API || "http://localhost:5000/api";
@@ -55,7 +58,7 @@ export async function api(path, { method = "GET", body, params } = {}) {
   } catch {
     throw Object.assign(
       new Error(
-        "Cannot connect to the server. Please make sure the backend is running.",
+        `Cannot connect to the server (${API_URL}). Please make sure the backend is running.`,
       ),
       { network: true },
     );
