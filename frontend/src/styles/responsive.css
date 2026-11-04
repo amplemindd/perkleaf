@@ -14,8 +14,8 @@
     padding: 6px 10px;
   }
   html body .app .hdr .brand { min-width: 0; }
-  html body .app .hdr .hright { gap: 6px; min-width: 0; }
-  html body .app .hdr .ordic { gap: 10px; min-width: 0; margin-right: 4px; }
+  html body .app .hdr .hright { gap: 8px; min-width: 0; }
+  html body .app .hdr .ordic { gap: 16px; min-width: 0; margin-right: 6px; }
   html body .app .hdr .hbtn,
   html body .app .hdr .hbtn.plat,
   html body .app .hdr .hbtn.plat.swiggy,
@@ -38,4 +38,9 @@
   .app .page .tbl.sm { min-width: 0; }
   .app .page .tbl.sm th, .app .page .tbl.sm td { white-space: normal; padding: 8px 8px; }
   .modal { width: calc(100vw - 20px); max-width: calc(100vw - 20px); }
+  /* Charts are drawn on a 560-640px wide canvas and shrink on phones: make their labels readable */
+  .chart { overflow: visible; }
+  .chart .ax, .chart text.ax.b { font-size: 19px; }
+  /* "View All" links must not wrap their arrow onto a new line */
+  .app .page .lnk, .app .page .card-h a { white-space: nowrap; }
 }
