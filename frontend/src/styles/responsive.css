@@ -1,0 +1,41 @@
+﻿/* =====================================================================
+   RESPONSIVE FIXES - loaded LAST (imported at the end of index.js)
+   Works for phones, tablets and desktop. Safe to edit.
+   ===================================================================== */
+/* Buttons that sit in a card header must keep their own text colour (was green-on-green) */
+.app .dash .card-h a.btn.pri,
+.app .dash .card-h a.btn.pri:hover { color: #fff !important; text-decoration: none; }
+/* ---------- Tablet + phone (<= 900px) ---------- */
+@media (max-width: 900px) {
+  /* Header: compact icons, no sideways overflow */
+  html body .app .hdr {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 6px 10px;
+  }
+  html body .app .hdr .brand { min-width: 0; }
+  html body .app .hdr .hright { gap: 6px; min-width: 0; }
+  html body .app .hdr .ordic { gap: 10px; min-width: 0; margin-right: 4px; }
+  html body .app .hdr .hbtn,
+  html body .app .hdr .hbtn.plat,
+  html body .app .hdr .hbtn.plat.swiggy,
+  html body .app .hdr .hbtn.plat.zomato { width: 36px; height: 36px; flex: 0 0 auto; }
+  html body .app .hdr .uname { display: none; }
+  html body .app .hdr .user { padding: 0; gap: 0; }
+  html body .app .hdr .uav { width: 34px; height: 34px; }
+  html body .app .hdr .hsearch { min-width: 0; max-width: none; width: 100%; }
+  /* Any table that is NOT already inside a scroll wrapper scrolls inside its own box */
+  div:has(> table.tbl):not(.table-wrap) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* Long words / numbers must not push boxes wider than the screen */
+  .card, .card-b, .panel, .modal, .side-panel { max-width: 100%; }
+}
+/* ---------- Phone (<= 600px) ---------- */
+@media (max-width: 600px) {
+  /* Inbox (same as the bell) and Settings (already in the side menu) are hidden on phones */
+  html body .app .hdr .hright > .hbtn { display: none; }
+  /* Small dashboard tables: let them fit the card instead of forcing 640px */
+  .app .page .tbl.sm { min-width: 0; }
+  .app .page .tbl.sm th, .app .page .tbl.sm td { white-space: normal; padding: 8px 8px; }
+  .modal { width: calc(100vw - 20px); max-width: calc(100vw - 20px); }
+}
