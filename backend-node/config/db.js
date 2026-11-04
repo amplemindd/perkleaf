@@ -2,6 +2,10 @@ const mysql = require("mysql2/promise");
 const path = require("path");
 const dotenv = require("dotenv");
 
+// Run everything in Indian time (server hosts are usually UTC, which showed times 5h30m behind).
+process.env.TZ = process.env.APP_TZ || "Asia/Kolkata";
+const DB_TZ = process.env.DB_TZ || "+05:30";
+
 // Load environment variables from backend-node/.env
 dotenv.config({
   path: path.resolve(__dirname, "../.env"),
@@ -19,6 +23,12 @@ const pool = mysql.createPool({
   queueLimit: 0,
   decimalNumbers: true,
   dateStrings: true,
+  timezone: DB_TZ,
+});
+
+// Make NOW(), CURDATE() and TIMESTAMP columns use the same timezone on every connection.
+pool.pool.on("connection", (conn) => {
+  conn.query("SET time_zone = '" + DB_TZ + "'");
 });
 
 module.exports = pool;
