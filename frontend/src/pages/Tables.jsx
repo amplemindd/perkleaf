@@ -104,16 +104,25 @@ function Detail({ id, onClose, refresh, admin }) {
     );
   const go = (path, state) => navigate(admin ? "/admin" + path : path, state);
   const posPath = admin ? "/admin/pos" : "/";
-  const makeQr = () => {
-    const baseUrl = process.env.REACT_APP_PUBLIC_URL || window.location.origin;
 
-    const url = `${baseUrl}/customer-order/${t.qr_token}`;
-    setQrLink(url);
+const makeQr = () => {
+  const env = process.env.REACT_APP_PUBLIC_URL;
+  const isLocal = (u) =>
+    /^https?:\/\/(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(u || "");
+  const baseUrl = (env && !isLocal(env) ? env : window.location.origin).replace(/\/$/, "");
 
-    setQrData(
-      `https://api.qrserver.com/v1/create-qr-code/?size=420x420&margin=12&data=${encodeURIComponent(url)}`,
-    );
-  };
+  const url = `${baseUrl}/customer-order/${t.qr_token}`;
+  setQrLink(url);
+  setQrData(
+    `https://api.qrserver.com/v1/create-qr-code/?size=420x420&margin=12&data=${encodeURIComponent(url)}`,
+  );
+};
+
+
+
+
+
+
   const printQr = () => {
     document.body.classList.add("print-qr");
     const done = () => {
@@ -123,6 +132,9 @@ function Detail({ id, onClose, refresh, admin }) {
     window.addEventListener("afterprint", done);
     window.print();
   };
+
+
+
   const cancel = async () => {
     const reason = await ask(
       `Cancel the active order on ${t.name}? Enter a reason:`,
