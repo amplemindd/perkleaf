@@ -4,7 +4,8 @@
   "private": true,
   "description": "Brew & Bite POS System",
   "scripts": {
-    "start": "node backend-node/server.js"
+    "start": "node backend-node/server.js",
+    "dev": "node backend-node/server.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
