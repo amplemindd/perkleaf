@@ -80,7 +80,7 @@ html body .app .page .perm-grid ~ .sp-actions .btn { flex: 0 0 auto; width: auto
    (before, the whole table area was hidden and only the QR panel showed)
    ===================================================================== */
 @media (max-width: 1000px) {
-  html body .app .page.split.tables-page.has-panel { grid-template-columns: 1fr; padding-bottom: 96px; }
+  html body .app .page.split.tables-page.has-panel { grid-template-columns: 1fr; padding-bottom: calc(230px + env(safe-area-inset-bottom, 0px)); }
   html body .app .page.split.tables-page.has-panel .split-main { display: block !important; }
   /* a leftover animation transform would trap the fixed bar inside this box */
   html body .app .page.tables-page .split-main { transform: none !important; animation: none !important; }
@@ -89,13 +89,17 @@ html body .app .page .perm-grid ~ .sp-actions .btn { flex: 0 0 auto; width: auto
     position: static; inset: auto; max-height: none; width: auto; max-width: 100%; box-sizing: border-box;
     margin: 14px 0 0; z-index: auto; animation: none !important; transform: none !important;
   }
-  /* Quick Actions become a bar pinned to the bottom of the screen (swipe sideways) */
+  /* Quick Actions: a 2-column panel pinned to the bottom, every action visible at once */
   html body .app .page.tables-page.has-panel .qa-t { display: none; }
   html body .app .page.tables-page.has-panel .qa {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-    display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    max-height: 46vh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
     margin: 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
     background: var(--card, #fff); border-top: 1px solid var(--bd); box-shadow: 0 -6px 18px rgba(0, 0, 0, .14);
   }
-  html body .app .page.tables-page.has-panel .qa .btn { flex: 0 0 auto; white-space: nowrap; }
+  html body .app .page.tables-page.has-panel .qa .btn {
+    width: 100%; min-width: 0; min-height: 40px; padding: 8px 6px; margin: 0;
+    font-size: 12.5px; white-space: nowrap; justify-content: center;
+  }
 }
