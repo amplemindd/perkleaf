@@ -120,3 +120,28 @@ html body .app .page .perm-grid ~ .sp-actions .btn { flex: 0 0 auto; width: auto
 .catgrp-l .nav.sub.on:hover { padding-left: 14px; }
 .app.col .catgrp-n, .app.col .catgrp-h > svg:last-child { display: none; }
 .app.col .catgrp-l { margin-left: 0; border-left: 0; }
+
+/* CATGRP-INTERNAL-SCROLL: Show 7 categories, scroll the rest */
+.catgrp-items {
+  display: flex;
+  flex-direction: column;
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #9acbad transparent;
+}
+.catgrp-items::-webkit-scrollbar {
+  width: 6px;
+}
+.catgrp-items::-webkit-scrollbar-thumb {
+  background: #9acbad;
+  border-radius: 10px;
+}
+.catgrp-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+.catgrp-l > .nav.sub:last-child {
+  flex-shrink: 0;
+}

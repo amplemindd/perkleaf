@@ -541,11 +541,13 @@ export default function Shell({ admin, children }) {
                   </button>
                   {catOpen && (
                     <div className="catgrp-l">
+                      <div className="catgrp-items">
                       {poCats.map((c) => (
                         <button type="button" key={c.id} className={`nav sub ${path === "/admin/pos" && poCur === String(c.id) ? "on" : ""}`} onClick={() => { setCatSel(c.id); setDrawer(false); navigate("/admin/pos"); }} title={c.name}>
                           <em>{c.name}</em>
                         </button>
                       ))}
+                      </div>
                       <button type="button" className={`nav sub ${path === "/admin/pos" && poCur === "all" ? "on" : ""}`} onClick={() => { setCatSel("all"); setDrawer(false); navigate("/admin/pos"); }} title="All Items">
                         <Icon n="grid" size={17} />
                         <em>All Items</em>
