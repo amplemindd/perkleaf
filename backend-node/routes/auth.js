@@ -102,6 +102,20 @@ api.put("/api/users/:id", "staff", async (ctx) => {
   return { message: "User updated." };
 });
 
+api.delete("/api/users/:id", "staff", async (ctx) => {
+  const id = Number(ctx.params.id);
+  const u = await one("SELECT id, name, email, role, aadhaar_image, passbook_image, photo_image FROM bb_users WHERE id = ?", [id]);
+  if (!u) throw fail(404, "User not found.");
+  if (id === ctx.user.id) throw fail(400, "You cannot delete your own account.");
+  if (u.role === "admin") {
+    const other = await one("SELECT COUNT(*) AS n FROM bb_users WHERE role = 'admin' AND id <> ?", [id]);
+    if (!other || Number(other.n) < 1) throw fail(400, "You cannot delete the last admin account.");
+  }
+  await q("DELETE FROM bb_users WHERE id = ?", [id]);
+  removeUpload(u.aadhaar_image); removeUpload(u.passbook_image); removeUpload(u.photo_image);
+  await audit(ctx, { action: "Deleted", module: "Users", details: `Deleted ${u.role} account "${u.name}" (${u.email})`, record_id: id, old: { name: u.name, email: u.email, role: u.role }, level: "critical" });
+  return { message: "User deleted." };
+});
 /* ---------- roles & permissions ---------- */
 api.get("/api/roles", "staff", async () => {
   const rows = await q("SELECT name, permissions, is_system FROM bb_roles ORDER BY is_system DESC, name");
