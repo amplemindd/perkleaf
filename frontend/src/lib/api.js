@@ -26,8 +26,13 @@ const TK = "bbToken";
 export const getToken = () => localStorage.getItem(TK) || "";
 export const setToken = (t) =>
   t ? localStorage.setItem(TK, t) : localStorage.removeItem(TK);
-export const img = (u) =>
-  !u ? "" : /^https?:|^data:/.test(u) ? u : ORIGIN + u;
+export const img = (u) => {
+  if (!u) return "";
+  // old absolute upload links (saved with a localhost / LAN IP) -> use this server instead
+  const m = /^https?:\/\/[^/]+(\/uploads\/[^?#]+)/i.exec(u);
+  if (m) return ORIGIN + m[1];
+  return /^https?:|^data:/.test(u) ? u : ORIGIN + u;
+};
 
 export async function api(path, { method = "GET", body, params } = {}) {
   let url = API_URL + path;
