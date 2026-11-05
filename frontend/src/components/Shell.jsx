@@ -65,6 +65,14 @@ const NOTE_LINK = {
   expense: "/admin/expenses",
 };
 
+function CatThumb({ c }) {
+  const [bad, setBad] = useState(false);
+  return c.image_url && !bad ? (
+    <img src={img(c.image_url)} alt="" className="cimg" onError={() => setBad(true)} />
+  ) : (
+    <span className="cbox">{(c.name || "?")[0]}</span>
+  );
+}
 export default function Shell({ admin, children }) {
   const { user, settings, can, logout, isStaff } = useAuth();
   const path = usePath();
@@ -543,7 +551,7 @@ export default function Shell({ admin, children }) {
                     <div className="catgrp-l">
                       {poCats.map((c) => (
                         <button type="button" key={c.id} className={`nav sub ${path === "/admin/pos" && poCur === String(c.id) ? "on" : ""}`} onClick={() => { setCatSel(c.id); setDrawer(false); navigate("/admin/pos"); }} title={c.name}>
-                          {c.image_url ? <img src={img(c.image_url)} alt="" className="cimg" /> : <span className="cbox">{c.name[0]}</span>}
+                          <CatThumb c={c} />
                           <em>{c.name}</em>
                         </button>
                       ))}

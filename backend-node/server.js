@@ -110,12 +110,23 @@ const server = http.createServer(async (req, res) => {
         path.basename(url.pathname)
       );
 
-      if (
-        !file.startsWith(core.UPLOAD_DIR) ||
-        !fs.existsSync(file)
-      ) {
+      if (!file.startsWith(core.UPLOAD_DIR)) {
         res.writeHead(404);
         return res.end();
+      }
+      if (!fs.existsSync(file)) {
+        const row = await core.loadUpload(path.basename(file)).catch(() => null);
+        if (!row) {
+          res.writeHead(404);
+          return res.end();
+        }
+        try { fs.writeFileSync(file, row.data); } catch { /* disk may be read-only */ }
+        res.writeHead(200, {
+          "Content-Type": row.mime || "application/octet-stream",
+          "Cache-Control": "public, max-age=86400",
+          "Cross-Origin-Resource-Policy": "cross-origin",
+        });
+        return res.end(row.data);
       }
 
       res.writeHead(200, {
@@ -205,6 +216,12 @@ const server = http.createServer(async (req, res) => {
   try {
     await migrate();
     console.log("Database ready.");
+    try {
+      const n = await core.syncUploadsToDb();
+      if (n) console.log("Saved " + n + " upload(s) to the database.");
+    } catch (e) {
+      console.error("Upload sync failed:", e.message);
+    }
   } catch (e) {
     console.error(
       "Database setup failed:",

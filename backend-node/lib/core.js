@@ -314,6 +314,7 @@ function saveUpload(
     `${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${MIME[m[1]]}`;
 
   fs.writeFileSync(path.join(UPLOAD_DIR, name), buf);
+  pool.query("INSERT INTO bb_files (name, mime, data) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE data = VALUES(data)", [name, m[1], buf]).catch(() => {});
 
   return `/uploads/${name}`;
 }
@@ -325,6 +326,7 @@ function removeUpload(url) {
     }
 
     const file = path.join(UPLOAD_DIR, path.basename(url));
+    pool.query("DELETE FROM bb_files WHERE name = ?", [path.basename(url)]).catch(() => {});
 
     if (file.startsWith(UPLOAD_DIR) && fs.existsSync(file)) {
       fs.unlinkSync(file);
@@ -334,6 +336,25 @@ function removeUpload(url) {
   }
 }
 
+const EXT_MIME = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".pdf": "application/pdf" };
+/* Read an upload back from the database (used when the file is missing on disk) */
+async function loadUpload(name) {
+  const [rows] = await pool.query("SELECT mime, data FROM bb_files WHERE name = ? LIMIT 1", [String(name || "")]);
+  return rows && rows[0] ? rows[0] : null;
+}
+/* At start-up: copy files that exist on disk but are not in the database yet */
+async function syncUploadsToDb() {
+  let n = 0;
+  for (const name of fs.readdirSync(UPLOAD_DIR)) {
+    const mime = EXT_MIME[path.extname(name).toLowerCase()];
+    if (!mime) continue;
+    const [r] = await pool.query("SELECT 1 FROM bb_files WHERE name = ? LIMIT 1", [name]);
+    if (r && r.length) continue;
+    await pool.query("INSERT IGNORE INTO bb_files (name, mime, data) VALUES (?, ?, ?)", [name, mime, fs.readFileSync(path.join(UPLOAD_DIR, name))]);
+    n++;
+  }
+  return n;
+}
 /* ---------- MISC HELPERS ---------- */
 
 const r2 = (n) =>
@@ -597,6 +618,8 @@ module.exports = {
   saveUpload,
   removeUpload,
   UPLOAD_DIR,
+  loadUpload,
+  syncUploadsToDb,
   r2,
   ymd,
   isYmd,

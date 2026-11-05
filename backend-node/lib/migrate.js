@@ -24,6 +24,14 @@ async function addColumn(table, col, def) {
 }
 
 const DDL = [
+  // UPLOADED FILES (images / PDFs) - kept in the database so they survive redeploys
+  `CREATE TABLE IF NOT EXISTS bb_files (
+    name VARCHAR(160) NOT NULL,
+    mime VARCHAR(80) NOT NULL,
+    data LONGBLOB NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (name)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   // CATEGORIES TABLE
   `CREATE TABLE IF NOT EXISTS categories (
     id INT NOT NULL AUTO_INCREMENT,
