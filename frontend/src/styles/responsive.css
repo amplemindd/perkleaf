@@ -145,3 +145,24 @@ html body .app .page .perm-grid ~ .sp-actions .btn { flex: 0 0 auto; width: auto
 .catgrp-l > .nav.sub:last-child {
   flex-shrink: 0;
 }
+
+/* CATGRP-7-VISIBLE-FIX */
+.catgrp-l .catgrp-items {
+  display: flex !important;
+  flex-direction: column !important;
+  height: auto !important;
+  max-height: 420px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  min-height: 0 !important;
+  flex-shrink: 1 !important;
+  scrollbar-width: thin;
+  scrollbar-color: #86c99d transparent;
+}
+.catgrp-l .catgrp-items::-webkit-scrollbar {
+  width: 6px;
+}
+.catgrp-l .catgrp-items::-webkit-scrollbar-thumb {
+  background: #86c99d;
+  border-radius: 10px;
+}
