@@ -5,6 +5,10 @@ import { useAuth, useDebounced, useFetch, useShell, useUI } from "../lib/store";
 import { Badge, Empty, ErrorBox, Field, ImagePick, Loading, Modal, Tabs, Toggle } from "../lib/ui";
 import MenuItems from "./MenuItems";
 
+function MiniThumb({ c }) {
+  const [bad, setBad] = useState(false);
+  return c.image_url && !bad ? <img src={img(c.image_url)} alt="" onError={() => setBad(true)} /> : (c.name || "?")[0];
+}
 const blank = { name: "", description: "", is_active: true, show_in_pos: true, tax_rate_id: "", image: "", image_url: "" };
 
 export default function Categories() {
@@ -45,7 +49,7 @@ export default function Categories() {
             <tbody>{cats.map((c, i) => (
               <tr key={c.id}>
                 <td className="macts"><button className="btn sm ico" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Move up"><Icon n="chevup" /></button><button className="btn sm ico" disabled={i === cats.length - 1} onClick={() => move(i, 1)} aria-label="Move down"><Icon n="chevdown" /></button></td>
-                <td><span className="mini">{c.image_url ? <img src={img(c.image_url)} alt="" /> : c.name[0]}</span> <b>{c.name}</b></td><td className="muted">{c.description || "-"}</td><td>{c.product_count}</td>
+                <td><span className="mini"><MiniThumb c={c} /></span> <b>{c.name}</b></td><td className="muted">{c.description || "-"}</td><td>{c.product_count}</td>
                 <td><Toggle checked={c.show_in_pos} onChange={async (v) => { try { await api(`/categories/${c.id}`, { method: "PUT", body: { ...c, show_in_pos: v } }); refresh(); } catch (e) { toast(e.message, "err"); } }} /></td>
                 <td><button className="plain" onClick={() => flip(c)}><Badge kind={c.is_active ? "green" : "gray"}>{c.is_active ? "Active" : "Inactive"}</Badge></button></td>
                 <td className="macts"><button className="btn sm ico" onClick={() => setForm({ ...blank, ...c, tax_rate_id: c.tax_rate_id || "", is_active: !!c.is_active, show_in_pos: !!c.show_in_pos, image: "", image_url: c.image_url ? img(c.image_url) : "", description: c.description || "" })} aria-label="Edit"><Icon n="edit" /></button><button className="btn sm ico dng flat" onClick={() => del(c)} aria-label="Delete"><Icon n="trash" /></button></td>

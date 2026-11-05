@@ -95,7 +95,7 @@ export const ImagePick = ({ value, onChange, label = "Upload Image (optional)" }
       onDrop={(e) => { e.preventDefault(); setDrag(false); pick(e.dataTransfer.files[0]); }} onClick={() => !value && ref.current.click()}>
       <input ref={ref} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(e) => pick(e.target.files[0])} />
       {value ? (
-        <div className="drop-prev"><img src={value} alt="" /><div><button type="button" className="btn sm" onClick={(e) => { e.stopPropagation(); ref.current.click(); }}>Change</button>{" "}
+        <div className="drop-prev"><img src={value} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} /><div><button type="button" className="btn sm" onClick={(e) => { e.stopPropagation(); ref.current.click(); }}>Change</button>{" "}
           <button type="button" className="btn sm dng" onClick={(e) => { e.stopPropagation(); onChange(""); }}>Remove</button></div></div>
       ) : (<><div className="drop-i"><Icon n="image" /></div><b>{label}</b><small>Click to upload or drag &amp; drop · JPG, PNG, WebP (max 2 MB)</small></>)}
     </div>
