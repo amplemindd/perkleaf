@@ -80,6 +80,7 @@ export default function Shell({ admin, children }) {
   const [bump, setBump] = useState(0);
   const [shake, setShake] = useState(false);
   const [ordMenu, setOrdMenu] = useState("");
+  const [catOpen, setCatOpen] = useState(false);
   const last = useRef(0);
   const reload = useCallback(() => setBump((b) => b + 1), []);
 
@@ -104,7 +105,7 @@ export default function Shell({ admin, children }) {
     [bump],
     5000,
   );
-  const cats = useFetch(admin ? "" : "/categories", { pos: 1 }, [bump], 60000);
+  const cats = useFetch(admin ? (can("pos") ? "/categories" : "") : "/categories", { pos: 1 }, [bump], 60000);
   const online = useFetch("/online/summary", null, [bump], 6000);
   const kots = useFetch("/kots/latest", null, [bump], 6000);
   const qrEvents = useFetch(can("pos") ? "/qr/events" : "", null, [], 2000);
@@ -209,6 +210,8 @@ export default function Shell({ admin, children }) {
   const groups = [["held", "Held bills", openOrders]];
   const uRef = useClickAway(() => setUmenu(false));
   const nav = admin ? ADMIN.filter((n) => can(n[4])) : PUBLIC;
+  const poCats = cats.data?.categories || [];
+  const poCur = String(catSel || (poCats[0] && poCats[0].id) || "");
   const act = (to) => (to === "/" ? path === "/" : path === to);
   const searchPh = path.includes("order")
     ? "Search orders by bill no, table no, customer, phone..."
@@ -509,8 +512,8 @@ export default function Shell({ admin, children }) {
           </div>
           <nav>
             {nav.map(([k, label, ic, to], i) => (
+              <React.Fragment key={k}>
               <A
-                key={k}
                 to={to}
                 className={`nav ${act(to) ? "on" : ""}`}
                 style={{ "--i": i }}
@@ -528,6 +531,31 @@ export default function Shell({ admin, children }) {
                   <b className="nbdg">{unread}</b>
                 )}
               </A>
+              {k === "pos" && admin && poCats.length > 0 && (
+                <div className="catgrp">
+                  <button type="button" className={`nav catgrp-h ${catOpen ? "open" : ""}`} onClick={() => setCatOpen(!catOpen)} aria-expanded={catOpen} title="Categories">
+                    <Icon n="folder" size={19} />
+                    <em>Categories</em>
+                    <b className="catgrp-n">{poCats.length}</b>
+                    <Icon n={catOpen ? "chevup" : "chevdown"} size={16} />
+                  </button>
+                  {catOpen && (
+                    <div className="catgrp-l">
+                      {poCats.map((c) => (
+                        <button type="button" key={c.id} className={`nav sub ${path === "/admin/pos" && poCur === String(c.id) ? "on" : ""}`} onClick={() => { setCatSel(c.id); setDrawer(false); navigate("/admin/pos"); }} title={c.name}>
+                          {c.image_url ? <img src={img(c.image_url)} alt="" className="cimg" /> : <span className="cbox">{c.name[0]}</span>}
+                          <em>{c.name}</em>
+                        </button>
+                      ))}
+                      <button type="button" className={`nav sub ${path === "/admin/pos" && poCur === "all" ? "on" : ""}`} onClick={() => { setCatSel("all"); setDrawer(false); navigate("/admin/pos"); }} title="All Items">
+                        <Icon n="grid" size={17} />
+                        <em>All Items</em>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              </React.Fragment>
             ))}
           </nav>
           {!admin && (
