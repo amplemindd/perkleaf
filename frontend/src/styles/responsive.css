@@ -166,3 +166,23 @@ html body .app .page .perm-grid ~ .sp-actions .btn { flex: 0 0 auto; width: auto
   background: #86c99d;
   border-radius: 10px;
 }
+
+/* CATGRP-7-ROWS-FINAL: exactly 7 rows visible, rest scrolls inside */
+.app .catgrp-l .catgrp-items {
+  display: block !important;
+  height: auto !important;
+  max-height: 308px !important;   /* 7 rows x 44px */
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
+}
+.app .catgrp-l .catgrp-items > .nav.sub {
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  flex: 0 0 auto !important;
+}
