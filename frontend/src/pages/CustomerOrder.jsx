@@ -151,6 +151,7 @@ export default function CustomerOrder({ token }) {
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [note, setNote] = useState("");
 
   // bell state
   const bellKey = `bb_call_until_${token}`;
@@ -292,12 +293,14 @@ export default function CustomerOrder({ token }) {
         body: {
           customer_name: customerName.trim(),
           customer_phone: customerPhone.trim(),
+          note: note.trim(),
           items: lines.map((p) => ({ product_id: p.id, qty: p.qty })),
         },
       });
 
       setOrder(result.order);
       setCart({});
+      setNote("");
       setShowCheckout(false);
       setNotice("Your order has been sent to the cashier.");
       setSearch("");
@@ -664,6 +667,17 @@ export default function CustomerOrder({ token }) {
               />
             </div>
 
+            <div className="cx-details">
+              <h3>Special instructions (optional)</h3>
+              <textarea
+                rows={2}
+                maxLength={200}
+                placeholder="e.g. Less sugar, extra spicy, no onion..."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <small className="cx-cnt">{note.length}/200</small>
+            </div>
             <div className="cx-total">
               <span>Total Amount</span>
               <b>{money(total)}</b>
@@ -849,6 +863,9 @@ const RAW_CSS = `
 .cx-details{margin-top:16px;display:flex;flex-direction:column;gap:10px}
 .cx-details h3{font-size:14px;color:var(--cx-mu);font-weight:700}
 .cx-details input{width:100%;height:48px;padding:0 14px;font:inherit;font-size:15px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);outline:0}
+.cx-details textarea{width:100%;min-height:64px;padding:12px 14px;font:inherit;font-size:15px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);outline:0;resize:none}
+.cx-details textarea:focus{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.1)}
+.cx-cnt{align-self:flex-end;color:var(--cx-mu);font-size:11px;margin-top:-6px}
 .cx-details input:focus{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.1)}
 .cx-total{display:flex;align-items:center;justify-content:space-between;margin:16px 0 12px;padding:14px 16px;background:var(--cx-gl)}
 .cx-total span{font-weight:700}

@@ -4,7 +4,7 @@ module.exports = {
   timezone: "Asia/Kolkata", open_time: "09:00", close_time: "23:00", week_off: "None",
   dine_in_enabled: true, takeaway_enabled: true, delivery_enabled: true, online_enabled: false,
   sidebar_style: "expanded", font: "Poppins", language: "English", date_format: "DD Mon YYYY", currency: "INR",
-  auto_print: true, auto_tax: true, allow_discounts: true, require_table: true,
+  auto_print: true, qr_auto_kot: true, auto_tax: true, allow_discounts: true, require_table: true,
   default_order_type: "dine_in", default_payment_method: "cash",
   bill_prefix: "BB-", bill_start: 1001, discount_limit_cashier: 10,
   table_after_bill: "available", round_off: "nearest1", loyalty_per_100: 1,

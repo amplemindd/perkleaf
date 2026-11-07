@@ -1,6 +1,6 @@
 "use strict";
 const crypto = require("crypto");
-const { api, q, one, fail, notify, getSettings, str } = require("../lib/core");
+const { api, q, one, fail, notify, getSettings, str, pool } = require("../lib/core");
 const { saveOrder, OPEN_SQL } = require("./orders");
 
 const CALL_COOLDOWN_SEC = 15; // customer may ring the bell once per table every 15 seconds
@@ -48,8 +48,10 @@ api.post("/api/public/qr/:token/order", null, async (ctx) => {
   }
   if (!incoming.size)
     throw fail(400, "Please add items before placing your order.");
+  const added = new Map(incoming); // only the NEW items of this request (for the KOT)
+  const note = str(ctx.body.note, 200).replace(/\s+/g, " ");
   const existing = await one(
-    `SELECT id FROM bb_orders WHERE table_id = ? AND ${OPEN_SQL} ORDER BY id DESC LIMIT 1`,
+    `SELECT id, notes FROM bb_orders WHERE table_id = ? AND ${OPEN_SQL} ORDER BY id DESC LIMIT 1`,
     [table.id],
   );
   if (existing) {
@@ -80,19 +82,37 @@ api.post("/api/public/qr/:token/order", null, async (ctx) => {
     items: [...incoming].map(([product_id, qty]) => ({ product_id, qty })),
     idempotency_key: existing ? undefined : crypto.randomUUID(),
     source: "qr",
+    notes: (() => {
+      const prev = existing && existing.notes ? existing.notes : "";
+      if (!note) return prev;
+      const t = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" });
+      return ((prev ? prev + "\n" : "") + `[Customer ${t}] ${note}`).slice(-255);
+    })(),
   };
   const result = await saveOrder(
     { ...ctx, user: fakeUser, body },
     existing ? existing.id : null,
   );
   const order = result.order;
+  // KOT for the kitchen printer (only the new items + customer's note). The cashier screen prints it automatically.
+  try {
+    const names = await q("SELECT id, name FROM products WHERE id IN (?)", [[...added.keys()]]);
+    const kotItems = [...added].map(([id, qty]) => ({ name: (names.find((n) => n.id === id) || {}).name || "Item", qty }));
+    const [ins] = await pool.query(
+      "INSERT INTO bb_kots (order_id, table_id, table_name, waiter_id, waiter_name, items, instructions) VALUES (?,?,?,?,?,?,?)",
+      [order.id, table.id, table.name, null, "QR Customer", JSON.stringify(kotItems), note || null],
+    );
+    await q("UPDATE bb_kots SET kot_no = ? WHERE id = ?", [`KOT-${String(ins.insertId).padStart(4, "0")}`, ins.insertId]);
+  } catch (e) {
+    console.error("QR KOT could not be saved:", e.message);
+  }
   await notify({
     type: "order",
     title: `QR Order Received! · Table ${table.name}`, force: true,
     message: `${order.bill_no} · ${order.items
       .map((i) => `${i.product_name} x${i.qty}`)
       .join(", ")
-      .slice(0, 330)} · ₹${order.total}`,
+      .slice(0, 330)} · ₹${order.total}${note ? ` · Note: ${note.slice(0, 80)}` : ""}`,
     priority: "urgent",
     link_type: "order",
     link_id: order.id,

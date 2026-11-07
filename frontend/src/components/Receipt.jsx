@@ -96,10 +96,13 @@ export function ReceiptModal({ order, orderId, onClose, auto }) {
   );
 }
 
-export function KotModal({ order: o, auto, onClose }) {
+export function KotModal({ order: o, auto, autoClose, onClose }) {
   const { settings } = useAuth();
   useEffect(() => { document.body.classList.add("print-receipt"); return () => document.body.classList.remove("print-receipt"); }, []);
   useEffect(() => { if (auto) { const t = setTimeout(() => printReceipt(), 400); return () => clearTimeout(t); } }, [auto]);
+  // auto-printed (QR) tickets close themselves once the print has been sent
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (auto && autoClose) { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); } }, [auto, autoClose]);
   const where = `${TYPES[o.order_type] || ""}${o.table_name ? `: ${o.table_name}` : ""}`;
   return (
     <Modal title="Kitchen Order Ticket (KOT)" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Close</button><button className="btn pri" onClick={() => printReceipt()}>Print KOT</button></>}>
@@ -115,6 +118,7 @@ export function KotModal({ order: o, auto, onClose }) {
           <thead><tr><th>Item</th><th>Qty</th></tr></thead>
           <tbody>{(o.items || []).map((i) => <tr key={i.id || i.product_name}><td>{i.product_name}</td><td><b>{i.qty}</b></td></tr>)}</tbody>
         </table>
+        {o.kot_note && <div style={{ fontWeight: 700, whiteSpace: "pre-wrap", marginTop: 4 }}>NOTE: {o.kot_note}</div>}
         <hr className="r-line" />
         <div className="r-c r-code">** KOT **</div>
       </div>

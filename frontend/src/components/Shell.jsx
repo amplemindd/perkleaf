@@ -10,6 +10,7 @@ import {
 } from "../lib/store";
 import { api, fmtTime, img, money, ago, TYPES } from "../lib/api";
 import { SafeImg, useClickAway } from "../lib/ui";
+import { KotModal } from "./Receipt";
 import PlatIcon from "./PlatIcon";
 
 const PN = { swiggy: "Swiggy", zomato: "Zomato" };
@@ -110,6 +111,7 @@ export default function Shell({ admin, children }) {
   const kots = useFetch("/kots/latest", null, [bump], 6000);
   const qrEvents = useFetch(can("pos") ? "/qr/events" : "", null, [], 2000);
   const [pops, setPops] = useState([]);
+  const [kotQueue, setKotQueue] = useState([]); // QR-order KOTs waiting to be auto-printed
   const seen = useRef({ online: null, kot: null, qr: null });
   // Web Audio is retained for the existing short notification beep.
   const audioRef = useRef(null);
@@ -269,9 +271,26 @@ export default function Shell({ admin, children }) {
     const list = kots.data?.kots;
     if (!list) return;
     const max = list.reduce((m, o) => Math.max(m, o.id), 0);
+    if (seen.current.kot !== null && settings.qr_auto_kot !== false) {
+      const qrNew = list.filter((k) => k.id > seen.current.kot && k.waiter_name === "QR Customer");
+      if (qrNew.length)
+        setKotQueue((prev) => [
+          ...prev,
+          ...qrNew.reverse().map((k) => ({
+            qid: k.id,
+            bill_no: k.kot_no,
+            created_at: k.created_at,
+            order_type: "dine_in",
+            table_name: k.table_name,
+            source: "qr",
+            kot_note: k.instructions || "",
+            items: (k.items || []).map((i) => ({ id: i.name, product_name: i.name, qty: i.qty })),
+          })),
+        ]);
+    }
     if (seen.current.kot !== null)
       list
-        .filter((k) => k.id > seen.current.kot)
+        .filter((k) => k.id > seen.current.kot && k.waiter_name !== "QR Customer")
         .reverse()
         .forEach((k) =>
           pushPop({
@@ -284,7 +303,7 @@ export default function Shell({ admin, children }) {
           }),
         );
     seen.current.kot = Math.max(seen.current.kot || 0, max);
-  }, [kots.data, admin, pushPop]);
+  }, [kots.data, admin, pushPop, settings.qr_auto_kot]);
   useEffect(() => {
     const events = qrEvents.data?.events;
     if (!events) return;
@@ -745,6 +764,9 @@ export default function Shell({ admin, children }) {
           )}
         </aside>
         {drawer && <div className="scrim" onClick={() => setDrawer(false)} />}
+        {kotQueue[0] && !document.getElementById("receipt") && (
+          <KotModal key={kotQueue[0].qid} order={kotQueue[0]} auto autoClose onClose={() => setKotQueue((l) => l.slice(1))} />
+        )}
         <div className="pops" aria-live="polite">
           {pops.map((p) => (
             <button
