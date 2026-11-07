@@ -1,6 +1,6 @@
 // Builds a printable "Scan & Order" card (QR + instructions) as a PNG, so the downloaded
 // image contains the text for customers, not just the bare QR code.
-export const QR_BRAND = { name: "AMPLEMIND CAFE", sub: "CAFÉ & RESTAURANT", powered: "Powered by AmpleMind Technologies" };
+export const QR_BRAND = { name: "AMPLEMIND CAFE", sub: "CAFÉ & RESTAURANT", powered: "Powered by AmpleMind Technologies Pvt Ltd" };
 
 export const QR_STEPS = [
   ["Scan this QR with your phone camera", "Apne phone ke camera se QR scan karein"],

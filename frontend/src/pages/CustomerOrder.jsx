@@ -681,7 +681,7 @@ export default function CustomerOrder({ token }) {
 
       <footer className="cx-foot">
         <p>Thank you for visiting {data.restaurant}!</p>
-        <small>Powered by AmpleMind Technologies</small>
+        <small>Powered by AmpleMind Technologies Pvt Ltd</small>
       </footer>
     </div>
   );
