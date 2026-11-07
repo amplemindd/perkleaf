@@ -29,7 +29,7 @@ export default function Receipt({ order: o, settings: S }) {
         {S.show_logo && S.logo_url && <img className="r-logo" src={img(S.logo_url)} alt="" />}
         <h4 className="r-shop">{S.restaurant_name}</h4>
         {S.show_restaurant_details && S.address && <p className="r-addr">{S.address}</p>}
-        {S.show_restaurant_details && S.phone && <p className="r-addr">Phone: {S.phone}</p>}
+        {S.show_phone !== false && S.phone && <p className="r-addr">Phone: {S.phone}</p>}
         {S.show_gst_details && S.gstin && <p className="r-addr">GSTIN: {S.gstin}</p>}
       </div>
       <hr className="r-line" />

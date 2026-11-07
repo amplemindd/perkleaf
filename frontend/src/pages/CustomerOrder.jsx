@@ -464,7 +464,7 @@ export default function CustomerOrder({ token }) {
               )}
               <div>
                 <small>{data.restaurant}</small>
-                <h1>{data.tagline || "CAFÉ & RESTAURANT"}</h1>
+                {data.show_tagline !== false && <h1>{data.tagline || "CAFÉ & RESTAURANT"}</h1>}
                 <p>
                   <Icon n="pin" size={14} /> Table {data.table.name}
                 </p>

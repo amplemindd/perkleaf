@@ -10,7 +10,7 @@ module.exports = {
   table_after_bill: "available", round_off: "nearest1", loyalty_per_100: 1,
   tax_enabled: true, default_tax_rate_id: 0, tax_mode: "exclusive", show_tax_on_bill: true,
   pm_cash: true, pm_upi: true, pm_card: true, pm_wallet: false, pm_split: true, pm_qr: true, upi_id: "", qr_image_url: "",
-  show_logo: true, show_restaurant_details: true, show_gst_details: true, show_thanks: true,
+  show_logo: true, show_phone: true, show_tagline: true, show_restaurant_details: true, show_gst_details: true, show_thanks: true,
   footer_message: "Thank you for visiting!\nGood Food, Good Mood!", paper_size: "80mm",
   default_table_capacity: 4, table_prefix: "T",
   n_new_order: true, n_low_stock: true, n_payment: true, n_table: true, n_daily_report: true, n_expense: true, n_system: true,

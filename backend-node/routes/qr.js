@@ -24,6 +24,7 @@ api.get("/api/public/qr/:token", null, async (ctx) => {
     table: { id: table.id, name: table.name },
     restaurant: S.restaurant_name || "Restaurant",
     tagline: S.tagline || "",
+    show_tagline: S.show_tagline !== false,
     logo_url: S.logo_url || "",
     categories,
     products: products.map((p) => ({ ...p, price: Number(p.price) })),

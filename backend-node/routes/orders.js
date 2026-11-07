@@ -245,7 +245,7 @@ api.get("/api/orders/:id/receipt", "orders", async (ctx) => {
   const o = await loadOrder(Number(ctx.params.id));
   if (!o) throw fail(404, "Order not found.");
   const S = await getSettings();
-  const keys = ["restaurant_name", "logo_url", "phone", "email", "address", "gstin", "show_logo", "show_restaurant_details", "show_gst_details", "show_thanks", "footer_message", "paper_size", "show_tax_on_bill", "tax_mode", "currency", "date_format"];
+  const keys = ["restaurant_name", "logo_url", "phone", "email", "address", "gstin", "show_logo", "show_phone", "show_restaurant_details", "show_gst_details", "show_thanks", "footer_message", "paper_size", "show_tax_on_bill", "tax_mode", "currency", "date_format"];
   return { order: o, receipt_settings: Object.fromEntries(keys.map((k) => [k, S[k]])) };
 });
 
