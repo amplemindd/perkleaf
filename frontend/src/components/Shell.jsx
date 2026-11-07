@@ -111,37 +111,138 @@ export default function Shell({ admin, children }) {
   const qrEvents = useFetch(can("pos") ? "/qr/events" : "", null, [], 2000);
   const [pops, setPops] = useState([]);
   const seen = useRef({ online: null, kot: null, qr: null });
+  // Web Audio is retained for the existing short notification beep.
   const audioRef = useRef(null);
-  const getCtx = () => {
+  // This HTMLAudioElement plays the restaurant's own bell.mp3 for Customer Call events.
+  const bellSoundRef = useRef(null);
+
+  const getCtx = useCallback(() => {
     const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
     if (!audioRef.current) audioRef.current = new AC();
-    if (audioRef.current.state === "suspended") audioRef.current.resume();
+    if (audioRef.current.state === "suspended") {
+      audioRef.current.resume().catch(() => {});
+    }
     return audioRef.current;
-  };
+  }, []);
+
   useEffect(() => {
-    const unlock = () => { try { getCtx(); } catch { /* ignore */ } };
-    ["click", "keydown", "touchstart"].forEach((e) => window.addEventListener(e, unlock));
-    return () => ["click", "keydown", "touchstart"].forEach((e) => window.removeEventListener(e, unlock));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const soundUrl = `${process.env.PUBLIC_URL || ""}/sounds/bell.mp3`;
+    const sound = new Audio(soundUrl);
+    sound.preload = "auto";
+    sound.volume = 0.9;
+    bellSoundRef.current = sound;
+
+    return () => {
+      sound.pause();
+      sound.currentTime = 0;
+      bellSoundRef.current = null;
+    };
   }, []);
-  const tone = (freq, secs, vol) => {
+
+  // Browsers require a user interaction before allowing notification audio.
+  // A muted play/pause during the first interaction unlocks the audio element.
+  useEffect(() => {
+    const unlock = () => {
+      try {
+        const context = getCtx();
+        if (context && context.state === "suspended") {
+          context.resume().catch(() => {});
+        }
+      } catch {
+        // Audio is optional; the POS must continue working without it.
+      }
+
+      const sound = bellSoundRef.current;
+      if (!sound || !sound.paused) return;
+
+      sound.muted = true;
+      const playAttempt = sound.play();
+
+      if (playAttempt && typeof playAttempt.then === "function") {
+        playAttempt
+          .then(() => {
+            sound.pause();
+            sound.currentTime = 0;
+            sound.muted = false;
+          })
+          .catch(() => {
+            sound.muted = false;
+          });
+      } else {
+        sound.muted = false;
+      }
+    };
+
+    ["click", "keydown", "touchstart"].forEach((eventName) =>
+      window.addEventListener(eventName, unlock),
+    );
+
+    return () => {
+      ["click", "keydown", "touchstart"].forEach((eventName) =>
+        window.removeEventListener(eventName, unlock),
+      );
+    };
+  }, [getCtx]);
+
+  const tone = useCallback((freq, secs, vol) => {
     try {
-      const a = getCtx(), o = a.createOscillator(), g = a.createGain();
-      o.connect(g); g.connect(a.destination); o.type = "sine"; o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, a.currentTime);
-      g.gain.linearRampToValueAtTime(vol, a.currentTime + 0.05);
-      g.gain.setValueAtTime(vol, a.currentTime + secs - 0.25);
-      g.gain.linearRampToValueAtTime(0.0001, a.currentTime + secs);
-      o.start(); o.stop(a.currentTime + secs);
-    } catch { /* sound is optional */ }
-  };
-  const beep = () => tone(880, 0.5, 0.15);
-  const ringBell = () => tone(880, 3, 0.3);
-  const pushPop = useCallback((p) => {
-    setPops((l) => [...l.slice(-2), p]);
-    beep();
-    setTimeout(() => setPops((l) => l.filter((x) => x.id !== p.id)), 3000);
+      const context = getCtx();
+      if (!context) return;
+
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.type = "sine";
+      oscillator.frequency.value = freq;
+
+      gain.gain.setValueAtTime(0.0001, context.currentTime);
+      gain.gain.linearRampToValueAtTime(vol, context.currentTime + 0.05);
+      gain.gain.setValueAtTime(vol, context.currentTime + secs - 0.25);
+      gain.gain.linearRampToValueAtTime(0.0001, context.currentTime + secs);
+
+      oscillator.start();
+      oscillator.stop(context.currentTime + secs);
+    } catch {
+      // Sound is optional; the POS must continue working without it.
+    }
+  }, [getCtx]);
+
+  const beep = useCallback(() => {
+    tone(880, 0.5, 0.15);
+  }, [tone]);
+
+  // Play the exact MP3 saved in frontend/public/sounds/bell.mp3.
+  // Do not restart it if another call sound is already playing.
+  const ringBell = useCallback(() => {
+    const sound = bellSoundRef.current;
+    if (!sound || !sound.paused) return;
+
+    try {
+      sound.currentTime = 0;
+      sound.volume = 0.9;
+      const playAttempt = sound.play();
+
+      if (playAttempt && typeof playAttempt.catch === "function") {
+        playAttempt.catch((error) => {
+          console.warn(
+            "Customer call bell could not play. Check browser sound permission and frontend/public/sounds/bell.mp3.",
+            error,
+          );
+        });
+      }
+    } catch (error) {
+      console.warn("Customer call bell could not play:", error);
+    }
   }, []);
+
+  const pushPop = useCallback((p, playSound = true) => {
+    setPops((list) => [...list.slice(-2), p]);
+    if (playSound) beep();
+    setTimeout(() => setPops((list) => list.filter((item) => item.id !== p.id)), 3000);
+  }, [beep]);
   const onl = online.data?.summary || {};
   const onlineNew = (onl.swiggy?.new || 0) + (onl.zomato?.new || 0);
   useEffect(() => {
@@ -187,14 +288,36 @@ export default function Shell({ admin, children }) {
   useEffect(() => {
     const events = qrEvents.data?.events;
     if (!events) return;
-    const max = events.reduce((m, e) => Math.max(m, Number(e.id)), 0);
-    if (seen.current.qr !== null) events.filter(e => Number(e.id) > seen.current.qr).forEach(e => {
-      const isCall = e.title.startsWith("Customer Call");
-      if (isCall) ringBell();
-      pushPop({ id: `qr${e.id}`, kind: isCall ? "qr-call" : "qr-order", title: e.title, text: e.message, to: admin ? "/admin/notifications" : "/orders", state: null });
-    });
+
+    const max = events.reduce((currentMax, event) => Math.max(currentMax, Number(event.id)), 0);
+
+    if (seen.current.qr !== null) {
+      events
+        .filter((event) => Number(event.id) > seen.current.qr)
+        .forEach((event) => {
+          const isCall = String(event.title || "").startsWith("Customer Call");
+
+          if (isCall) {
+            // Customer Call plays bell.mp3 only; skip the regular beep for this popup.
+            ringBell();
+          }
+
+          pushPop(
+            {
+              id: `qr${event.id}`,
+              kind: isCall ? "qr-call" : "qr-order",
+              title: event.title,
+              text: event.message,
+              to: admin ? "/admin/notifications" : "/orders",
+              state: null,
+            },
+            !isCall,
+          );
+        });
+    }
+
     seen.current.qr = Math.max(seen.current.qr || 0, max);
-  }, [qrEvents.data, admin, pushPop]);
+  }, [qrEvents.data, admin, pushPop, ringBell]);
   const openOrders = open.data?.orders || [];
   const unread = notes.data?.unread_total || 0;
   const count = unread + openOrders.length + onlineNew;
