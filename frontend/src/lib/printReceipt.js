@@ -9,10 +9,12 @@ const SIZES = {
   "58mm": { page: 58, print: 48 },
 };
 
-export function printReceipt() {
-  const el = document.getElementById("receipt");
+export function printReceipt(target) {
+  const el = target || document.getElementById("receipt");
   if (!el) { window.print(); return; }
 
+  const clone = el.cloneNode(true);
+  clone.id = "receipt";
   const s = el.classList.contains("p58") ? SIZES["58mm"] : SIZES["80mm"];
   const head = Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).map((n) => n.outerHTML).join("\n");
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>Bill</title>
@@ -25,7 +27,7 @@ ${head}
   html body #receipt, html body #receipt * { visibility: visible !important; }
   #receipt { position: static !important; transform: none !important; width: ${s.print}mm !important; max-width: none !important; margin: 0 !important;
              padding: 1.5mm 0 12mm !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; animation: none !important; }
-</style></head><body>${el.outerHTML}</body></html>`;
+</style></head><body>${clone.outerHTML}</body></html>`;
 
   const frame = document.createElement("iframe");
   frame.setAttribute("aria-hidden", "true");

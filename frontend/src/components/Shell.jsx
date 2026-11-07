@@ -10,7 +10,7 @@ import {
 } from "../lib/store";
 import { api, fmtTime, img, money, ago, TYPES } from "../lib/api";
 import { SafeImg, useClickAway } from "../lib/ui";
-import { KotModal } from "./Receipt";
+import { KotAutoPrint } from "./Receipt";
 import PlatIcon from "./PlatIcon";
 
 const PN = { swiggy: "Swiggy", zomato: "Zomato" };
@@ -764,8 +764,8 @@ export default function Shell({ admin, children }) {
           )}
         </aside>
         {drawer && <div className="scrim" onClick={() => setDrawer(false)} />}
-        {kotQueue[0] && !document.getElementById("receipt") && (
-          <KotModal key={kotQueue[0].qid} order={kotQueue[0]} auto autoClose onClose={() => setKotQueue((l) => l.slice(1))} />
+        {kotQueue[0] && (
+          <KotAutoPrint key={kotQueue[0].qid} order={kotQueue[0]} onDone={() => setKotQueue((l) => l.slice(1))} />
         )}
         <div className="pops" aria-live="polite">
           {pops.map((p) => (

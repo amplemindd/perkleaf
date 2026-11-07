@@ -125,3 +125,36 @@ export function KotModal({ order: o, auto, autoClose, onClose }) {
     </Modal>
   );
 }
+
+// Prints a KOT straight to the printer without showing anything on screen.
+export function KotAutoPrint({ order: o, onDone }) {
+  const { settings } = useAuth();
+  const ref = React.useRef(null);
+  useEffect(() => {
+    const t1 = setTimeout(() => { if (ref.current) printReceipt(ref.current); }, 300);
+    const t2 = setTimeout(onDone, 3000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const where = `${TYPES[o.order_type] || ""}${o.table_name ? `: ${o.table_name}` : ""}`;
+  return (
+    <div aria-hidden="true" style={{ position: "fixed", left: -10000, top: 0, width: 400, pointerEvents: "none" }}>
+      <div ref={ref} className={`receipt r-bill r-kot ${settings.paper_size === "58mm" ? "p58" : ""}`}>
+        <div className="r-c"><h4 className="r-shop">KITCHEN ORDER</h4><p className="r-addr">{settings.restaurant_name}</p></div>
+        <hr className="r-line" />
+        <div className="r-meta">
+          <div><div>KOT No: {o.bill_no}</div><div>{dt(o.created_at)}</div></div>
+          <div><div>{where}</div><div>Source: QR</div></div>
+        </div>
+        <table className="r-t r-items">
+          <colgroup><col /><col className="c-q" /></colgroup>
+          <thead><tr><th>Item</th><th>Qty</th></tr></thead>
+          <tbody>{(o.items || []).map((i) => <tr key={i.id || i.product_name}><td>{i.product_name}</td><td><b>{i.qty}</b></td></tr>)}</tbody>
+        </table>
+        {o.kot_note && <div style={{ fontWeight: 700, whiteSpace: "pre-wrap", marginTop: 4 }}>NOTE: {o.kot_note}</div>}
+        <hr className="r-line" />
+        <div className="r-c r-code">** KOT **</div>
+      </div>
+    </div>
+  );
+}
