@@ -8,39 +8,135 @@
 
 /* ---------- Customer QR popup ---------- */
 .qrm-card {
-  display: flex; flex-direction: column; align-items: center; text-align: center;
-  padding: 20px 22px 16px; background: #fff; color: #17211b;
-  border: 1px solid #c9dfcd; border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 22px 16px;
+  background: #fff;
+  color: #17211b;
+  border: 1px solid #c9dfcd;
+  border-radius: 12px;
 }
-.qrm-brand b { display: block; font-size: 22px; font-weight: 800; color: #14532d; letter-spacing: .3px; }
-.qrm-brand span { display: block; margin-top: 4px; font-size: 11px; font-weight: 600; letter-spacing: 3px; color: #15803d; }
+.qrm-brand b {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: #14532d;
+  letter-spacing: .3px;
+}
+.qrm-brand span {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: #15803d;
+}
 .qrm-table {
-  margin: 12px 0 14px; padding: 8px 22px; border-radius: 999px;
-  background: #15803d; color: #fff; font-size: 15px; font-weight: 800; letter-spacing: .5px;
+  margin: 12px 0 14px;
+  padding: 8px 22px;
+  border-radius: 2px;
+  background: #15803d;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .5px;
 }
-.qrm-img { padding: 12px; border: 2px solid #d7e3da; border-radius: 14px; background: #fff; line-height: 0; }
-.qrm-img img { width: 190px; height: 190px; display: block; }
-.qrm-title { margin: 14px 0 2px; font-size: 24px; font-weight: 800; color: #14532d; }
-.qrm-sub { margin: 0; font-size: 13.5px; color: #64748b; }
-.qrm-steps { list-style: none; margin: 14px 0 0; padding: 0; width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 10px; text-align: left; }
-.qrm-steps li { display: flex; gap: 12px; align-items: flex-start; }
-.qrm-steps .n {
-  flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%;
-  background: #15803d; color: #fff; font-size: 13px; font-weight: 800;
-  display: grid; place-items: center;
+.qrm-img {
+  padding: 10px;
+  border: 1px solid #d7e3da;
+  border-radius: 2px;
+  background: #fff;
+  line-height: 0;
 }
-.qrm-steps b { display: block; font-size: 13.5px; font-weight: 650; line-height: 1.35; }
-.qrm-steps small { display: block; margin-top: 2px; font-size: 12.5px; color: #64748b; line-height: 1.35; }
+.qrm-img img {
+  width: 190px;
+  height: 190px;
+  display: block;
+}
+.qrm-title {
+  margin: 14px 0 2px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #14532d;
+}
+.qrm-sub {
+  margin: 0;
+  font-size: 13.5px;
+  color: #64748b;
+}
+.qrm-staff {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 22px;
+  padding: 18px 16px;
+  text-align: left;
+  background: #f0faf2;
+  border: 1px solid #d5ead9;
+  border-radius: 12px;
+}
+.qrm-staff-icon {
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  color: #15803d;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.qrm-staff-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.qrm-staff-copy b {
+  color: #14532d;
+  font-size: 19px;
+  line-height: 1.2;
+  font-weight: 800;
+}
+.qrm-staff-copy span {
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.45;
+}
 .qrm-help {
-  margin-top: 14px; padding-top: 10px; width: 100%;
-  border-top: 1px solid #e5e7eb; font-size: 13px; font-weight: 650; color: #14532d;
+  margin-top: 16px;
+  padding-top: 12px;
+  width: 100%;
+  border-top: 1px solid #e5e7eb;
+  font-size: 13px;
+  font-weight: 650;
+  color: #14532d;
 }
-.qrm-powered { margin-top: 8px; font-size: 11px; color: #94a3b8; }
-.qrm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
-.qrm-actions .btn { justify-content: center; min-height: 44px; }
+.qrm-powered {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+.qrm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+.qrm-actions .btn {
+  justify-content: center;
+  min-height: 44px;
+}
 @media (max-width: 480px) {
-  .qrm-card { padding: 20px 14px 16px; }
+  .qrm-card { padding: 18px 12px 14px; }
   .qrm-img img { width: 180px; height: 180px; }
+  .qrm-staff { gap: 10px; padding: 14px 10px; }
+  .qrm-staff-icon { flex-basis: 42px; width: 42px; height: 42px; }
+  .qrm-staff-copy b { font-size: 16px; }
+  .qrm-staff-copy span { font-size: 12px; }
 }
 
 /* ---------- Print: only the QR card ---------- */
@@ -58,3 +154,31 @@
 .qrm-warn { margin-bottom: 12px; padding: 10px 12px; border: 1px solid #fecaca; background: #fef2f2; color: #991b1b; font-size: 12.5px; line-height: 1.45; }
 .qrm-warn b { display: block; margin-bottom: 2px; }
 .qrm-warn code { background: #fee2e2; padding: 0 4px; font-size: 12px; }
+
+/* Compact Scan to Call a Staff panel */
+.qrm-staff {
+  margin-top: 16px !important;
+  padding: 10px 14px !important;
+  gap: 12px !important;
+  min-height: 0 !important;
+}
+
+.qrm-staff-icon {
+  flex: 0 0 40px !important;
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.qrm-staff-copy {
+  gap: 3px !important;
+}
+
+.qrm-staff-copy b {
+  font-size: 17px !important;
+  line-height: 1.15 !important;
+}
+
+.qrm-staff-copy span {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+}

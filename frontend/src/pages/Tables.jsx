@@ -6,7 +6,7 @@ import { navigate } from "../lib/store";
 import { useAuth, useFetch, useShell, useUI } from "../lib/store";
 import { Badge, Empty, ErrorBox, Field, Loading, Modal, Tabs } from "../lib/ui";
 import { ReceiptModal } from "../components/Receipt";
-import { QR_BRAND, QR_STEPS, downloadQrCard } from "../lib/qrcard";
+import { QR_BRAND, downloadQrCard } from "../lib/qrcard";
 import "../styles/table-qr.css";
 
 const ST = ["available", "occupied", "reserved", "cleaning", "out_of_service"];
@@ -305,7 +305,7 @@ const makeQr = () => {
                   <button
                     className="btn pri"
                     onClick={() =>
-                      downloadQrCard(qrData, t.name, settings.qr_brand_name || QR_BRAND.name).catch(() =>
+                      downloadQrCard(qrData, t.name, { name: settings.qr_brand_name || QR_BRAND.name, sub: settings.tagline || QR_BRAND.sub }).catch(() =>
                         toast("Could not create the image. Use Print QR instead.", "err"),
                       )
                     }
@@ -330,7 +330,7 @@ const makeQr = () => {
             <div className="qrm-card">
               <div className="qrm-brand">
                 <b>{settings.qr_brand_name || QR_BRAND.name}</b>
-                <span>{QR_BRAND.sub}</span>
+                <span>{settings.tagline || QR_BRAND.sub}</span>
               </div>
               <div className="qrm-table">TABLE {t.name}</div>
               <div className="qrm-img">
@@ -338,17 +338,17 @@ const makeQr = () => {
               </div>
               <h4 className="qrm-title">SCAN &amp; ORDER</h4>
               <p className="qrm-sub">Order directly from your mobile — no waiting!</p>
-              <ol className="qrm-steps">
-                {QR_STEPS.map(([en, hi], i) => (
-                  <li key={i}>
-                    <span className="n">{i + 1}</span>
-                    <div>
-                      <b>{en}</b>
-                      <small>{hi}</small>
-                    </div>
-                  </li>
-                ))}
-              </ol>
+
+              <section className="qrm-staff" aria-label="Call a staff member">
+                <div className="qrm-staff-icon" aria-hidden="true">
+                  <Icon n="bell" size={38} />
+                </div>
+                <div className="qrm-staff-copy">
+                  <b>Scan to Call a Staff</b>
+                  <span>Scan this QR to open the menu, then tap “Ring a Bell” to notify our staff.</span>
+                </div>
+              </section>
+
               <div className="qrm-help">Need help? Please ask our staff 🙂</div>
               <small className="qrm-powered">{QR_BRAND.powered}</small>
             </div>
