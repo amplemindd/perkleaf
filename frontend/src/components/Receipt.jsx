@@ -67,7 +67,6 @@ export default function Receipt({ order: o, settings: S }) {
           <div className="r-row" key={b.rate}><span>{inc ? "Incl. " : ""}GST ({b.rate}%)</span><span>{n2(b.tax)}</span></div>
         )
       )}
-      {o.round_off !== 0 && <div className="r-row"><span>Round off</span><span>{o.round_off > 0 ? "+" : ""}{n2(o.round_off)}</span></div>}
       <hr className="r-line" />
       <div className="r-grand"><span>Grand Total</span><span>{rs(o.total)}</span></div>
       {methods.length > 0 && (
