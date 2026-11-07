@@ -41,14 +41,16 @@ export async function buildQrCardPng(qrUrl, tableName, brandSettings = {}) {
   const FONT = "Poppins, 'Segoe UI', Arial, sans-serif";
   const dark = "#14532d", green = "#15803d", grey = "#64748b";
   const brandName = typeof brandSettings === "string" ? brandSettings : (brandSettings.name || QR_BRAND.name);
-  const brandSub = typeof brandSettings === "object" && brandSettings.sub ? brandSettings.sub : QR_BRAND.sub;
+  const brandSub = typeof brandSettings === "object" ? String(brandSettings.sub ?? "").trim() : "";
 
   c.fillStyle = "#ffffff"; c.fillRect(0, 0, W, H);
   c.strokeStyle = "#c9dfcd"; c.lineWidth = 3; rrect(c, 8, 8, W - 16, H - 16, 28); c.stroke();
   c.textAlign = "center"; c.textBaseline = "alphabetic";
 
   c.fillStyle = dark; c.font = `800 34px ${FONT}`; c.fillText(brandName || QR_BRAND.name, W / 2, 70);
-  c.fillStyle = green; c.font = `600 14px ${FONT}`; c.fillText(brandSub.split("").join(" "), W / 2, 96);
+  if (brandSub) {
+    c.fillStyle = green; c.font = `600 14px ${FONT}`; c.fillText(brandSub.split("").join(" "), W / 2, 96);
+  }
 
   // table pill
   const label = `TABLE ${tableName}`;

@@ -305,7 +305,7 @@ const makeQr = () => {
                   <button
                     className="btn pri"
                     onClick={() =>
-                      downloadQrCard(qrData, t.name, { name: settings.qr_brand_name || QR_BRAND.name, sub: settings.tagline || QR_BRAND.sub }).catch(() =>
+                      downloadQrCard(qrData, t.name, { name: settings.qr_brand_name || QR_BRAND.name, sub: settings.tagline || "" }).catch(() =>
                         toast("Could not create the image. Use Print QR instead.", "err"),
                       )
                     }
@@ -330,7 +330,7 @@ const makeQr = () => {
             <div className="qrm-card">
               <div className="qrm-brand">
                 <b>{settings.qr_brand_name || QR_BRAND.name}</b>
-                <span>{settings.tagline || QR_BRAND.sub}</span>
+                {!!String(settings.tagline || "").trim() && <span>{settings.tagline.trim()}</span>}
               </div>
               <div className="qrm-table">TABLE {t.name}</div>
               <div className="qrm-img">
