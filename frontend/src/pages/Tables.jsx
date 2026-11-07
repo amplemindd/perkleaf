@@ -86,7 +86,7 @@ function TableTile({ t, on, onClick, i }) {
 }
 
 function Detail({ id, onClose, refresh, admin }) {
-  const { can } = useAuth();
+  const { can, settings } = useAuth();
   const { toast, ask } = useUI();
   const d = useFetch(`/tables/${id}`, null, [id]);
   const [rec, setRec] = useState(false);
@@ -305,7 +305,7 @@ const makeQr = () => {
                   <button
                     className="btn pri"
                     onClick={() =>
-                      downloadQrCard(qrData, t.name).catch(() =>
+                      downloadQrCard(qrData, t.name, settings.qr_brand_name || QR_BRAND.name).catch(() =>
                         toast("Could not create the image. Use Print QR instead.", "err"),
                       )
                     }
@@ -329,7 +329,7 @@ const makeQr = () => {
             )}
             <div className="qrm-card">
               <div className="qrm-brand">
-                <b>{QR_BRAND.name}</b>
+                <b>{settings.qr_brand_name || QR_BRAND.name}</b>
                 <span>{QR_BRAND.sub}</span>
               </div>
               <div className="qrm-table">TABLE {t.name}</div>

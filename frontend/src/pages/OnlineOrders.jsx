@@ -4,6 +4,7 @@ import PlatIcon from "../components/PlatIcon";
 import { api, ago, money, fmtTime } from "../lib/api";
 import { A, navigate, takeHandoff, useFetch, useShell, useUI, useAuth } from "../lib/store";
 import { Badge, Empty, ErrorBox, Field, Loading, Modal, Tabs } from "../lib/ui";
+import { printReceipt } from "../lib/printReceipt";
 
 const NAME = { swiggy: "Swiggy", zomato: "Zomato" };
 const STATUSES = ["new", "accepted", "preparing", "ready", "dispatched", "delivered", "rejected"];
@@ -49,7 +50,7 @@ function Kot({ o, onClose }) {
   const { settings } = useAuth();
   useEffect(() => { document.body.classList.add("print-receipt"); return () => document.body.classList.remove("print-receipt"); }, []);
   return (
-    <Modal title="KOT" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Close</button><button className="btn pri" onClick={() => window.print()}><Icon n="print" size={15} /> Print KOT</button></>}>
+    <Modal title="KOT" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Close</button><button className="btn pri" onClick={() => printReceipt()}><Icon n="print" size={15} /> Print KOT</button></>}>
       <div className="receipt" id="receipt">
         <div className="r-c"><h4>KITCHEN ORDER</h4><p>{settings.restaurant_name}</p></div><hr />
         <div className="r-kv"><span>Platform</span><b>{NAME[o.platform]}</b></div><div className="r-kv"><span>Order ID</span><b>#{o.external_id}</b></div><div className="r-kv"><span>Time</span><span>{fmtTime(o.received_at)}</span></div><hr />

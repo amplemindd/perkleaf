@@ -30,7 +30,7 @@ function rrect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-export async function buildQrCardPng(qrUrl, tableName) {
+export async function buildQrCardPng(qrUrl, tableName, brandName = QR_BRAND.name) {
   const img = await loadImg(qrUrl);
   const S = 2; // sharper output
   const W = 640, H = 1090;
@@ -45,7 +45,7 @@ export async function buildQrCardPng(qrUrl, tableName) {
   c.strokeStyle = "#c9dfcd"; c.lineWidth = 3; rrect(c, 8, 8, W - 16, H - 16, 28); c.stroke();
   c.textAlign = "center"; c.textBaseline = "alphabetic";
 
-  c.fillStyle = dark; c.font = `800 34px ${FONT}`; c.fillText(QR_BRAND.name, W / 2, 70);
+  c.fillStyle = dark; c.font = `800 34px ${FONT}`; c.fillText(brandName || QR_BRAND.name, W / 2, 70);
   c.fillStyle = green; c.font = `600 14px ${FONT}`; c.fillText(QR_BRAND.sub.split("").join(" "), W / 2, 96);
 
   // table pill
@@ -98,8 +98,8 @@ export async function buildQrCardPng(qrUrl, tableName) {
   return cv.toDataURL("image/png");
 }
 
-export async function downloadQrCard(qrUrl, tableName) {
-  const png = await buildQrCardPng(qrUrl, tableName);
+export async function downloadQrCard(qrUrl, tableName, brandName = QR_BRAND.name) {
+  const png = await buildQrCardPng(qrUrl, tableName, brandName);
   const a = document.createElement("a");
   a.href = png;
   a.download = `Table-${tableName}-QR.png`;

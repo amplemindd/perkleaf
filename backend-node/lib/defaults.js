@@ -1,6 +1,6 @@
 // Default settings. Every key can be changed from Admin > Settings and is stored in MySQL (bb_settings).
 module.exports = {
-  restaurant_name: "Brew & Bite", tagline: "CAFÉ & RESTAURANT", logo_url: "", phone: "", email: "", address: "", gstin: "",
+  restaurant_name: "Brew & Bite", qr_brand_name: "AMPLEMIND CAFE", tagline: "CAFÉ & RESTAURANT", logo_url: "", phone: "", email: "", address: "", gstin: "",
   timezone: "Asia/Kolkata", open_time: "09:00", close_time: "23:00", week_off: "None",
   dine_in_enabled: true, takeaway_enabled: true, delivery_enabled: true, online_enabled: false,
   sidebar_style: "expanded", font: "Poppins", language: "English", date_format: "DD Mon YYYY", currency: "INR",
