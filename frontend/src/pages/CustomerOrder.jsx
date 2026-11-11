@@ -12,11 +12,58 @@ const RING_ANIMATION_MS = 3000; // bell keeps ringing for 3 seconds
 const STATUS_POLL_MS = 8000; // order tracker refreshes every 8 seconds
 
 // "Need anything?" quick requests (key is sent to the server)
+const svg = (children) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {children}
+  </svg>
+);
 const REQUEST_OPTIONS = [
-  { key: "water", icon: "💧", label: "Water" },
-  { key: "cutlery", icon: "🍴", label: "Cutlery" },
-  { key: "tissues", icon: "🧻", label: "Tissues" },
-  { key: "other", icon: "🙋", label: "Other" },
+  {
+    key: "water",
+    label: "Water",
+    hint: "Glass of water",
+    tone: "blue",
+    icon: svg(<path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z" />),
+  },
+  {
+    key: "cutlery",
+    label: "Cutlery",
+    hint: "Fork, spoon, knife",
+    tone: "amber",
+    icon: svg(
+      <>
+        <path d="M3 2v7a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V2" />
+        <path d="M7 2v20" />
+        <path d="M21 15V2a5 5 0 0 0-5 5v6a2 2 0 0 0 2 2h3zm0 0v7" />
+      </>,
+    ),
+  },
+  {
+    key: "tissues",
+    label: "Tissues",
+    hint: "Napkins / tissues",
+    tone: "teal",
+    // tissue box with a tissue popping out
+    icon: svg(
+      <>
+        <path d="M4 12h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+        <path d="M8 12c-.3-3 1-6 4-8 3 2 4.3 5 4 8" />
+        <path d="M9.5 16.5h5" />
+      </>,
+    ),
+  },
+  {
+    key: "other",
+    label: "Other",
+    hint: "Something else",
+    tone: "violet",
+    icon: svg(
+      <>
+        <path d="M21 12a8 8 0 0 1-11.5 7.2L4 20.5l1.3-4.4A8 8 0 1 1 21 12z" />
+        <path d="M8.5 12h.01M12 12h.01M15.5 12h.01" strokeWidth="2.6" />
+      </>,
+    ),
+  },
 ];
 
 // order status (from the cashier screen) -> what the customer sees
@@ -189,21 +236,38 @@ function NeedAnything({ picked, onToggle, otherText, onOtherText, left, busy, on
 
   return (
     <section className="cx-need">
-      <h3>Need anything?</h3>
+      <div className="cx-need-head">
+        <span className="cx-need-bell">
+          <Icon n="bell" size={20} />
+        </span>
+        <div>
+          <h3>Need anything?</h3>
+          <p>Choose what you need, then tap Call staff.</p>
+        </div>
+      </div>
 
       <div className="cx-need-grid">
-        {REQUEST_OPTIONS.map((o) => (
-          <button
-            key={o.key}
-            type="button"
-            className={`cx-need-btn ${picked.includes(o.key) ? "on" : ""}`}
-            aria-pressed={picked.includes(o.key)}
-            onClick={() => onToggle(o.key)}
-          >
-            <span aria-hidden="true">{o.icon}</span>
-            {o.label}
-          </button>
-        ))}
+        {REQUEST_OPTIONS.map((o) => {
+          const on = picked.includes(o.key);
+          return (
+            <button
+              key={o.key}
+              type="button"
+              className={`cx-need-btn tone-${o.tone} ${on ? "on" : ""}`}
+              aria-pressed={on}
+              onClick={() => onToggle(o.key)}
+            >
+              <span className="cx-need-ic">{o.icon}</span>
+              <span className="cx-need-tx">
+                <b>{o.label}</b>
+                <small>{o.hint}</small>
+              </span>
+              <span className="cx-need-tick" aria-hidden="true">
+                <Icon n="check" size={12} />
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {picked.includes("other") && (
@@ -218,8 +282,14 @@ function NeedAnything({ picked, onToggle, otherText, onOtherText, left, busy, on
       )}
 
       <button type="button" className="cx-callstaff" onClick={onCall} disabled={busy || waiting}>
-        <span aria-hidden="true">🛎️</span>
-        {waiting ? `Call again in ${left}s` : "Call staff"}
+        <Icon n="bell" size={20} />
+        <span>
+          {waiting
+            ? `Call again in ${left}s`
+            : picked.length
+              ? `Call staff · ${picked.length} selected`
+              : "Call staff"}
+        </span>
       </button>
     </section>
   );
@@ -941,18 +1011,31 @@ const RAW_CSS = `
 @media (prefers-reduced-motion:reduce){.cx-steps li.now i{animation:none}}
 
 /* need anything */
-.cx-need{margin-bottom:18px;padding:16px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 2px 10px rgba(20,83,45,.05)}
-.cx-need h3{margin-bottom:10px;font-size:17px;font-weight:800}
+.cx-need{margin-bottom:18px;padding:16px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 6px 18px rgba(20,83,45,.08)}
+.cx-need-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.cx-need-bell{flex:0 0 40px;width:40px;height:40px;display:grid;place-items:center;color:var(--cx-g);background:var(--cx-gl)}
+.cx-need-head h3{font-size:18px;font-weight:800;line-height:1.2}
+.cx-need-head p{margin-top:1px;font-size:12.5px;color:var(--cx-mu)}
 .cx-need-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.cx-need-btn{display:flex;align-items:center;gap:10px;padding:13px 14px;font-size:15px;font-weight:700;background:var(--cx-card);border:1.5px solid var(--cx-bd)!important;transition:background .15s,border-color .15s}
-.cx-need-btn span{font-size:20px;line-height:1}
-.cx-need-btn.on{background:var(--cx-gl);border-color:var(--cx-g)!important;color:var(--cx-g)}
+.cx-need-btn{--t:#2b6cb0;--tb:#e8f1fb;position:relative;display:flex;align-items:center;gap:10px;padding:12px 10px;min-height:64px;background:var(--cx-card);border:1.5px solid var(--cx-bd)!important;transition:background .15s,border-color .15s,transform .1s}
+.cx-need-btn:active{transform:scale(.97)}
+.cx-need-btn.tone-blue{--t:#2b6cb0;--tb:#e8f1fb}
+.cx-need-btn.tone-amber{--t:#b7701a;--tb:#fdf1de}
+.cx-need-btn.tone-teal{--t:#0f766e;--tb:#e3f5f1}
+.cx-need-btn.tone-violet{--t:#7e3fb0;--tb:#f2e9f9}
+.cx-need-ic{flex:0 0 40px;width:40px;height:40px;display:grid;place-items:center;color:var(--t);background:var(--tb)}
+.cx-need-tx{min-width:0;display:block}
+.cx-need-tx b{display:block;font-size:14.5px;font-weight:800;line-height:1.2}
+.cx-need-tx small{display:block;margin-top:2px;font-size:11px;line-height:1.25;color:var(--cx-mu)}
+.cx-need-tick{position:absolute;top:6px;right:6px;width:18px;height:18px;display:grid;place-items:center;color:#fff;background:var(--cx-g);transform:scale(0);transition:transform .15s}
+.cx-need-btn.on{background:var(--cx-gl);border-color:var(--cx-g)!important}
+.cx-need-btn.on .cx-need-ic{color:#fff;background:var(--cx-g)}
+.cx-need-btn.on .cx-need-tick{transform:scale(1)}
 .cx-need-other{width:100%;height:46px;margin-top:10px;padding:0 14px;font:inherit;font-size:15px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);outline:0}
 .cx-need-other:focus{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.1)}
-.cx-callstaff{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;padding:16px;font-size:17px;font-weight:800;color:#fff!important;background:var(--cx-gd)}
-.cx-callstaff span{font-size:20px;line-height:1}
-.cx-callstaff:active:not(:disabled){opacity:.85}
-.cx-callstaff:disabled{opacity:.6}
+.cx-callstaff{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;padding:15px;font-size:16px;font-weight:800;letter-spacing:.2px;color:#fff!important;background:linear-gradient(135deg,#17643a,#1f8a4c);box-shadow:0 6px 16px rgba(20,83,45,.25)}
+.cx-callstaff:active:not(:disabled){opacity:.88;transform:translateY(1px)}
+.cx-callstaff:disabled{opacity:.6;box-shadow:none}
 
 /* Square corners throughout the customer QR ordering page */
 .cx,
