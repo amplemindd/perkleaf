@@ -109,8 +109,21 @@ export default function Pos() {
   };
   const step = (id, d) => setCart((c) => c.map((x) => (x.id === id ? { ...x, qty: Math.min(x.qty + d, 99) } : x)).filter((x) => x.qty > 0));
   const reset = () => { setCart([]); setOrderId(null); setTableId(null); setCust(blank); setShowCust(false); setGuests(1); setSource("direct"); setRef(""); setDPct(0); setDFix(""); setCalc(null); setPayModal(null); idem.current = uid(); setSheet(false); };
-  const newOrder = async () => { if (cart.length && !(await ask("Start a new order? Items in the current cart will be removed.", { danger: true, okText: "Start new" }))) return; reset(); };
-  const clearAll = async () => { if (cart.length && (await ask("Remove all items from this order?", { danger: true, okText: "Clear all" }))) { setCart([]); setCalc(null); } };
+  const newOrder = async () => { if (cart.length && !(await ask(orderId ? "Start a new order? This saved order stays on hold for its table (use Cancel Order to remove it)." : "Start a new order? Items in the current cart will be removed.", { danger: true, okText: "Start new" }))) return; reset(); };
+  const clearAll = async () => {
+    if (!cart.length) return;
+    // A saved (held) order is still OPEN on the table. Only clearing the screen would leave it behind, and the
+    // customer's next QR order for that table would get merged into it. So here we really cancel the order.
+    if (orderId) {
+      if (!can("orders.cancel")) { toast("This order is saved on the table. Ask a manager to cancel it (Orders > Cancel Order).", "err"); return; }
+      const reason = await ask("Cancel this saved order completely? Enter a reason:", { input: true, danger: true, okText: "Cancel order", placeholder: "Reason for cancellation", title: "Cancel order" });
+      if (!reason) return;
+      try { await api(`/orders/${orderId}/cancel`, { method: "POST", body: { reason } }); toast("Order cancelled."); reset(); refreshAll(); }
+      catch (e) { toast(e.message, "err"); }
+      return;
+    }
+    if (await ask("Remove all items from this order?", { danger: true, okText: "Clear all" })) { setCart([]); setCalc(null); }
+  };
 
   const pickTable = async (t) => {
     if (t.status === "out_of_service") return toast(`${t.name} is out of service.`, "err");
