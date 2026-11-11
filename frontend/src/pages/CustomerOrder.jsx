@@ -9,6 +9,24 @@ import { API_URL, img, money } from "../lib/api";
 
 const CALL_COOLDOWN_SEC = 15; // customer can ring the bell once every 15 seconds
 const RING_ANIMATION_MS = 3000; // bell keeps ringing for 3 seconds
+const STATUS_POLL_MS = 8000; // order tracker refreshes every 8 seconds
+
+// "Need anything?" quick requests (key is sent to the server)
+const REQUEST_OPTIONS = [
+  { key: "water", icon: "💧", label: "Water" },
+  { key: "cutlery", icon: "🍴", label: "Cutlery" },
+  { key: "tissues", icon: "🧻", label: "Tissues" },
+  { key: "other", icon: "🙋", label: "Other" },
+];
+
+// order status (from the cashier screen) -> what the customer sees
+const TRACK_STEPS = [
+  { key: "pending", label: "Order received" },
+  { key: "preparing", label: "In the kitchen" },
+  { key: "ready", label: "Ready to serve" },
+];
+const TRACK_TITLE = { pending: "Order received", preparing: "Preparing", ready: "Ready to serve" };
+const TRACK_PERCENT = { pending: 25, preparing: 60, ready: 100 };
 
 // ---------- API ----------
 async function request(path, options = {}) {
@@ -136,6 +154,77 @@ function Bell({ left, ringing, busy, onPress, compact }) {
   );
 }
 
+// Live order tracker: Order received -> In the kitchen -> Ready to serve
+function OrderTracker({ track }) {
+  const status = TRACK_STEPS.some((s) => s.key === track.status) ? track.status : "pending";
+  const at = TRACK_STEPS.findIndex((s) => s.key === status);
+
+  return (
+    <section className="cx-track" aria-live="polite">
+      <small className="cx-track-no">ORDER #{String(track.bill_no || "").replace(/^#/, "")}</small>
+      <h2>{TRACK_TITLE[status]}</h2>
+
+      <div className="cx-track-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={TRACK_PERCENT[status]}>
+        <span style={{ width: `${TRACK_PERCENT[status]}%` }} />
+      </div>
+
+      <ul className="cx-steps">
+        {TRACK_STEPS.map((step, i) => {
+          const state = i < at || status === "ready" ? "done" : i === at ? "now" : "todo";
+          return (
+            <li key={step.key} className={state}>
+              <i>{state === "done" ? <Icon n="check" size={12} /> : null}</i>
+              {step.label}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+// "Need anything?" quick requests + Call staff button
+function NeedAnything({ picked, onToggle, otherText, onOtherText, left, busy, onCall }) {
+  const waiting = left > 0;
+
+  return (
+    <section className="cx-need">
+      <h3>Need anything?</h3>
+
+      <div className="cx-need-grid">
+        {REQUEST_OPTIONS.map((o) => (
+          <button
+            key={o.key}
+            type="button"
+            className={`cx-need-btn ${picked.includes(o.key) ? "on" : ""}`}
+            aria-pressed={picked.includes(o.key)}
+            onClick={() => onToggle(o.key)}
+          >
+            <span aria-hidden="true">{o.icon}</span>
+            {o.label}
+          </button>
+        ))}
+      </div>
+
+      {picked.includes("other") && (
+        <input
+          className="cx-need-other"
+          type="text"
+          maxLength={80}
+          placeholder="Tell us what you need..."
+          value={otherText}
+          onChange={(e) => onOtherText(e.target.value)}
+        />
+      )}
+
+      <button type="button" className="cx-callstaff" onClick={onCall} disabled={busy || waiting}>
+        <span aria-hidden="true">🛎️</span>
+        {waiting ? `Call again in ${left}s` : "Call staff"}
+      </button>
+    </section>
+  );
+}
+
 // ---------- main page ----------
 export default function CustomerOrder({ token }) {
   const [data, setData] = useState(null);
@@ -163,6 +252,11 @@ export default function CustomerOrder({ token }) {
   });
   const [now, setNow] = useState(Date.now());
   const [ringEnd, setRingEnd] = useState(0);
+
+  // order tracker + "Need anything?" state
+  const [track, setTrack] = useState(null); // { bill_no, status } of the table's open order
+  const [picked, setPicked] = useState([]); // selected quick requests
+  const [otherText, setOtherText] = useState("");
 
   const pushedRef = useRef(false);
 
@@ -192,6 +286,32 @@ export default function CustomerOrder({ token }) {
     const timer = setTimeout(() => setNotice(""), 3500);
     return () => clearTimeout(timer);
   }, [notice]);
+
+  // ---- order tracker: refresh the table's open order status ----
+  useEffect(() => {
+    let active = true;
+
+    const load = () => {
+      if (document.hidden) return;
+      request(`/public/qr/${token}/status`)
+        .then((r) => {
+          if (active) setTrack(r.order || null);
+        })
+        .catch(() => {
+          /* keep the last known status */
+        });
+    };
+
+    load();
+    const id = setInterval(load, STATUS_POLL_MS);
+    document.addEventListener("visibilitychange", load);
+
+    return () => {
+      active = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", load);
+    };
+  }, [token]);
 
   // ---- bell countdown ticker (runs only while cooling down) ----
   useEffect(() => {
@@ -305,6 +425,7 @@ export default function CustomerOrder({ token }) {
       });
 
       setOrder(result.order);
+      setTrack({ bill_no: result.order.bill_no, status: "pending" });
       setCart({});
       setNote("");
       setShowCheckout(false);
@@ -321,7 +442,7 @@ export default function CustomerOrder({ token }) {
   };
 
   // ---- call cashier (once every 15 seconds, bell rings for 3 seconds) ----
-  const callCashier = async () => {
+  const callCashier = async (requests = [], other = "") => {
     if (bellBusy || left > 0) return;
 
     setBellBusy(true);
@@ -329,7 +450,7 @@ export default function CustomerOrder({ token }) {
     try {
       const result = await request(`/public/qr/${token}/call`, {
         method: "POST",
-        body: {},
+        body: { requests, other_text: other.trim() },
       });
 
       const t = Date.now();
@@ -338,6 +459,8 @@ export default function CustomerOrder({ token }) {
       setNow(t);
       setUntil(end);
       setRingEnd(t + RING_ANIMATION_MS);
+      setPicked([]);
+      setOtherText("");
       setNotice(result.message || "Cashier has been notified.");
     } catch (e) {
       // server also enforces the wait, e.g. "Please wait 9s before calling again."
@@ -353,6 +476,9 @@ export default function CustomerOrder({ token }) {
       setBellBusy(false);
     }
   };
+
+  const toggleRequest = (key) =>
+    setPicked((p) => (p.includes(key) ? p.filter((k) => k !== key) : [...p, key]));
 
   // ---------- screens ----------
   if (!data && !error) {
@@ -389,7 +515,7 @@ export default function CustomerOrder({ token }) {
       left={left}
       ringing={ringing}
       busy={bellBusy}
-      onPress={callCashier}
+      onPress={() => callCashier()}
     />
   );
 
@@ -497,6 +623,18 @@ export default function CustomerOrder({ token }) {
                 </div>
               </div>
             )}
+
+            {track && <OrderTracker track={track} />}
+
+            <NeedAnything
+              picked={picked}
+              onToggle={toggleRequest}
+              otherText={otherText}
+              onOtherText={setOtherText}
+              left={left}
+              busy={bellBusy}
+              onCall={() => callCashier(picked, otherText)}
+            />
 
             <h2 className="cx-hello">What would you like today?</h2>
             <p className="cx-hello-sub">Pick a category to see everything in it.</p>
@@ -785,6 +923,36 @@ const RAW_CSS = `
 @keyframes cx-ring{0%,100%{transform:rotate(0)}10%{transform:rotate(18deg)}20%{transform:rotate(-18deg)}30%{transform:rotate(15deg)}40%{transform:rotate(-15deg)}50%{transform:rotate(10deg)}60%{transform:rotate(-10deg)}70%{transform:rotate(5deg)}80%{transform:rotate(-5deg)}90%{transform:rotate(2deg)}}
 @media (prefers-reduced-motion:reduce){.cx-bell:not(.waiting):not(.ringing) .cx-bell-ic{animation:none}}
 .cx-bell.compact{color:var(--cx-g)!important}
+
+/* order tracker */
+.cx-track{margin-bottom:14px;padding:16px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 2px 10px rgba(20,83,45,.05)}
+.cx-track-no{display:block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:1.5px;color:var(--cx-mu)}
+.cx-track h2{margin:2px 0 12px;font-size:26px;font-weight:800;line-height:1.15}
+.cx-track-bar{height:6px;background:var(--cx-bd);overflow:hidden}
+.cx-track-bar span{display:block;height:100%;background:var(--cx-g);transition:width .6s ease}
+.cx-steps{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+.cx-steps li{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:#b4bdb6}
+.cx-steps li i{flex:0 0 16px;width:16px;height:16px;display:grid;place-items:center;border:2px solid #cfd8d1;font-style:normal}
+.cx-steps li.done{color:var(--cx-tx)}
+.cx-steps li.done i{background:var(--cx-g);border-color:var(--cx-g);color:#fff}
+.cx-steps li.now{color:var(--cx-tx);font-weight:800}
+.cx-steps li.now i{background:var(--cx-g);border-color:var(--cx-g);box-shadow:0 0 0 4px rgba(20,83,45,.15);animation:cx-pulse 1.4s ease-in-out infinite}
+@keyframes cx-pulse{50%{box-shadow:0 0 0 7px rgba(20,83,45,0)}}
+@media (prefers-reduced-motion:reduce){.cx-steps li.now i{animation:none}}
+
+/* need anything */
+.cx-need{margin-bottom:18px;padding:16px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 2px 10px rgba(20,83,45,.05)}
+.cx-need h3{margin-bottom:10px;font-size:17px;font-weight:800}
+.cx-need-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cx-need-btn{display:flex;align-items:center;gap:10px;padding:13px 14px;font-size:15px;font-weight:700;background:var(--cx-card);border:1.5px solid var(--cx-bd)!important;transition:background .15s,border-color .15s}
+.cx-need-btn span{font-size:20px;line-height:1}
+.cx-need-btn.on{background:var(--cx-gl);border-color:var(--cx-g)!important;color:var(--cx-g)}
+.cx-need-other{width:100%;height:46px;margin-top:10px;padding:0 14px;font:inherit;font-size:15px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);outline:0}
+.cx-need-other:focus{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.1)}
+.cx-callstaff{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;padding:16px;font-size:17px;font-weight:800;color:#fff!important;background:var(--cx-gd)}
+.cx-callstaff span{font-size:20px;line-height:1}
+.cx-callstaff:active:not(:disabled){opacity:.85}
+.cx-callstaff:disabled{opacity:.6}
 
 /* Square corners throughout the customer QR ordering page */
 .cx,

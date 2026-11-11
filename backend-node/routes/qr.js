@@ -31,6 +31,22 @@ api.get("/api/public/qr/:token", null, async (ctx) => {
   };
 });
 
+// Live status of the table's open order (customer page polls this)
+api.get("/api/public/qr/:token/status", null, async (ctx) => {
+  const table = await one(
+    "SELECT id FROM bb_tables WHERE qr_token = ? AND is_active = 1",
+    [str(ctx.params.token, 36)],
+  );
+  if (!table) throw fail(404, "This table QR code is invalid or inactive.");
+  const o = await one(
+    `SELECT id, bill_no, status, total FROM bb_orders WHERE table_id = ? AND ${OPEN_SQL} ORDER BY id DESC LIMIT 1`,
+    [table.id],
+  );
+  return {
+    order: o ? { id: o.id, bill_no: o.bill_no, status: o.status, total: Number(o.total) } : null,
+  };
+});
+
 api.post("/api/public/qr/:token/order", null, async (ctx) => {
   const token = str(ctx.params.token, 36);
   const table = await one(
@@ -151,10 +167,18 @@ api.post("/api/public/qr/:token/call", null, async (ctx) => {
     throw fail(429, `Please wait ${wait}s before calling again.`);
   }
 
+  // What does the customer need? (Water / Cutlery / Tissues / Other) - whitelisted
+  const LABELS = { water: "Water", cutlery: "Cutlery", tissues: "Tissues", other: "Other" };
+  const wanted = [...new Set(Array.isArray(ctx.body.requests) ? ctx.body.requests : [])]
+    .filter((k) => LABELS[k])
+    .map((k) => LABELS[k]);
+  const otherText = str(ctx.body.other_text, 80).replace(/\s+/g, " ");
+  const needs = wanted.map((w) => (w === "Other" && otherText ? `Other: ${otherText}` : w)).join(", ");
+
   await notify({
     type: "table",
     title: `Customer Call · Table ${table.name}`, force: true,
-    message: "Customer is requesting cashier assistance.",
+    message: needs ? `Customer needs: ${needs}` : "Customer is requesting cashier assistance.",
     priority: "urgent",
     link_type: "table",
     link_id: table.id,
