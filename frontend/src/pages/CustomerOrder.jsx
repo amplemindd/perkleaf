@@ -131,6 +131,7 @@ function Bell({ left, ringing, busy, onPress, compact }) {
       <span className="cx-bell-ic">
         <Icon n="bell" size={compact ? 25 : 28} />
       </span>
+      <span className="cx-bell-label">{waiting ? `${left}s` : "Call staff"}</span>
     </button>
   );
 }
@@ -738,13 +739,15 @@ const RAW_CSS = `
 /* bell: icon only, transparent background, no border or box */
 .cx-bell{
   position:relative;
-  flex:0 0 40px;
-  width:40px;
-  height:40px;
+  flex:0 0 auto;
+  min-width:44px;
+  min-height:44px;
   display:flex;
+  flex-direction:column;
   align-items:center;
   justify-content:center;
-  padding:0!important;
+  gap:2px;
+  padding:0 2px!important;
   color:#fff!important;
   background:transparent!important;
   border:0!important;
@@ -755,10 +758,25 @@ const RAW_CSS = `
 .cx-bell:active:not(:disabled){transform:scale(.92)}
 .cx-bell:disabled{background:transparent!important;opacity:.65}
 .cx-bell-ic{display:grid;place-items:center;transform-origin:50% 12%}
+.cx-bell-label{font-size:9px;font-weight:700;line-height:1;letter-spacing:.3px;white-space:nowrap;opacity:.9}
 .cx-bell.waiting{cursor:default}
 .cx-bell.waiting .cx-bell-ic{opacity:.6}
+/* idle: small vibration-like shake every couple of seconds so customers notice the bell */
+.cx-bell:not(.waiting):not(.ringing) .cx-bell-ic{animation:cx-idle 2.6s ease-in-out infinite}
+@keyframes cx-idle{
+  0%,60%,100%{transform:rotate(0)}
+  64%{transform:rotate(14deg)}
+  68%{transform:rotate(-14deg)}
+  72%{transform:rotate(11deg)}
+  76%{transform:rotate(-11deg)}
+  80%{transform:rotate(7deg)}
+  84%{transform:rotate(-7deg)}
+  88%{transform:rotate(3deg)}
+  92%{transform:rotate(-3deg)}
+}
 .cx-bell.ringing .cx-bell-ic{animation:cx-ring .9s ease-in-out infinite}
 @keyframes cx-ring{0%,100%{transform:rotate(0)}10%{transform:rotate(18deg)}20%{transform:rotate(-18deg)}30%{transform:rotate(15deg)}40%{transform:rotate(-15deg)}50%{transform:rotate(10deg)}60%{transform:rotate(-10deg)}70%{transform:rotate(5deg)}80%{transform:rotate(-5deg)}90%{transform:rotate(2deg)}}
+@media (prefers-reduced-motion:reduce){.cx-bell:not(.waiting):not(.ringing) .cx-bell-ic{animation:none}}
 .cx-bell.compact{color:var(--cx-g)!important}
 
 /* Square corners throughout the customer QR ordering page */

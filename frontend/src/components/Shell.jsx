@@ -240,6 +240,42 @@ export default function Shell({ admin, children }) {
     }
   }, []);
 
+  // Distinct double "ring-ring" sound for every new customer QR order.
+  // Synthesised with Web Audio, so no extra mp3 file is needed. It is different from bell.mp3 (Customer Call).
+  const ringOrder = useCallback(() => {
+    try {
+      const context = getCtx();
+      if (!context) return;
+
+      const strike = (freq, start, dur, vol) => {
+        [1, 2.76, 5.4].forEach((mult, i) => {
+          const osc = context.createOscillator();
+          const gain = context.createGain();
+          osc.type = "sine";
+          osc.frequency.value = freq * mult;
+          osc.connect(gain);
+          gain.connect(context.destination);
+          const t0 = context.currentTime + start;
+          const v = vol / (i + 1);
+          gain.gain.setValueAtTime(0.0001, t0);
+          gain.gain.exponentialRampToValueAtTime(v, t0 + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+          osc.start(t0);
+          osc.stop(t0 + dur + 0.05);
+        });
+      };
+
+      // two rings, each made of fast alternating strikes: ring-ring
+      [0, 0.9].forEach((offset) => {
+        for (let i = 0; i < 6; i += 1) {
+          strike(i % 2 ? 1568 : 1318, offset + i * 0.11, 0.35, 0.28);
+        }
+      });
+    } catch {
+      // Sound is optional; the POS must continue working without it.
+    }
+  }, [getCtx]);
+
   const pushPop = useCallback((p, playSound = true) => {
     setPops((list) => [...list.slice(-2), p]);
     if (playSound) beep();
@@ -319,6 +355,9 @@ export default function Shell({ admin, children }) {
           if (isCall) {
             // Customer Call plays bell.mp3 only; skip the regular beep for this popup.
             ringBell();
+          } else {
+            // New customer order: separate ring-ring sound.
+            ringOrder();
           }
 
           pushPop(
@@ -330,13 +369,13 @@ export default function Shell({ admin, children }) {
               to: admin ? "/admin/notifications" : "/orders",
               state: null,
             },
-            !isCall,
+            false,
           );
         });
     }
 
     seen.current.qr = Math.max(seen.current.qr || 0, max);
-  }, [qrEvents.data, admin, pushPop, ringBell]);
+  }, [qrEvents.data, admin, pushPop, ringBell, ringOrder]);
   const openOrders = open.data?.orders || [];
   const unread = notes.data?.unread_total || 0;
   const count = unread + openOrders.length + onlineNew;
