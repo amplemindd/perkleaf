@@ -253,7 +253,10 @@ function NeedAnything({ picked, onToggle, otherText, onOtherText, left, busy, on
               onClick={() => onToggle(o.key)}
             >
               <span className="cx-need-ic">{o.icon}</span>
-              <b>{o.label}</b>
+              <span className="cx-need-tx">
+                <b>{o.label}</b>
+                <small>{o.hint}</small>
+              </span>
               <span className="cx-need-tick" aria-hidden="true">
                 <Icon n="check" size={11} />
               </span>
@@ -1008,7 +1011,7 @@ const RAW_CSS = `
 .cx-need-head h3{font-size:16.5px;font-weight:800;line-height:1.2;letter-spacing:.1px}
 .cx-need-head span{font-size:11.5px;font-weight:600;color:var(--cx-mu)}
 .cx-need-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.cx-need-btn{--t:#2b6cb0;position:relative;display:flex;align-items:center;gap:10px;height:46px;padding:0 12px;background:#fbfcfb;border:1px solid var(--cx-bd)!important;transition:background .15s,border-color .15s,box-shadow .15s,transform .1s}
+.cx-need-btn{--t:#2b6cb0;position:relative;display:flex;align-items:center;gap:10px;height:54px;padding:0 12px;background:#fbfcfb;border:1px solid var(--cx-bd)!important;transition:background .15s,border-color .15s,box-shadow .15s,transform .1s}
 .cx-need-btn:active{transform:scale(.97)}
 .cx-need-btn.tone-blue{--t:#2b6cb0}
 .cx-need-btn.tone-amber{--t:#c47a12}
@@ -1016,7 +1019,9 @@ const RAW_CSS = `
 .cx-need-btn.tone-violet{--t:#8a45c2}
 .cx-need-ic{flex:0 0 auto;display:grid;place-items:center;color:var(--t);background:none}
 .cx-need-ic svg{width:22px;height:22px}
-.cx-need-btn b{font-size:14px;font-weight:700;line-height:1;color:var(--cx-tx)}
+.cx-need-tx{min-width:0;display:block}
+.cx-need-tx b{display:block;font-size:14px;font-weight:700;line-height:1.15;color:var(--cx-tx)}
+.cx-need-tx small{display:block;margin-top:2px;font-size:11px;line-height:1.2;color:var(--cx-mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cx-need-tick{position:absolute;top:50%;right:9px;width:16px;height:16px;display:grid;place-items:center;color:#fff;background:var(--cx-g);transform:translateY(-50%) scale(0);transition:transform .15s}
 .cx-need-btn.on{background:var(--cx-gl);border-color:var(--cx-g)!important;box-shadow:inset 3px 0 0 var(--cx-g)}
 .cx-need-btn.on .cx-need-tick{transform:translateY(-50%) scale(1)}
