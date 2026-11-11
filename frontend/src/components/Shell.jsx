@@ -119,6 +119,7 @@ export default function Shell({ admin, children }) {
   const reloadNewOrders = useRef(() => {});
   reloadNewOrders.current = newOrdersSrv.reload;
   const [hiddenIds, setHiddenIds] = useState([]);
+  const [soundLocked, setSoundLocked] = useState(false);
   const [localPending, setLocalPending] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("bb_qr_pending") || "[]");
@@ -287,6 +288,13 @@ export default function Shell({ admin, children }) {
     try {
       const context = getCtx();
       if (!context) return;
+      // Browsers block sound until the page gets a click/touch. While blocked, do NOT queue rings
+      // (they would all play at once on the first click); just remember that sound is locked.
+      if (context.state !== "running") {
+        setSoundLocked(true);
+        return;
+      }
+      setSoundLocked(false);
 
       const strike = (freq, start, dur, vol) => {
         [1, 2.76, 5.4].forEach((mult, i) => {
@@ -423,6 +431,24 @@ export default function Shell({ admin, children }) {
 
     seen.current.qr = Math.max(seen.current.qr || 0, max);
   }, [qrEvents.data, admin, pushPop, ringBell, ringOrder]);
+  // First click/touch after a refresh allows sound: ring right away if an order is waiting.
+  useEffect(() => {
+    if (!soundLocked) return undefined;
+    const unlockSound = () => {
+      const context = getCtx();
+      if (!context) return;
+      context.resume().then(() => {
+        if (context.state === "running") {
+          setSoundLocked(false);
+          if (hasPendingRef.current) ringOrder();
+        }
+      }).catch(() => {});
+    };
+    const events = ["click", "keydown", "touchstart"];
+    events.forEach((e) => window.addEventListener(e, unlockSound));
+    return () => events.forEach((e) => window.removeEventListener(e, unlockSound));
+  }, [soundLocked, getCtx, ringOrder]);
+
   // Keep ringing every 6 seconds until every new order is accepted.
   useEffect(() => {
     if (!hasPending) return undefined;
@@ -896,7 +922,13 @@ export default function Shell({ admin, children }) {
           )}
         </aside>
         {drawer && <div className="scrim" onClick={() => setDrawer(false)} />}
+        {hasPending && soundLocked && (
+          <button className="no-sound" onClick={() => {}}>
+            <Icon n="bell" size={16} /> New order waiting. Click here to turn on order sound
+          </button>
+        )}
         <style>{`
+          .no-sound{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:8px;border:0;background:#e03131;color:#fff;font-weight:700;font-size:13px;padding:10px 18px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35);animation:bb-no-pulse 1.2s infinite}
           .hbtn.plat.neworders{background:#e8590c;box-shadow:none}
           .hbtn.plat.neworders:hover{background:#f76707}
           .hbtn.plat.neworders.ringing{background:#e03131;animation:bb-no-pulse 1.2s infinite}
