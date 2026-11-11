@@ -237,13 +237,8 @@ function NeedAnything({ picked, onToggle, otherText, onOtherText, left, busy, on
   return (
     <section className="cx-need">
       <div className="cx-need-head">
-        <span className="cx-need-bell">
-          <Icon n="bell" size={20} />
-        </span>
-        <div>
-          <h3>Need anything?</h3>
-          <p>Choose what you need, then tap Call staff.</p>
-        </div>
+        <h3>Need anything?</h3>
+        <span>Tap to select</span>
       </div>
 
       <div className="cx-need-grid">
@@ -258,12 +253,9 @@ function NeedAnything({ picked, onToggle, otherText, onOtherText, left, busy, on
               onClick={() => onToggle(o.key)}
             >
               <span className="cx-need-ic">{o.icon}</span>
-              <span className="cx-need-tx">
-                <b>{o.label}</b>
-                <small>{o.hint}</small>
-              </span>
+              <b>{o.label}</b>
               <span className="cx-need-tick" aria-hidden="true">
-                <Icon n="check" size={12} />
+                <Icon n="check" size={11} />
               </span>
             </button>
           );
@@ -282,7 +274,7 @@ function NeedAnything({ picked, onToggle, otherText, onOtherText, left, busy, on
       )}
 
       <button type="button" className="cx-callstaff" onClick={onCall} disabled={busy || waiting}>
-        <Icon n="bell" size={20} />
+        <Icon n="bell" size={18} />
         <span>
           {waiting
             ? `Call again in ${left}s`
@@ -1010,31 +1002,28 @@ const RAW_CSS = `
 @keyframes cx-pulse{50%{box-shadow:0 0 0 7px rgba(20,83,45,0)}}
 @media (prefers-reduced-motion:reduce){.cx-steps li.now i{animation:none}}
 
-/* need anything */
-.cx-need{margin-bottom:18px;padding:16px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 6px 18px rgba(20,83,45,.08)}
-.cx-need-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-.cx-need-bell{flex:0 0 40px;width:40px;height:40px;display:grid;place-items:center;color:var(--cx-g);background:var(--cx-gl)}
-.cx-need-head h3{font-size:18px;font-weight:800;line-height:1.2}
-.cx-need-head p{margin-top:1px;font-size:12.5px;color:var(--cx-mu)}
-.cx-need-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.cx-need-btn{--t:#2b6cb0;--tb:#e8f1fb;position:relative;display:flex;align-items:center;gap:10px;padding:12px 10px;min-height:64px;background:var(--cx-card);border:1.5px solid var(--cx-bd)!important;transition:background .15s,border-color .15s,transform .1s}
+/* need anything (compact, premium) */
+.cx-need{margin-bottom:16px;padding:14px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 8px 24px rgba(20,83,45,.07)}
+.cx-need-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:10px}
+.cx-need-head h3{font-size:16.5px;font-weight:800;line-height:1.2;letter-spacing:.1px}
+.cx-need-head span{font-size:11.5px;font-weight:600;color:var(--cx-mu)}
+.cx-need-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.cx-need-btn{--t:#2b6cb0;position:relative;display:flex;align-items:center;gap:10px;height:46px;padding:0 12px;background:#fbfcfb;border:1px solid var(--cx-bd)!important;transition:background .15s,border-color .15s,box-shadow .15s,transform .1s}
 .cx-need-btn:active{transform:scale(.97)}
-.cx-need-btn.tone-blue{--t:#2b6cb0;--tb:#e8f1fb}
-.cx-need-btn.tone-amber{--t:#b7701a;--tb:#fdf1de}
-.cx-need-btn.tone-teal{--t:#0f766e;--tb:#e3f5f1}
-.cx-need-btn.tone-violet{--t:#7e3fb0;--tb:#f2e9f9}
-.cx-need-ic{flex:0 0 40px;width:40px;height:40px;display:grid;place-items:center;color:var(--t);background:var(--tb)}
-.cx-need-tx{min-width:0;display:block}
-.cx-need-tx b{display:block;font-size:14.5px;font-weight:800;line-height:1.2}
-.cx-need-tx small{display:block;margin-top:2px;font-size:11px;line-height:1.25;color:var(--cx-mu)}
-.cx-need-tick{position:absolute;top:6px;right:6px;width:18px;height:18px;display:grid;place-items:center;color:#fff;background:var(--cx-g);transform:scale(0);transition:transform .15s}
-.cx-need-btn.on{background:var(--cx-gl);border-color:var(--cx-g)!important}
-.cx-need-btn.on .cx-need-ic{color:#fff;background:var(--cx-g)}
-.cx-need-btn.on .cx-need-tick{transform:scale(1)}
-.cx-need-other{width:100%;height:46px;margin-top:10px;padding:0 14px;font:inherit;font-size:15px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);outline:0}
+.cx-need-btn.tone-blue{--t:#2b6cb0}
+.cx-need-btn.tone-amber{--t:#c47a12}
+.cx-need-btn.tone-teal{--t:#0f8a7e}
+.cx-need-btn.tone-violet{--t:#8a45c2}
+.cx-need-ic{flex:0 0 auto;display:grid;place-items:center;color:var(--t);background:none}
+.cx-need-ic svg{width:22px;height:22px}
+.cx-need-btn b{font-size:14px;font-weight:700;line-height:1;color:var(--cx-tx)}
+.cx-need-tick{position:absolute;top:50%;right:9px;width:16px;height:16px;display:grid;place-items:center;color:#fff;background:var(--cx-g);transform:translateY(-50%) scale(0);transition:transform .15s}
+.cx-need-btn.on{background:var(--cx-gl);border-color:var(--cx-g)!important;box-shadow:inset 3px 0 0 var(--cx-g)}
+.cx-need-btn.on .cx-need-tick{transform:translateY(-50%) scale(1)}
+.cx-need-other{width:100%;height:42px;margin-top:8px;padding:0 12px;font:inherit;font-size:14px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);outline:0}
 .cx-need-other:focus{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.1)}
-.cx-callstaff{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;padding:15px;font-size:16px;font-weight:800;letter-spacing:.2px;color:#fff!important;background:linear-gradient(135deg,#17643a,#1f8a4c);box-shadow:0 6px 16px rgba(20,83,45,.25)}
-.cx-callstaff:active:not(:disabled){opacity:.88;transform:translateY(1px)}
+.cx-callstaff{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;height:46px;margin-top:10px;padding:0 14px;font-size:15px;font-weight:800;letter-spacing:.3px;color:#fff!important;background:linear-gradient(135deg,#145a33,#1f8a4c);box-shadow:0 6px 16px rgba(20,83,45,.22),inset 0 1px 0 rgba(255,255,255,.18)}
+.cx-callstaff:active:not(:disabled){opacity:.9;transform:translateY(1px)}
 .cx-callstaff:disabled{opacity:.6;box-shadow:none}
 
 /* Square corners throughout the customer QR ordering page */
