@@ -281,6 +281,11 @@ export default function CustomerOrder({ token }) {
   const place = async () => {
     if (!count || busy) return;
 
+    if (!customerName.trim()) {
+      setNotice("Please enter your name to place the order.");
+      return;
+    }
+
     if (customerPhone && !/^[0-9]{10}$/.test(customerPhone)) {
       setNotice("Please enter a valid 10-digit mobile number.");
       return;
@@ -649,17 +654,19 @@ export default function CustomerOrder({ token }) {
             </div>
 
             <div className="cx-details">
-              <h3>Your details (optional)</h3>
+              <h3>Your details</h3>
               <input
                 type="text"
-                placeholder="Your name"
+                placeholder="Your name *"
+                required
+                aria-required="true"
                 maxLength={100}
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
               />
               <input
                 type="tel"
-                placeholder="10-digit mobile number"
+                placeholder="10-digit mobile number (optional)"
                 maxLength={10}
                 value={customerPhone}
                 onChange={(e) =>
