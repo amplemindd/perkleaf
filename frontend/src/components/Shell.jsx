@@ -102,9 +102,9 @@ export default function Shell({ admin, children }) {
     5000,
   );
   const cats = useFetch(admin ? (can("pos") ? "/categories" : "") : "/categories", { pos: 1 }, [bump], 60000);
-  const online = useFetch("/online/summary", null, [bump], 6000);
-  const kots = useFetch("/kots/latest", null, [bump], 6000);
-  const qrEvents = useFetch(can("pos") ? "/qr/events" : "", null, [], 2000);
+  const online = useFetch("/online/summary", null, [bump], 3000);
+  const kots = useFetch("/kots/latest", null, [bump], 3000);
+  const qrEvents = useFetch(can("pos") ? "/qr/events" : "", null, [], 1000);
   // ---- New (un-accepted) customer QR orders ----
   // Managers/admins (notifications permission) read the shared unread list from the server,
   // so accepting on one screen silences the ring on every screen.
@@ -118,6 +118,11 @@ export default function Shell({ admin, children }) {
   );
   const reloadNewOrders = useRef(() => {});
   reloadNewOrders.current = newOrdersSrv.reload;
+  // On a new QR order, refresh KOT + notifications right away instead of waiting for their timers.
+  const reloadKots = useRef(() => {});
+  reloadKots.current = kots.reload;
+  const reloadNotes = useRef(() => {});
+  reloadNotes.current = notes.reload;
   const [hiddenIds, setHiddenIds] = useState([]);
   const [soundLocked, setSoundLocked] = useState(false);
   const [localPending, setLocalPending] = useState(() => {
@@ -136,11 +141,23 @@ export default function Shell({ admin, children }) {
       // storage is optional
     }
   }, [localPending]);
-  const pendingOrders = (
-    canNotes
-      ? (newOrdersSrv.data?.notifications || []).filter((n) => String(n.title || "").startsWith("QR Order Received"))
-      : localPending
-  ).filter((n) => !hiddenIds.includes(n.id));
+  // Server list (shared) + orders just received on this screen. The local copy shows the order at once,
+  // without waiting for the server list to refresh.
+  const serverPending = canNotes
+    ? (newOrdersSrv.data?.notifications || []).filter((n) => String(n.title || "").startsWith("QR Order Received"))
+    : [];
+  const pendingOrders = [...serverPending, ...localPending.filter((n) => !serverPending.some((x) => x.id === n.id))]
+    .filter((n) => !hiddenIds.includes(n.id))
+    .sort((a, b) => b.id - a.id);
+  // Managers/admins: once the server list is fresh, drop local copies that someone already accepted elsewhere.
+  useEffect(() => {
+    if (!canNotes || !newOrdersSrv.data) return;
+    const ids = new Set((newOrdersSrv.data.notifications || []).map((n) => n.id));
+    setLocalPending((l) => {
+      const keep = l.filter((n) => ids.has(n.id) || Date.now() - (n.seenAt || 0) < 8000);
+      return keep.length === l.length ? l : keep;
+    });
+  }, [newOrdersSrv.data, canNotes]);
   const hasPending = pendingOrders.length > 0;
   const hasPendingRef = useRef(false);
   hasPendingRef.current = hasPending;
@@ -410,10 +427,12 @@ export default function Shell({ admin, children }) {
             setLocalPending((l) =>
               l.some((x) => x.id === event.id)
                 ? l
-                : [...l, { id: event.id, title: event.title, message: event.message, link_id: event.link_id, created_at: event.created_at }],
+                : [...l, { id: event.id, title: event.title, message: event.message, link_id: event.link_id, created_at: event.created_at, seenAt: Date.now() }],
             );
             reloadNewOrders.current();
+            reloadKots.current();
           }
+          reloadNotes.current();
 
           pushPop(
             {
