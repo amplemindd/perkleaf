@@ -7,6 +7,7 @@ import { Field, ImagePick, Panel, Toggle } from "../lib/ui";
 import { FONTS, fontStack } from "../i18n/fonts";
 import { setLanguage } from "../i18n";
 import { COLOR_CHOICES, applyAppearance, effective, localSet } from "../lib/borders";
+import { getPrintCfg, setPrintCfg, printTest } from "../lib/printReceipt";
 
 const TZ = ["Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Europe/London", "America/New_York", "UTC"];
 const opt = (a) => a.map((x) => (Array.isArray(x) ? x : [x, x]));
@@ -36,6 +37,8 @@ export default function Settings() {
   const [logo, setLogo] = useState("");
   const [qr, setQr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pc, setPc] = useState(getPrintCfg());
+  const setPrint = (k, v) => setPc((x) => { const n = { ...x, [k]: v }; setPrintCfg(n); return n; });
   const rates = useFetch(can("taxes") ? "/taxes" : "");
   const backups = useFetch(can("backup") ? "/backups" : "");
   const set = (k, v) => setS((x) => ({ ...x, [k]: v }));
@@ -89,6 +92,17 @@ export default function Settings() {
             {k === "info" && <div className="logo-row"><div><b>Logo (optional)</b><ImagePick value={logo && logo !== "remove" ? logo : logo === "remove" ? "" : img(s.logo_url)} onChange={(v) => setLogo(v || "remove")} label="Upload logo" /></div></div>}
             {k === "tax" && <Field label="Default GST Rate"><select value={s.default_tax_rate_id} onChange={(e) => set("default_tax_rate_id", Number(e.target.value))}><option value={0}>None (0%)</option>{(rates.data?.rates || []).filter((r) => r.is_active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>}
             <div className="form-grid">{SEC[k][2].map(field)}</div>
+            {k === "receipt" && (
+              <div className="form-grid" style={{ marginTop: 10 }}>
+                <Field label="Printer Paper Width (mm) - type your printer's paper size, e.g. 58, 72, 76, 80 (leave empty to use Bill Paper Size above)">
+                  <input type="number" min={30} max={120} step="0.5" placeholder="e.g. 76" value={pc.width} onChange={(e) => setPrint("width", e.target.value)} />
+                </Field>
+                <Field label="Safe margin on each side (mm) - increase if left/right is still cut">
+                  <input type="number" min={0} max={15} step="0.5" value={pc.margin} onChange={(e) => setPrint("margin", e.target.value)} />
+                </Field>
+                <div><button type="button" className="btn" onClick={printTest}><Icon n="print" size={15} /> Test Print</button> <small className="muted">Saved on this computer automatically.</small></div>
+              </div>
+            )}
             {k === "theme" && [["border_color", "Border Colour"], ["icon_color", "Icon Colour"]].map(([key, label]) => (
               <div className="border-swatches" key={key}>
                 <small className="muted">{label}</small>
