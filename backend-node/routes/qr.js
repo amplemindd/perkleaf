@@ -26,24 +26,10 @@ api.get("/api/public/qr/:token", null, async (ctx) => {
     tagline: S.tagline || "",
     show_tagline: S.show_tagline !== false,
     logo_url: S.logo_url || "",
+    phone: S.phone || "",
+    address: S.address || "",
     categories,
     products: products.map((p) => ({ ...p, price: Number(p.price) })),
-  };
-});
-
-// Live status of the table's open order (customer page polls this)
-api.get("/api/public/qr/:token/status", null, async (ctx) => {
-  const table = await one(
-    "SELECT id FROM bb_tables WHERE qr_token = ? AND is_active = 1",
-    [str(ctx.params.token, 36)],
-  );
-  if (!table) throw fail(404, "This table QR code is invalid or inactive.");
-  const o = await one(
-    `SELECT id, bill_no, status, total FROM bb_orders WHERE table_id = ? AND ${OPEN_SQL} ORDER BY id DESC LIMIT 1`,
-    [table.id],
-  );
-  return {
-    order: o ? { id: o.id, bill_no: o.bill_no, status: o.status, total: Number(o.total) } : null,
   };
 });
 
@@ -146,6 +132,75 @@ api.post("/api/public/qr/:token/order", null, async (ctx) => {
   };
 });
 
+// Live status of one order, for the customer's tracking screen (only orders of this table).
+api.get("/api/public/qr/:token/order/:id", null, async (ctx) => {
+  const table = await one(
+    "SELECT id, name FROM bb_tables WHERE qr_token = ? AND is_active = 1",
+    [str(ctx.params.token, 36)],
+  );
+  if (!table) throw fail(404, "This table QR code is invalid or inactive.");
+  const o = await one(
+    `SELECT id, bill_no, status, payment_status, subtotal, tax_amount, discount_amount, round_off, total,
+            created_at, completed_at, cancel_reason
+     FROM bb_orders WHERE id = ? AND table_id = ?`,
+    [Number(ctx.params.id) || 0, table.id],
+  );
+  if (!o) throw fail(404, "Order not found.");
+  const items = await q(
+    "SELECT product_id, product_name, qty, unit_price, line_total FROM bb_order_items WHERE order_id = ? ORDER BY id",
+    [o.id],
+  );
+  return {
+    order: {
+      id: o.id,
+      bill_no: o.bill_no,
+      status: o.status,
+      payment_status: o.payment_status,
+      subtotal: Number(o.subtotal),
+      tax: Number(o.tax_amount),
+      discount: Number(o.discount_amount),
+      total: Number(o.total),
+      created_at: o.created_at,
+      completed_at: o.completed_at,
+      cancel_reason: o.status === "cancelled" ? o.cancel_reason || "" : "",
+      table: table.name,
+      items: items.map((i) => ({
+        product_id: i.product_id,
+        product_name: i.product_name,
+        qty: i.qty,
+        unit_price: Number(i.unit_price),
+        line_total: Number(i.line_total),
+      })),
+    },
+  };
+});
+
+// Customer feedback / rating. Saved as a normal notification for the staff (no ring).
+api.post("/api/public/qr/:token/feedback", null, async (ctx) => {
+  const table = await one(
+    "SELECT id, name FROM bb_tables WHERE qr_token = ? AND is_active = 1",
+    [str(ctx.params.token, 36)],
+  );
+  if (!table) throw fail(404, "This table QR code is invalid or inactive.");
+  const rating = Math.floor(Number(ctx.body.rating));
+  if (!(rating >= 1 && rating <= 5)) throw fail(400, "Please choose a rating from 1 to 5 stars.");
+  const comment = str(ctx.body.comment, 300).replace(/\s+/g, " ");
+  const orderId = Number(ctx.body.order_id) || null;
+  await notify({
+    type: "table",
+    title: `Customer Feedback · Table ${table.name} · ${"★".repeat(rating)}${"☆".repeat(5 - rating)}`,
+    force: true,
+    message: comment || `Customer rated ${rating}/5.`,
+    priority: rating <= 2 ? "high" : "normal",
+    link_type: "table",
+    link_id: table.id,
+    dedupe: `qr-feedback-${table.id}-${orderId || 0}-${Date.now()}`,
+  });
+  return { message: "Thank you for your feedback!" };
+});
+
+const NEED_LABELS = { water: "Water", cutlery: "Cutlery", tissues: "Tissues", other: "Other" };
+
 api.post("/api/public/qr/:token/call", null, async (ctx) => {
   const table = await one(
     "SELECT id, name FROM bb_tables WHERE qr_token = ? AND is_active = 1",
@@ -167,24 +222,41 @@ api.post("/api/public/qr/:token/call", null, async (ctx) => {
     throw fail(429, `Please wait ${wait}s before calling again.`);
   }
 
-  // What does the customer need? (Water / Cutlery / Tissues / Other) - whitelisted
-  const LABELS = { water: "Water", cutlery: "Cutlery", tissues: "Tissues", other: "Other" };
-  const wanted = [...new Set(Array.isArray(ctx.body.requests) ? ctx.body.requests : [])]
-    .filter((k) => LABELS[k])
-    .map((k) => LABELS[k]);
-  const otherText = str(ctx.body.other_text, 80).replace(/\s+/g, " ");
-  const needs = wanted.map((w) => (w === "Other" && otherText ? `Other: ${otherText}` : w)).join(", ");
+  // What does the customer need? (all optional; plain bell press keeps the old behaviour)
+  const kind = ["bill", "request"].includes(ctx.body.kind) ? ctx.body.kind : "call";
+  const needs = (Array.isArray(ctx.body.needs) ? ctx.body.needs : [])
+    .map((n) => NEED_LABELS[String(n)])
+    .filter(Boolean)
+    .filter((n, i, a) => a.indexOf(n) === i);
+  const callNote = str(ctx.body.note, 200).replace(/\s+/g, " ");
+  let suffix = "";
+  let message = "Customer is requesting cashier assistance.";
+  if (kind === "bill") {
+    suffix = " · Bill";
+    message = "Customer is asking for the bill.";
+  } else if (kind === "request") {
+    suffix = " · Request";
+    message = `Special request: ${callNote || "see staff"}`;
+  } else if (needs.length || callNote) {
+    suffix = needs.length ? ` · ${needs.join(", ")}` : "";
+    message = `Customer needs: ${needs.join(", ") || "assistance"}${callNote ? ` · Note: ${callNote}` : ""}`;
+  }
 
   await notify({
     type: "table",
-    title: `Customer Call · Table ${table.name}`, force: true,
-    message: needs ? `Customer needs: ${needs}` : "Customer is requesting cashier assistance.",
+    title: `Customer Call · Table ${table.name}${suffix}`, force: true,
+    message,
     priority: "urgent",
     link_type: "table",
     link_id: table.id,
     dedupe: `qr-call-${table.id}-${Date.now()}`,
   });
-  return { message: "Cashier has been notified." };
+  return {
+    message:
+      kind === "bill"
+        ? "Bill requested. Our staff will bring it shortly."
+        : "Staff has been notified. They will be with you shortly.",
+  };
 });
 
 api.get("/api/qr/events", "pos", async (ctx) => {
