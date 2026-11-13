@@ -789,6 +789,8 @@ export default function CustomerOrder({ token }) {
   }
 
   const callBlocked = bellBusy || left > 0;
+  // "Request Bill" only makes sense after an order is placed (and not cancelled)
+  const canBill = !!track && track.status !== "cancelled";
   const showTracker =
     !!track && !(["served", "cancelled"].includes(track.status) && dismissed === `${track.id}:${track.status}`);
 
@@ -914,24 +916,26 @@ export default function CustomerOrder({ token }) {
               onCall={() => callCashier(picked, otherText)}
             />
 
-            <div className="cx-quick">
-              <button className="tone-bill" onClick={requestBill} disabled={callBlocked}>
-                <span className="cx-q-ic">
-                  <Icon n="receipt" size={21} />
-                </span>
-                <b>Request Bill</b>
-                <small>Ask for your bill</small>
-              </button>
+            <div className="cx-quick" style={{ gridTemplateColumns: `repeat(${canBill ? 3 : 2}, minmax(0, 1fr))` }}>
+              {canBill && (
+                <button className="tone-bill" onClick={requestBill} disabled={callBlocked}>
+                  <span className="cx-q-ic">
+                    <Icon n="receipt" size={24} />
+                  </span>
+                  <b>Request Bill</b>
+                  <small>Ask for your bill</small>
+                </button>
+              )}
               <button className="tone-rate" onClick={openFeedback}>
                 <span className="cx-q-ic">
-                  <Star size={21} filled />
+                  <Star size={24} filled />
                 </span>
                 <b>Rate Us</b>
                 <small>Share feedback</small>
               </button>
               <button className="tone-more" onClick={() => setShowMore(true)}>
                 <span className="cx-q-ic">
-                  <Icon n="dots" size={21} />
+                  <Icon n="dots" size={24} />
                 </span>
                 <b>More</b>
                 <small>Requests and info</small>
@@ -1189,13 +1193,15 @@ export default function CustomerOrder({ token }) {
               <p className="cx-note">No active order right now.</p>
             )}
 
-            <div className="cx-two">
+            <div className="cx-two" style={{ gridTemplateColumns: canBill ? "1fr 1fr" : "1fr" }}>
               <button onClick={() => callCashier()} disabled={callBlocked}>
                 <Icon n="bell" size={18} /> {left > 0 ? `Wait ${left}s` : "Call Waiter"}
               </button>
-              <button onClick={requestBill} disabled={callBlocked}>
-                <Icon n="receipt" size={18} /> Request Bill
-              </button>
+              {canBill && (
+                <button onClick={requestBill} disabled={callBlocked}>
+                  <Icon n="receipt" size={18} /> Request Bill
+                </button>
+              )}
             </div>
 
             <button className="cx-linkbtn" onClick={closeTrack}>
@@ -1633,7 +1639,7 @@ const RAW_CSS = `
 .cx-track-x{position:absolute;top:8px;right:8px;width:30px;height:30px;display:grid;place-items:center;color:var(--cx-mu)}
 .cx-track-cancel{display:flex;align-items:center;gap:12px;padding-right:26px;color:#b42318}
 .cx-track-cancel small{display:block;font-size:12.5px;color:#7a271a}
-.cx-track-ic{flex:0 0 38px;width:38px;height:38px;display:grid;place-items:center;color:#d92d20;background:#fde4e1}
+.cx-track-ic{flex:0 0 auto;display:inline-flex;color:#d92d20}
 
 /* ---- need anything (compact, premium) ---- */
 .cx-need{margin-bottom:14px;padding:14px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 8px 24px rgba(20,83,45,.07)}
@@ -1663,13 +1669,13 @@ const RAW_CSS = `
 
 /* ---- quick actions ---- */
 .cx-quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 20px}
-.cx-quick button{--t:#14532d;--tb:#eaf4ec;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:12px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 4px 14px rgba(20,83,45,.06);transition:transform .1s,box-shadow .15s}
+.cx-quick button{--t:#14532d;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:12px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 4px 14px rgba(20,83,45,.06);transition:transform .1s,box-shadow .15s}
 .cx-quick button:active:not(:disabled){transform:scale(.97)}
 .cx-quick button:disabled{opacity:.55}
-.cx-quick .tone-bill{--t:#b86a00;--tb:#fdf0d9}
-.cx-quick .tone-rate{--t:#c99700;--tb:#fff4c7}
-.cx-quick .tone-more{--t:#14532d;--tb:#e6f2ea}
-.cx-q-ic{width:38px;height:38px;display:grid;place-items:center;margin-bottom:2px;color:var(--t);background:var(--tb)}
+.cx-quick .tone-bill{--t:#b86a00}
+.cx-quick .tone-rate{--t:#c99700}
+.cx-quick .tone-more{--t:#14532d}
+.cx-q-ic{display:inline-flex;margin-bottom:4px;color:var(--t)}
 .cx-quick button b{font-size:13.5px;font-weight:800;line-height:1.2}
 .cx-quick button small{font-size:11px;line-height:1.25;color:var(--cx-mu)}
 
@@ -1677,7 +1683,8 @@ const RAW_CSS = `
 .cx-okbox{display:flex;flex-direction:column;align-items:center;gap:8px;margin:2px 0 14px;text-align:center;color:var(--cx-mu);font-size:14px}
 .cx-okbox b{color:var(--cx-tx);font-size:17px}
 .cx-okbox .cx-place{margin-top:6px}
-.cx-okmark{width:62px;height:62px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#2f8f55,#14532d);box-shadow:0 8px 20px rgba(20,83,45,.3);animation:cx-pop .45s ease-out}
+.cx-okmark{display:inline-flex;color:#2f8f55;animation:cx-pop .45s ease-out}
+.cx-okmark svg{width:64px;height:64px;stroke-width:2.2}
 @keyframes cx-pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 .cx-sheet .cx-track{box-shadow:none;border-color:var(--cx-bd)}
 .cx-sum{margin-top:12px;padding:10px 14px;border:1px solid var(--cx-bd);background:var(--cx-bg)}
@@ -1692,11 +1699,11 @@ const RAW_CSS = `
 .cx-more > button{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid var(--cx-bd);color:var(--cx-mu)}
 .cx-more > button:last-child{border-bottom:0}
 .cx-more > button:active{background:var(--cx-bg)}
-.cx-more-ic{--t:#14532d;--tb:#e6f2ea;width:44px;height:44px;display:grid;place-items:center;flex:none;color:var(--t);background:var(--tb)}
-.cx-more .tone-note .cx-more-ic{--t:#2b6cb0;--tb:#e4eefb}
-.cx-more .tone-again .cx-more-ic{--t:#0f8a7e;--tb:#dff4f1}
-.cx-more .tone-rate .cx-more-ic{--t:#c99700;--tb:#fff4c7}
-.cx-more .tone-info .cx-more-ic{--t:#8a45c2;--tb:#f1e6fa}
+.cx-more-ic{--t:#14532d;width:28px;display:inline-flex;justify-content:center;flex:none;color:var(--t)}
+.cx-more .tone-note .cx-more-ic{--t:#2b6cb0}
+.cx-more .tone-again .cx-more-ic{--t:#0f8a7e}
+.cx-more .tone-rate .cx-more-ic{--t:#c99700}
+.cx-more .tone-info .cx-more-ic{--t:#8a45c2}
 .cx-more-tx{flex:1;min-width:0}
 .cx-more-tx b{display:block;color:var(--cx-tx);font-size:15px}
 .cx-more-tx small{display:block;font-size:12px;color:var(--cx-mu)}

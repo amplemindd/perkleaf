@@ -241,6 +241,17 @@ api.post("/api/public/qr/:token/call", null, async (ctx) => {
   const kind = ["bill", "request"].includes(ctx.body.kind) ? ctx.body.kind : "call";
   const extra = str(ctx.body.note, 200).replace(/\s+/g, " ");
 
+  if (kind === "bill") {
+    const hasOrder = await one(
+      `SELECT id FROM bb_orders
+       WHERE table_id = ? AND (${OPEN_SQL}
+         OR (status = 'completed' AND TIMESTAMPDIFF(MINUTE, completed_at, NOW()) < ${SERVED_VISIBLE_MIN}))
+       LIMIT 1`,
+      [table.id],
+    );
+    if (!hasOrder) throw fail(400, "Please place an order first to request the bill.");
+  }
+
   let suffix = "";
   let message = needs ? `Customer needs: ${needs}` : "Customer is requesting cashier assistance.";
   if (kind === "bill") {
