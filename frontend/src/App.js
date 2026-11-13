@@ -1,4 +1,3 @@
-
 import Icon from "./lib/icons";
 import React from "react";
 import { A, AuthProvider, UIProvider, useAuth, usePath } from "./lib/store";
@@ -15,6 +14,7 @@ import Tables from "./pages/Tables";
 import MenuItems from "./pages/MenuItems";
 import Categories from "./pages/Categories";
 import Customers from "./pages/Customers";
+import Feedback from "./pages/Feedback";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
 import Expenses from "./pages/Expenses";
@@ -45,6 +45,7 @@ const ADMIN = {
   "/admin/tables": [Tables, "tables"],
   "/admin/categories": [Categories, "menu"],
   "/admin/customers": [Customers, "customers"],
+  "/admin/feedback": [Feedback, "customers"],
   "/admin/expenses": [Expenses, "expenses"],
   "/admin/taxes": [Taxes, "taxes"],
   "/admin/users": [Users, "staff"],

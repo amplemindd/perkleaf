@@ -32,6 +32,7 @@ const ADMIN = [
   ["tables", "Tables", "table", "/admin/tables", "tables"],
   ["categories", "Categories & Items", "folder", "/admin/categories", "menu"],
   ["customers", "Customers", "users", "/admin/customers", "customers"],
+  ["feedback", "Feedback", "sparkle", "/admin/feedback", "customers"],
   ["expenses", "Expenses", "rupee", "/admin/expenses", "expenses"],
   ["taxes", "Taxes / GST", "percent", "/admin/taxes", "taxes"],
   ["users", "Staff / Users", "user", "/admin/users", "staff"],
@@ -58,6 +59,7 @@ const NOTE_ICON = {
   staff: "users",
 };
 const NOTE_LINK = {
+  feedback: "/admin/feedback",
   order: "/admin/orders",
   table: "/admin/tables",
   product: "/admin/categories",
