@@ -2,11 +2,16 @@ import Icon from "../lib/icons";
 import React, { useEffect, useState } from "react";
 import { api, cap, fmtDT, fmtTime, money, preset, saveCSV, TYPES, TYPE_ICON, img } from "../lib/api";
 import { navigate, takeHandoff, useAuth, useDebounced, useFetch, useShell, useUI } from "../lib/store";
-import { Badge, Empty, ErrorBox, Loading, Menu, Pager, RangePicker, SafeImg, Tabs } from "../lib/ui";
+import { Badge, Empty, ErrorBox, Loading, Pager, RangePicker, SafeImg, Tabs } from "../lib/ui";
 import { ReceiptModal } from "../components/Receipt";
 
 const FLOW = { pending: ["preparing", "ready", "completed"], preparing: ["ready", "completed"], ready: ["completed"], completed: [], cancelled: [] };
 const STATUSES = ["pending", "preparing", "ready", "completed", "cancelled"];
+
+// small "eye" icon for View Details (same look as the other line icons)
+const EyeIcon = ({ size = 16 }) => (
+  <svg className="ic" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+);
 
 export function OrderDetail({ id, onClose, onChanged }) {
   const { can } = useAuth();
@@ -56,7 +61,7 @@ export function OrderDetail({ id, onClose, onChanged }) {
 
 export default function Orders() {
   const { can } = useAuth();
-  const { toast } = useUI();
+  const { toast, ask } = useUI();
   const { search, admin, reload } = useShell();
   const [f, setF] = useState({ type: "all", status: "all", payment_status: "all", method: "all", ...preset("today") });
   const [page, setPage] = useState(1);
@@ -76,7 +81,11 @@ export default function Orders() {
         { label: "Items", key: "items" }, { label: "Total", key: "total" }, { label: "Payment", key: "methods" }, { label: "Payment Status", key: "payment_status" }, { label: "Status", key: "status" }]);
     } catch (e) { toast(e.message, "err"); }
   };
-  const act = async (o, fn, ok) => { try { await fn(); toast(ok); list.reload(); reload(); } catch (e) { toast(e.message, "err"); } };
+  const cancelOrder = async (o) => {
+    const reason = await ask(`Cancel order ${o.bill_no}?${o.payment_status === "paid" ? " The payment will be marked as refunded." : ""} Enter a reason:`, { input: true, danger: true, okText: "Cancel order", placeholder: "Reason for cancellation", title: "Cancel order" });
+    if (!reason) return;
+    try { await api(`/orders/${o.id}/cancel`, { method: "POST", body: { reason } }); toast("Order cancelled."); list.reload(); reload(); } catch (e) { toast(e.message, "err"); }
+  };
   return (
     <div className={`page split ${sel ? "has-panel" : ""}`}>
       <div className="split-main">
@@ -99,9 +108,13 @@ export default function Orders() {
                   <td>{(page - 1) * 10 + i + 1}</td><td><b>{o.bill_no}</b></td><td>{fmtTime(o.created_at)}</td><td>{o.table_name || "-"}</td><td><Icon n={TYPE_ICON[o.order_type]} size={15} /> {TYPES[o.order_type]}</td>
                   <td>{o.customer_name}</td><td>{o.items}</td><td><b>{money(o.total)}</b></td>
                   <td><Badge v={o.payment_status} /> <small className="muted">{o.methods ? o.methods.split(",").map(cap).join(" + ") : ""}</small></td><td><Badge v={o.status} /></td>
-                  <td onClick={(e) => e.stopPropagation()}><Menu items={[["View Details", () => setSel(o.id)], ["Print Bill", () => setPrint(o.id)],
-                    ...(FLOW[o.status] || []).filter((s) => o.payment_status === "paid" || s !== "completed").map((s) => [`Mark ${cap(s)}`, () => act(o, () => api(`/orders/${o.id}/status`, { method: "PATCH", body: { status: s } }), `Marked ${s}.`)]),
-                    o.status !== "cancelled" && can("orders.cancel") ? ["Cancel Order", () => setSel(o.id), true] : null]} /></td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button className="btn sm ico" title="View Details" aria-label="View Details" onClick={() => setSel(o.id)}><EyeIcon /></button>
+                      <button className="btn sm ico" title="Print Bill" aria-label="Print Bill" onClick={() => setPrint(o.id)}><Icon n="print" size={16} /></button>
+                      {o.status !== "cancelled" && can("orders.cancel") && <button className="btn sm ico dng" title="Cancel Order" aria-label="Cancel Order" onClick={() => cancelOrder(o)}><Icon n="ban" size={16} /></button>}
+                    </div>
+                  </td>
                 </tr>))}</tbody></table>
           )}
         </div>{data && <Pager page={page} total={data.total} limit={10} onPage={setPage} label="orders" />}</section>
@@ -111,4 +124,3 @@ export default function Orders() {
     </div>
   );
 }
-
