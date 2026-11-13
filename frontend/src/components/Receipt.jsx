@@ -79,7 +79,7 @@ export default function Receipt({ order: o, settings: S }) {
   );
 }
 
-export function ReceiptModal({ order, orderId, onClose, auto }) {
+export function ReceiptModal({ order, orderId, onClose, auto, onSettle }) {
   const { settings } = useAuth();
   const [d, setD] = useState(order ? { order, S: settings } : null);
   const [err, setErr] = useState("");
@@ -90,7 +90,7 @@ export function ReceiptModal({ order, orderId, onClose, auto }) {
   useEffect(() => { document.body.classList.add("print-receipt"); return () => document.body.classList.remove("print-receipt"); }, []);
   useEffect(() => { if (auto && d) { const t = setTimeout(() => printReceipt(), 400); return () => clearTimeout(t); } }, [auto, d]);
   return (
-    <Modal title="Bill / Receipt" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Close</button><button className="btn pri" onClick={() => printReceipt()}><Icon n="print" /> Print Bill</button></>}>
+    <Modal title="Bill / Receipt" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Close</button><button className={`btn ${onSettle ? "" : "pri"}`} onClick={() => printReceipt()}><Icon n="print" /> Print Bill</button>{onSettle && <button className="btn pri" onClick={onSettle}>Settle</button>}</>}>
       {err ? <div className="errbox"><Icon n="alert" /> {err}</div> : d ? <Receipt order={d.order} settings={d.S} /> : <Loading />}
     </Modal>
   );

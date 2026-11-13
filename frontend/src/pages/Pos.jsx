@@ -39,6 +39,7 @@ export default function Pos() {
   const [source, setSource] = useState("direct");
   const [ref, setRef] = useState("");
   const [sheet, setSheet] = useState(false);
+  const [settle, setSettle] = useState(null); // { order, step: "pick" | "upi" | "split", ref, rows }
   const idem = useRef(uid());
 
   const categories = cats.data?.categories || [];
@@ -175,6 +176,23 @@ export default function Pos() {
     checkout([{ method, amount: calc.total }]);
   }
 
+  // Settle an already saved / printed order: choose Cash, UPI, Card or Part
+  async function openSettle() {
+    const o = await persist(); if (!o) return;
+    setSettle({ order: o, step: "pick", ref: "", rows: {} });
+  }
+  async function doSettle(payments) {
+    const o = settle.order;
+    setBusy(true);
+    try {
+      await api(`/orders/${o.id}/payments`, { method: "POST", body: { payments } });
+      toast(`${o.bill_no} settled.`);
+      setSettle(null); setReceipt(null);
+      if (orderId === o.id) reset();
+      refreshAll(); prods.reload();
+    } catch (e) { toast(e.message, "err"); } finally { setBusy(false); }
+  }
+
   const title = type === "dine_in" ? (table ? `Table ${table.name}` : "No table selected") : `${TYPES[type]} order`;
   const count = cart.reduce((s, c) => s + c.qty, 0);
   const custVisible = type !== "dine_in" || showCust;
@@ -251,6 +269,7 @@ export default function Pos() {
             <button className="btn" disabled={busy || !cart.length} onClick={() => doKot(false)}><Icon n="file" size={15} /> KOT</button>
             <button className="btn" disabled={busy || !cart.length} onClick={() => doKot(true)}><Icon n="print" size={15} /> KOT &amp; Print</button>
           </div>
+          {orderId && <button className="btn pri" style={{ width: "100%", marginTop: 8 }} disabled={busy || !cart.length} onClick={openSettle}>Settle (Cash / UPI / Card / Part)</button>}
           <div className="pm-l">PAYMENT METHOD</div>
           <div className="seg pay">
             {methods.map((m) => <button key={m} className={method === m ? "on" : ""} onClick={() => setMethod(m)}>{m === "upi" ? "UPI" : cap(m)}</button>)}
@@ -290,7 +309,41 @@ export default function Pos() {
           </Modal>
         );
       })()}
-      {receipt && <ReceiptModal order={receipt} auto={rAuto} onClose={() => setReceipt(null)} />}
+      {receipt && <ReceiptModal order={receipt} auto={rAuto} onClose={() => setReceipt(null)} onSettle={receipt.payment_status !== "paid" && receipt.is_open !== false ? () => setSettle({ order: receipt, step: "pick", ref: "", rows: {} }) : undefined} />}
+      {settle && (() => {
+        const o = settle.order, total = Number(o.total || 0), close = () => setSettle(null), back = () => setSettle({ ...settle, step: "pick" });
+        if (settle.step === "upi") return (
+          <Modal title="UPI Payment" onClose={close} footer={<><button className="btn" onClick={back}>Back</button><button className="btn pri" disabled={busy} onClick={() => doSettle([{ method: "upi", amount: total, reference: settle.ref }])}>{busy ? "Processing…" : "Payment Received"}</button></>}>
+            <div className="big-amt">{money(total)}</div>
+            {S.pm_qr && S.qr_image_url ? <img className="qr" src={img(S.qr_image_url)} alt="UPI QR code" /> : S.upi_id ? <p className="center">Pay to UPI ID: <b>{S.upi_id}</b></p> : <p className="muted center">Ask the customer to pay by UPI.</p>}
+            <label className="fld"><span>Transaction reference (optional)</span><input value={settle.ref} maxLength={100} onChange={(e) => setSettle({ ...settle, ref: e.target.value })} /></label>
+            <p className="muted">Confirm only after the payment has been received.</p>
+          </Modal>
+        );
+        if (settle.step === "split") {
+          const rows = settle.rows, sum = Object.values(rows).reduce((a, v) => a + (+v || 0), 0), left = Math.round((total - sum) * 100) / 100;
+          return (
+            <Modal title="Part Payment" onClose={close} footer={<><button className="btn" onClick={back}>Back</button>
+              <button className="btn pri" disabled={busy || Math.abs(left) > 0.009} onClick={() => doSettle(Object.entries(rows).filter(([, v]) => +v > 0).map(([m, v]) => ({ method: m, amount: +v })))}>{busy ? "Processing…" : "Confirm & Settle"}</button></>}>
+              <div className="big-amt">{money(total)}</div>
+              {Object.keys(rows).map((m) => <div className="splitrow" key={m}><span>{cap(m)}</span><input type="number" min="0" placeholder="0.00" value={rows[m]} onChange={(e) => setSettle({ ...settle, rows: { ...rows, [m]: e.target.value } })} /><button className="btn sm" onClick={() => setSettle({ ...settle, rows: { ...rows, [m]: String(Math.max(Math.round((+rows[m] + left) * 100) / 100, 0)) } })}>Rest</button></div>)}
+              <p className={Math.abs(left) > 0.009 ? "errtxt" : "muted"}>{Math.abs(left) > 0.009 ? `Remaining: ${money(left)}` : "Amounts match the bill"}</p>
+            </Modal>
+          );
+        }
+        return (
+          <Modal title={`Settle ${o.bill_no}`} onClose={close} footer={<button className="btn" onClick={close}>Cancel</button>}>
+            <div className="big-amt">{money(total)}</div>
+            <p className="muted center">Choose how the customer paid</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
+              {S.pm_cash && <button className="btn pri" disabled={busy} onClick={() => doSettle([{ method: "cash", amount: total }])}>Cash</button>}
+              {S.pm_upi && <button className="btn pri" disabled={busy} onClick={() => setSettle({ ...settle, step: "upi" })}>UPI</button>}
+              {S.pm_card && <button className="btn pri" disabled={busy} onClick={() => doSettle([{ method: "card", amount: total }])}>Card</button>}
+              {S.pm_split && <button className="btn pri" disabled={busy} onClick={() => setSettle({ ...settle, step: "split", rows: Object.fromEntries(methods.map((m) => [m, ""])) })}>Part</button>}
+            </div>
+          </Modal>
+        );
+      })()}
       {kot && <KotModal order={kot.order} auto={kot.auto} onClose={() => setKot(null)} />}
     </div>
   );
