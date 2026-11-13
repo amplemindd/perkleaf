@@ -8,6 +8,7 @@ import { FONTS, fontStack } from "../i18n/fonts";
 import { setLanguage } from "../i18n";
 import { COLOR_CHOICES, applyAppearance, effective, localSet } from "../lib/borders";
 import { getPrintCfg, setPrintCfg, printTest } from "../lib/printReceipt";
+import EdPrintSettings from "../components/EdPrintSettings";
 
 const TZ = ["Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Europe/London", "America/New_York", "UTC"];
 const opt = (a) => a.map((x) => (Array.isArray(x) ? x : [x, x]));
@@ -92,6 +93,7 @@ export default function Settings() {
             {k === "info" && <div className="logo-row"><div><b>Logo (optional)</b><ImagePick value={logo && logo !== "remove" ? logo : logo === "remove" ? "" : img(s.logo_url)} onChange={(v) => setLogo(v || "remove")} label="Upload logo" /></div></div>}
             {k === "tax" && <Field label="Default GST Rate"><select value={s.default_tax_rate_id} onChange={(e) => set("default_tax_rate_id", Number(e.target.value))}><option value={0}>None (0%)</option>{(rates.data?.rates || []).filter((r) => r.is_active).map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></Field>}
             <div className="form-grid">{SEC[k][2].map(field)}</div>
+            {k === "receipt" && <EdPrintSettings />}
             {k === "receipt" && (
               <div className="form-grid" style={{ marginTop: 10 }}>
                 <Field label="Printer Paper Width (mm) - type your printer's paper size, e.g. 58, 72, 76, 80 (leave empty to use Bill Paper Size above)">

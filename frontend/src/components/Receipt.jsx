@@ -4,7 +4,16 @@ import { api, fmtDate, fmtTime, TYPES, img, cap } from "../lib/api";
 import { useAuth } from "../lib/store";
 import { Modal, Loading } from "../lib/ui";
 import { printReceipt } from "../lib/printReceipt";
+import { edEnabled, edPrintKot } from "../lib/edprint";
 import "../styles/receipt.css";
+
+// KOT printing: straight to the thermal printer via EDPrintTool when it is switched on (Settings > Receipt),
+// otherwise (or if EDPrintTool cannot be reached) through the normal browser print.
+function printKotSmart(o, restaurant, el) {
+  if (edEnabled()) {
+    edPrintKot(o, restaurant).catch((e) => { console.warn("EDPrintTool failed, using browser print:", e.message); printReceipt(el || undefined); });
+  } else printReceipt(el || undefined);
+}
 
 const n2 = (v) => Number(v || 0).toFixed(2);
 const rs = (v) => "\u20B9" + n2(v);
@@ -99,13 +108,13 @@ export function ReceiptModal({ order, orderId, onClose, auto, onSettle }) {
 export function KotModal({ order: o, auto, autoClose, onClose }) {
   const { settings } = useAuth();
   useEffect(() => { document.body.classList.add("print-receipt"); return () => document.body.classList.remove("print-receipt"); }, []);
-  useEffect(() => { if (auto) { const t = setTimeout(() => printReceipt(), 400); return () => clearTimeout(t); } }, [auto]);
+  useEffect(() => { if (auto) { const t = setTimeout(() => printKotSmart(o, settings.restaurant_name), 400); return () => clearTimeout(t); } }, [auto]);
   // auto-printed (QR) tickets close themselves once the print has been sent
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (auto && autoClose) { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); } }, [auto, autoClose]);
   const where = `${TYPES[o.order_type] || ""}${o.table_name ? `: ${o.table_name}` : ""}`;
   return (
-    <Modal title="Kitchen Order Ticket (KOT)" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Close</button><button className="btn pri" onClick={() => printReceipt()}>Print KOT</button></>}>
+    <Modal title="Kitchen Order Ticket (KOT)" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Close</button><button className="btn pri" onClick={() => printKotSmart(o, settings.restaurant_name)}>Print KOT</button></>}>
       <div className={`receipt r-bill r-kot ${settings.paper_size === "58mm" ? "p58" : ""}`} id="receipt">
         <div className="r-c"><h4 className="r-shop">KITCHEN ORDER</h4><p className="r-addr">{settings.restaurant_name}</p></div>
         <hr className="r-line" />
@@ -131,7 +140,7 @@ export function KotAutoPrint({ order: o, onDone }) {
   const { settings } = useAuth();
   const ref = React.useRef(null);
   useEffect(() => {
-    const t1 = setTimeout(() => { if (ref.current) printReceipt(ref.current); }, 300);
+    const t1 = setTimeout(() => { printKotSmart(o, settings.restaurant_name, ref.current); }, 300);
     const t2 = setTimeout(onDone, 3000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
