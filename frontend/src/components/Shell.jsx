@@ -11,6 +11,7 @@ import {
 import { api, img, money, ago, TYPES } from "../lib/api";
 import { SafeImg, useClickAway } from "../lib/ui";
 import { KotAutoPrint } from "./Receipt";
+import { edEnabled } from "../lib/edprint";
 import PlatIcon from "./PlatIcon";
 
 const PN = { swiggy: "Swiggy", zomato: "Zomato" };
@@ -373,7 +374,7 @@ export default function Shell({ admin, children }) {
     const list = kots.data?.kots;
     if (!list) return;
     const max = list.reduce((m, o) => Math.max(m, o.id), 0);
-    if (seen.current.kot !== null && settings.qr_auto_kot !== false) {
+    if (seen.current.kot !== null && settings.qr_auto_kot !== false && edEnabled()) {
       const qrNew = list.filter((k) => k.id > seen.current.kot && k.waiter_name === "QR Customer");
       if (qrNew.length)
         setKotQueue((prev) => [
