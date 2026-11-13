@@ -36,6 +36,31 @@ const PieIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor
 const T = ({ ic, children }) => (<>{ic === "pie" ? <PieIcon /> : <Icon n={ic} size={26} />}<span>{children}</span></>);
 const NICON = { order: "cart", payment: "card", inventory: "box", table: "table", customer: "user", expense: "alert", report: "calendar", system: "gear" };
 
+// Horizontal bar graph of the best selling items (by quantity sold)
+const TOPCOL = ["#14532D", "#15803D", "#22C55E", "#4ADE80", "#86EFAC", "#BBF7D0", "#D1FAE5"];
+function TopChart({ items = [] }) {
+  if (!items.length) return <p className="muted pad">No sales yet.</p>;
+  const max = Math.max(...items.map((i) => Number(i.qty) || 0), 1);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 11 }} role="img" aria-label="Top selling products chart">
+      {items.map((it, i) => {
+        const q = Number(it.qty) || 0, w = Math.max((q / max) * 100, 3);
+        return (
+          <div key={it.name}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12.5, marginBottom: 3 }}>
+              <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {it.name}</span>
+              <span className="muted" style={{ whiteSpace: "nowrap" }}><b>{num(q)}</b> sold · {money(it.sales)}</span>
+            </div>
+            <div style={{ height: 12, borderRadius: 6, background: "rgba(128,128,128,.18)", overflow: "hidden" }} title={`${it.name}: ${q} sold, ${money(it.sales)}`}>
+              <div style={{ width: `${w}%`, height: "100%", borderRadius: 6, background: TOPCOL[i % TOPCOL.length] }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [r, setR] = useState(preset("today"));
   const [bars, setBars] = useState("daily");
@@ -71,8 +96,7 @@ export default function Dashboard() {
           {!x.notifications.length && <p className="muted">No notifications.</p>}</Panel>
       </div>
       <div className="g3b">
-        <Panel title={<T ic="trend">Top Selling Products</T>} pad={false}><table className="tbl sm"><thead><tr><th>#</th><th>Item</th><th>Orders</th><th>Sales</th></tr></thead>
-          <tbody>{x.top.slice(0, 5).map((t, i) => <tr key={t.name}><td>{i + 1}</td><td><span className="mini">{String(t.name || "?").trim().charAt(0).toUpperCase()}</span> {t.name}</td><td>{t.orders}</td><td>{money(t.sales)}</td></tr>)}</tbody></table>{!x.top.length && <p className="muted pad">No sales yet.</p>}</Panel>
+        <Panel title={<T ic="trend">Top Selling Products</T>} right={<span className="muted">By quantity sold</span>}><TopChart items={x.top.slice(0, 7)} /></Panel>
         <Panel title={<T ic="chart">Daily / Weekly Sales</T>} right={<A to="/admin/orders" className="btn pri sm">View Orders</A>}>
           <div className="tabs"><button className={`tab ${bars === "daily" ? "on" : ""}`} onClick={() => setBars("daily")}>Last 7 days</button><button className={`tab ${bars === "weekly" ? "on" : ""}`} onClick={() => setBars("weekly")}>By week</button></div>
           <Bars data={barData} fmt={(v) => (v >= 1000 ? `${(v / 1000).toFixed(v % 1000 ? 1 : 0)}K` : num(v))} highlight="last" height={190} /></Panel>
