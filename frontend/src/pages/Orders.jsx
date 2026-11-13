@@ -8,6 +8,9 @@ import { ReceiptModal } from "../components/Receipt";
 const FLOW = { pending: ["preparing", "ready", "completed"], preparing: ["ready", "completed"], ready: ["completed"], completed: [], cancelled: [] };
 const STATUSES = ["pending", "preparing", "ready", "completed", "cancelled"];
 
+// borderless icon buttons for the Action column
+const FLAT = { border: 0, background: "none", boxShadow: "none", padding: 4, margin: 0, minWidth: 0, height: "auto", cursor: "pointer", color: "inherit", display: "inline-flex", alignItems: "center" };
+
 // small "eye" icon for View Details (same look as the other line icons)
 const EyeIcon = ({ size = 16 }) => (
   <svg className="ic" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
@@ -102,17 +105,17 @@ export default function Orders() {
         <div className="pills">{[["all", "All"], ...STATUSES.map((s) => [s, cap(s)])].map(([s, l]) => <button key={s} className={`pill ${f.status === s ? "on" : ""}`} onClick={() => set("status", s)}>{l} <i>{s === "all" ? Object.values(c.status).reduce((a, b) => a + b, 0) : c.status[s] || 0}</i></button>)}</div>
         <section className="card"><div className="table-wrap">
           {list.error && !data ? <ErrorBox msg={list.error} retry={list.reloadFull} /> : !data ? <Loading /> : !data.orders.length ? <Empty icon="receipt" text="No orders found for these filters." /> : (
-            <table className="tbl"><thead><tr><th>#</th><th>Bill No</th><th>Time</th><th>Table</th><th>Type</th><th>Customer</th><th>Items</th><th>Total (₹)</th><th>Payment</th><th>Status</th><th>Action</th></tr></thead>
+            <table className="tbl"><thead><tr><th>#</th><th>Bill No</th><th>Time</th><th>Table</th><th>Type</th><th>Customer</th><th>Items</th><th>Total (₹)</th><th>Payment</th><th>Status</th><th style={{ textAlign: "center" }}>Action</th></tr></thead>
               <tbody>{data.orders.map((o, i) => (
                 <tr key={o.id} className={sel === o.id ? "sel" : ""} onClick={() => setSel(o.id)}>
                   <td>{(page - 1) * 10 + i + 1}</td><td><b>{o.bill_no}</b></td><td>{fmtTime(o.created_at)}</td><td>{o.table_name || "-"}</td><td><Icon n={TYPE_ICON[o.order_type]} size={15} /> {TYPES[o.order_type]}</td>
                   <td>{o.customer_name}</td><td>{o.items}</td><td><b>{money(o.total)}</b></td>
                   <td><Badge v={o.payment_status} /> <small className="muted">{o.methods ? o.methods.split(",").map(cap).join(" + ") : ""}</small></td><td><Badge v={o.status} /></td>
                   <td onClick={(e) => e.stopPropagation()}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button className="btn sm ico" title="View Details" aria-label="View Details" onClick={() => setSel(o.id)}><EyeIcon /></button>
-                      <button className="btn sm ico" title="Print Bill" aria-label="Print Bill" onClick={() => setPrint(o.id)}><Icon n="print" size={16} /></button>
-                      {o.status !== "cancelled" && can("orders.cancel") && <button className="btn sm ico dng" title="Cancel Order" aria-label="Cancel Order" onClick={() => cancelOrder(o)}><Icon n="ban" size={16} /></button>}
+                    <div style={{ display: "flex", gap: 14, justifyContent: "center", alignItems: "center" }}>
+                      <button type="button" style={FLAT} title="View Details" aria-label="View Details" onClick={() => setSel(o.id)}><EyeIcon size={18} /></button>
+                      <button type="button" style={FLAT} title="Print Bill" aria-label="Print Bill" onClick={() => setPrint(o.id)}><Icon n="print" size={18} /></button>
+                      {o.status !== "cancelled" && can("orders.cancel") ? <button type="button" style={{ ...FLAT, color: "var(--err, #dc2626)" }} title="Cancel Order" aria-label="Cancel Order" onClick={() => cancelOrder(o)}><Icon n="ban" size={18} /></button> : <span style={{ display: "inline-block", width: 26 }} />}
                     </div>
                   </td>
                 </tr>))}</tbody></table>
