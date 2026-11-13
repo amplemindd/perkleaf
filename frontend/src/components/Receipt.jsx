@@ -56,7 +56,7 @@ export default function Receipt({ order: o, settings: S }) {
       </table>
       <hr className="r-line" />
       <div className="r-row"><span>Total Qty: {totalQty}</span><span className="r-sub"><span>Sub Total</span><span>{n2(o.subtotal)}</span></span></div>
-      {o.discount_amount > 0 && <div className="r-row"><span>Discount</span><span>-{n2(o.discount_amount)}</span></div>}
+      {o.discount_amount > 0 && <div className="r-row" style={{ fontWeight: 700 }}><span>Discount</span><span>-{n2(o.discount_amount)}</span></div>}
       {S.show_tax_on_bill && o.tax_amount > 0 && (o.tax_breakdown || []).map((b) =>
         S.show_gst_details ? (
           <React.Fragment key={b.rate}>
