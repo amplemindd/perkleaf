@@ -4,6 +4,10 @@ import { api, cap, fmtDT, fmtTime, money, preset, saveCSV, TYPES, TYPE_ICON, img
 import { navigate, takeHandoff, useAuth, useDebounced, useFetch, useShell, useUI } from "../lib/store";
 import { Badge, Empty, ErrorBox, Loading, Pager, RangePicker, SafeImg, Tabs } from "../lib/ui";
 import { ReceiptModal } from "../components/Receipt";
+import SettleModal from "../components/SettleModal";
+
+// an order can be settled (paid) only while it is open: unpaid and not cancelled / completed
+const canSettleRow = (o) => o.payment_status === "unpaid" && !["cancelled", "completed"].includes(o.status);
 
 // buttons the cashier sees: Serve -> Bill Pending (then payment closes the order).
 // "Accept" is done from the bell's New Orders list (it tells the customer the order was accepted).
@@ -25,6 +29,8 @@ export function OrderDetail({ id, onClose, onChanged }) {
   const { admin } = useShell();
   const d = useFetch(`/orders/${id}`, null, [id]);
   const [print, setPrint] = useState(false);
+  const [autoPrint, setAutoPrint] = useState(false);
+  const [settle, setSettle] = useState(false);
   const o = d.data?.order;
   const run = async (fn, ok) => { try { await fn(); toast(ok); d.reload(); onChanged(); } catch (e) { toast(e.message, "err"); } };
   const cancel = async () => {
@@ -54,13 +60,23 @@ export function OrderDetail({ id, onClose, onChanged }) {
       <h4 className="sp-t">Payment Details <Badge v={o.payment_status} /></h4>
       {o.payments.length ? o.payments.map((p, i) => <div className="kv" key={i}><span><Icon n={p.method === "cash" ? "cash" : p.method === "upi" ? "mobile" : "card"} size={15} /> {cap(p.method)} Payment{p.status === "refunded" ? " (refunded)" : ""}</span><b>{money(p.amount)} <small>{fmtTime(p.created_at)}</small></b></div>) : <p className="muted">No payment received yet.</p>}
       <div className="sp-actions">
-        <button className="btn pri" onClick={() => setPrint(true)}><Icon n="print" /> Print Bill</button>
-        <button className="btn" onClick={() => setPrint(true)}><Icon n="refresh" /> Reprint</button>
+        {o.is_open && can("pos") ? (
+          <>
+            <button className="btn pri" onClick={() => setSettle(true)}><Icon n="print" /> Settle &amp; Print</button>
+            <button className="btn" onClick={() => { setAutoPrint(false); setPrint(true); }}><Icon n="print" /> Print Bill</button>
+          </>
+        ) : (
+          <>
+            <button className="btn pri" onClick={() => { setAutoPrint(false); setPrint(true); }}><Icon n="print" /> Print Bill</button>
+            <button className="btn" onClick={() => { setAutoPrint(false); setPrint(true); }}><Icon n="refresh" /> Reprint</button>
+          </>
+        )}
         {o.is_open && can("pos") && <button className="btn" onClick={() => navigate(admin ? "/admin/pos" : "/", { orderId: o.id })}><Icon n="edit" /> Edit Order</button>}
         {can("pos") && [...(FLOW[o.status] || []), ...(o.payment_status === "paid" && !["completed", "cancelled"].includes(o.status) ? ["completed"] : [])].map((s) => <button key={s} className="btn pri" onClick={() => run(() => api(`/orders/${id}/status`, { method: "PATCH", body: { status: s } }), ACTION[s][1])}>{ACTION[s][0]}</button>)}
-        {o.status !== "cancelled" && can("orders.cancel") && <button className="btn dng" onClick={cancel}><Icon n="trash" /> Cancel Order</button>}
+        {o.status !== "cancelled" && o.payment_status !== "paid" && can("orders.cancel") && <button className="btn dng" onClick={cancel}><Icon n="trash" /> Cancel Order</button>}
       </div>
-      {print && <ReceiptModal order={{ ...o }} onClose={() => setPrint(false)} />}
+      {settle && <SettleModal order={o} onClose={() => setSettle(false)} onDone={() => { setSettle(false); d.reload(); onChanged(); setAutoPrint(true); setPrint(true); }} />}
+      {print && <ReceiptModal orderId={id} auto={autoPrint} onClose={() => { setPrint(false); setAutoPrint(false); }} />}
     </div>
   );
 }
@@ -73,6 +89,8 @@ export default function Orders() {
   const [page, setPage] = useState(1);
   const [sel, setSel] = useState(null);
   const [print, setPrint] = useState(null);
+  const [printAuto, setPrintAuto] = useState(false);
+  const [settleFor, setSettleFor] = useState(null);
   const dq = useDebounced(search);
   const list = useFetch("/orders", { ...f, q: dq, page, limit: 10 }, [], 15000);
   useEffect(() => { const h = takeHandoff(); if (h && h.openId) { setSel(h.openId); setF((x) => ({ ...x, from: "", to: "" })); } }, []);
@@ -117,8 +135,14 @@ export default function Orders() {
                   <td onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: "flex", gap: 14, justifyContent: "center", alignItems: "center" }}>
                       <button type="button" style={FLAT} title="View Details" aria-label="View Details" onClick={() => setSel(o.id)}><EyeIcon size={18} /></button>
-                      <button type="button" style={FLAT} title="Print Bill" aria-label="Print Bill" onClick={() => setPrint(o.id)}><Icon n="print" size={18} /></button>
-                      {o.status !== "cancelled" && can("orders.cancel") ? <button type="button" style={{ ...FLAT, color: "var(--err, #dc2626)" }} title="Cancel Order" aria-label="Cancel Order" onClick={() => cancelOrder(o)}><Icon n="ban" size={18} /></button> : <span style={{ display: "inline-block", width: 26 }} />}
+                      <span style={{ width: 132, display: "inline-flex", justifyContent: "center" }}>
+                        {canSettleRow(o) && can("pos") ? (
+                          <button type="button" className="btn sm pri" style={{ whiteSpace: "nowrap" }} title="Settle & Print" aria-label="Settle and Print" onClick={() => setSettleFor(o)}><Icon n="print" size={14} /> Settle &amp; Print</button>
+                        ) : (
+                          <button type="button" style={FLAT} title="Print Bill" aria-label="Print Bill" onClick={() => { setPrintAuto(false); setPrint(o.id); }}><Icon n="print" size={18} /></button>
+                        )}
+                      </span>
+                      {o.status !== "cancelled" && o.payment_status !== "paid" && can("orders.cancel") ? <button type="button" style={{ ...FLAT, color: "var(--err, #dc2626)" }} title="Cancel Order" aria-label="Cancel Order" onClick={() => cancelOrder(o)}><Icon n="x" size={20} /></button> : <span style={{ display: "inline-block", width: 28 }} />}
                     </div>
                   </td>
                 </tr>))}</tbody></table>
@@ -126,7 +150,8 @@ export default function Orders() {
         </div>{data && <Pager page={page} total={data.total} limit={10} onPage={setPage} label="orders" />}</section>
       </div>
       {sel && <OrderDetail id={sel} onClose={() => setSel(null)} onChanged={() => { list.reload(); reload(); }} />}
-      {print && <ReceiptModal orderId={print} onClose={() => setPrint(null)} />}
+      {settleFor && <SettleModal order={settleFor} onClose={() => setSettleFor(null)} onDone={(o) => { setSettleFor(null); list.reload(); reload(); setPrintAuto(true); setPrint(o.id); }} />}
+      {print && <ReceiptModal orderId={print} auto={printAuto} onClose={() => { setPrint(null); setPrintAuto(false); }} />}
     </div>
   );
 }

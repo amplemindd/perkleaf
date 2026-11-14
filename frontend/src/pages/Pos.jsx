@@ -269,13 +269,13 @@ export default function Pos() {
             <button className="btn" disabled={busy || !cart.length} onClick={() => doKot(false)}><Icon n="file" size={15} /> KOT</button>
             <button className="btn" disabled={busy || !cart.length} onClick={() => doKot(true)}><Icon n="print" size={15} /> KOT &amp; Print</button>
           </div>
-          {orderId && <button className="btn pri" style={{ width: "100%", marginTop: 8 }} disabled={busy || !cart.length} onClick={openSettle}>Settle (Cash / UPI / Card / Part)</button>}
           <div className="pm-l">PAYMENT METHOD</div>
           <div className="seg pay">
             {methods.map((m) => <button key={m} className={method === m ? "on" : ""} onClick={() => setMethod(m)}>{m === "upi" ? "UPI" : cap(m)}</button>)}
             {S.pm_split && <button className={method === "split" ? "on" : ""} onClick={() => setMethod("split")}>Part</button>}
           </div>
           <button className="checkout" disabled={busy || !cart.length} onClick={startCheckout}>{busy ? "Processing…" : "Save and Checkout"}</button>
+          {orderId && <button className="btn" style={{ width: "100%", marginTop: 8 }} disabled={busy || !cart.length} onClick={openSettle}>Settle (Cash / UPI / Card / Part)</button>}
         </div>
       </aside>
       {count > 0 && !sheet && <button className="mbar" onClick={() => setSheet(true)}><Icon n="cart" size={18} /> {count} item{count > 1 ? "s" : ""} · {money(calc ? calc.total : 0)} <span>View order</span></button>}
