@@ -169,7 +169,14 @@ export default function Shell({ admin, children }) {
     setHiddenIds((h) => [...h, ...ids]);
     setLocalPending((l) => l.filter((n) => !ids.includes(n.id)));
     if (list.length >= pendingOrders.length) setOrdMenu("");
-    await Promise.all(ids.map((id) => api(`/notifications/${id}/read`, { method: "PATCH" }).catch(() => {})));
+    // Accept = stop the ring AND mark the order "preparing" (accepted), so the customer's phone updates.
+    // The status call fails harmlessly if the order was already accepted / cancelled elsewhere.
+    await Promise.all(
+      list.flatMap((n) => [
+        api(`/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {}),
+        n.link_id ? api(`/orders/${n.link_id}/status`, { method: "PATCH", body: { status: "preparing" } }).catch(() => {}) : null,
+      ]),
+    );
     reloadNewOrders.current();
   };
   const [pops, setPops] = useState([]);
