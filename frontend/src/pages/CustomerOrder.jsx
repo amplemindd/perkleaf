@@ -264,16 +264,25 @@ function OrderTracker({ track, onOpen, onRate, onDismiss }) {
 
   const status = TRACK_STATUSES.includes(track.status) ? track.status : "pending";
   const served = status === "served" || status === "bill_pending";
+  const stage = served ? "served" : status === "pending" ? "pending" : "accepted";
+  const stageIcon = { pending: "clock", accepted: "check", served: "utensils" }[stage];
   const itemCount = (track.items || []).reduce((sum, i) => sum + i.qty, 0);
 
   return (
-    <section className={`cx-track ${served ? "served" : ""}`} aria-live="polite">
-      <div className="cx-track-top">
-        <small className="cx-track-no">ORDER #{String(track.bill_no || "").replace(/^#/, "")}</small>
-        {track.created_at && <small className="cx-track-ago">Ordered {ago(track.created_at)}</small>}
+    <section className={`cx-track ${stage}`} aria-live="polite">
+      <div className="cx-track-main">
+        <span className="cx-track-badge">
+          <Icon n={stageIcon} size={24} />
+        </span>
+        <div className="cx-track-body">
+          <div className="cx-track-top">
+            <small className="cx-track-no">ORDER #{String(track.bill_no || "").replace(/^#/, "")}</small>
+            {track.created_at && <small className="cx-track-ago">{ago(track.created_at)}</small>}
+          </div>
+          <h2>{TRACK_TITLE[status]}</h2>
+          {TRACK_NOTE[status] && <p className="cx-track-sub">{TRACK_NOTE[status]}</p>}
+        </div>
       </div>
-      <h2>{TRACK_TITLE[status]}</h2>
-      {TRACK_NOTE[status] && <p className="cx-track-sub">{TRACK_NOTE[status]}</p>}
 
       {(onOpen || (served && onRate)) && (
         <div className="cx-track-foot">
@@ -1252,7 +1261,7 @@ export default function CustomerOrder({ token }) {
                 <span className="cx-okmark">
                   <Icon n="check" size={30} />
                 </span>
-                <p>Your order has been sent to the kitchen. We will serve it at your table shortly.</p>
+                <p>Thank you! We have received your order.</p>
               </div>
             )}
 
@@ -1262,11 +1271,17 @@ export default function CustomerOrder({ token }) {
 
                 {track.status !== "cancelled" && track.items?.length > 0 && (
                   <div className="cx-sum">
+                    <div className="cx-sum-h">
+                      <b>Your items</b>
+                      <small>
+                        {track.items.reduce((n, i) => n + i.qty, 0)} item
+                        {track.items.reduce((n, i) => n + i.qty, 0) === 1 ? "" : "s"}
+                      </small>
+                    </div>
                     {track.items.map((i, idx) => (
-                      <div key={`${i.name}-${idx}`}>
-                        <span>
-                          {i.name} × {i.qty}
-                        </span>
+                      <div className="cx-sum-row" key={`${i.name}-${idx}`}>
+                        <i>{i.qty}×</i>
+                        <span>{i.name}</span>
                         <b>{money(i.line_total)}</b>
                       </div>
                     ))}
@@ -1281,6 +1296,10 @@ export default function CustomerOrder({ token }) {
               <p className="cx-note">No active order right now.</p>
             )}
 
+            <button className="cx-place cx-more-btn" onClick={closeTrack}>
+              <Icon n="plus" size={18} /> Order more items
+            </button>
+
             <div className="cx-two" style={{ gridTemplateColumns: canBill ? "1fr 1fr" : "1fr" }}>
               <button onClick={() => callCashier()} disabled={callBlocked}>
                 <Icon n="bell" size={18} /> {left > 0 ? `Wait ${left}s` : "Call Waiter"}
@@ -1292,9 +1311,6 @@ export default function CustomerOrder({ token }) {
               )}
             </div>
 
-            <button className="cx-linkbtn" onClick={closeTrack}>
-              <Icon n="plus" size={16} /> Order more items
-            </button>
           </section>
         </div>
       )}
@@ -1775,7 +1791,7 @@ const RAW_CSS = `
 .cx .cx-okmark svg{width:32px;height:32px;stroke-width:2.6}
 @keyframes cx-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
 @media (prefers-reduced-motion:reduce){.cx .cx-okmark{animation:none}}
-.cx-track-sub{margin:2px 0 4px;font-size:14px;color:var(--cx-mu)}
+.cx-track-sub{margin:4px 0 0;font-size:13.5px;line-height:1.4;color:var(--cx-mu)}
 @keyframes cx-pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 .cx-sheet .cx-track{box-shadow:none;border-color:var(--cx-bd)}
 .cx-sum{margin-top:12px;padding:10px 14px;border:1px solid var(--cx-bd);background:var(--cx-bg)}
@@ -1836,6 +1852,48 @@ const RAW_CSS = `
   .cx{max-width:560px;margin:0 auto;box-shadow:0 0 0 1px var(--cx-bd)}
   .cx-head{}
 }
+
+/* ---- order status card (home + order sheet) ---- */
+.cx-track{padding:16px 16px 14px}
+.cx-track.pending{border-top-color:#f5b301;background:linear-gradient(180deg,#fffaeb,#fff 60%)}
+.cx-track.accepted{border-top-color:#2f8f55;background:linear-gradient(180deg,#f1faf4,#fff 60%)}
+.cx-track.served{border-top-color:#14532d;background:linear-gradient(180deg,#e8f5ec,#fff 60%)}
+.cx-track-main{display:flex;align-items:flex-start;gap:14px}
+.cx-track-body{flex:1;min-width:0}
+.cx .cx-track-badge{position:relative;flex:0 0 auto;width:48px;height:48px;display:grid;place-items:center;border-radius:50%!important}
+.cx-track.pending .cx-track-badge{color:#b7791f;background:#fdeec3}
+.cx-track.accepted .cx-track-badge{color:#14532d;background:#d8eedf}
+.cx-track.served .cx-track-badge{color:#fff;background:linear-gradient(135deg,#2f8f55,#14532d)}
+.cx .cx-track.pending .cx-track-badge::after{content:"";position:absolute;inset:-4px;border:2px solid #f5b301;border-radius:50%!important;opacity:0;animation:cx-wait 1.8s ease-out infinite}
+@keyframes cx-wait{0%{transform:scale(.9);opacity:.6}100%{transform:scale(1.25);opacity:0}}
+@media (prefers-reduced-motion:reduce){.cx .cx-track.pending .cx-track-badge::after{animation:none}}
+.cx-track h2{margin:2px 0 0;font-size:21px;line-height:1.2}
+.cx-track-top{justify-content:flex-start;gap:10px}
+.cx-track-no{font-size:11.5px;letter-spacing:1.2px}
+.cx-track-ago{font-size:11.5px}
+.cx-track-ago::before{content:"·";margin-right:10px}
+
+/* ---- items card ---- */
+.cx-sum{margin-top:12px;padding:12px 14px 10px;border:1px solid var(--cx-bd);background:var(--cx-card);box-shadow:0 4px 14px rgba(20,83,45,.05)}
+.cx-sum-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;padding-bottom:8px;border-bottom:1px solid var(--cx-bd)}
+.cx-sum-h b{font-size:14px;font-weight:800}
+.cx-sum-h small{font-size:12px;font-weight:600;color:var(--cx-mu)}
+.cx-sum > .cx-sum-row{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:14px}
+.cx-sum-row i{flex:0 0 auto;min-width:32px;padding:3px 0;font-style:normal;font-size:12px;font-weight:800;text-align:center;color:var(--cx-g);background:var(--cx-gl)}
+.cx-sum-row span{flex:1;min-width:0}
+.cx-sum-row b{font-weight:700;white-space:nowrap}
+.cx-sum-t{margin-top:4px;padding-top:10px!important;border-top:1px dashed var(--cx-bd);font-weight:800}
+.cx-sum-t b{font-size:18px}
+
+/* ---- sheet actions + grabber ---- */
+.cx-more-btn{margin-top:14px;box-shadow:0 8px 18px rgba(20,83,45,.22)}
+.cx-two{margin-top:10px}
+.cx-two button{padding:12px 8px;font-size:13.5px;color:var(--cx-g);background:var(--cx-card);border:1.5px solid #cfe5d6}
+.cx-two button:active:not(:disabled){background:var(--cx-gl)}
+.cx-sheet{position:relative}
+.cx .cx-sheet::before{content:"";display:block;width:42px;height:4px;margin:-8px auto 12px;background:#d5ded8;border-radius:99px!important}
+.cx-okbox{gap:10px;margin:0 0 12px}
+.cx-okbox p{font-size:13.5px}
 `;
 
 const CSS = RAW_CSS;
