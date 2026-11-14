@@ -4,7 +4,17 @@ const { calculate } = require("../lib/billing");
 
 const TYPES = ["dine_in", "pickup", "delivery", "online"];
 const OPEN_SQL = "payment_status = 'unpaid' AND status NOT IN ('cancelled','completed')";
-const FLOW = { pending: ["preparing", "ready", "completed", "cancelled"], preparing: ["ready", "completed", "cancelled"], ready: ["completed", "cancelled"], completed: [], cancelled: [] };
+// pending -> (Accept) preparing -> (Serve) served -> (Bill Pending) bill_pending -> paid = completed.
+// "ready" is kept so older orders and the old buttons still work.
+const FLOW = {
+  pending: ["preparing", "ready", "served", "completed", "cancelled"],
+  preparing: ["ready", "served", "completed", "cancelled"],
+  ready: ["served", "completed", "cancelled"],
+  served: ["bill_pending", "completed", "cancelled"],
+  bill_pending: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+};
 
 async function loadOrder(id, c = pool) {
   const [[o]] = await c.query("SELECT o.*, u.name AS created_by_name FROM bb_orders o LEFT JOIN bb_users u ON u.id = o.created_by WHERE o.id = ?", [id]);

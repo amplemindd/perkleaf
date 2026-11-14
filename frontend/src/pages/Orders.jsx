@@ -5,8 +5,10 @@ import { navigate, takeHandoff, useAuth, useDebounced, useFetch, useShell, useUI
 import { Badge, Empty, ErrorBox, Loading, Pager, RangePicker, SafeImg, Tabs } from "../lib/ui";
 import { ReceiptModal } from "../components/Receipt";
 
-const FLOW = { pending: ["preparing", "ready", "completed"], preparing: ["ready", "completed"], ready: ["completed"], completed: [], cancelled: [] };
-const STATUSES = ["pending", "preparing", "ready", "completed", "cancelled"];
+// buttons the cashier sees: Accept -> Serve -> Bill Pending (then payment closes the order)
+const FLOW = { pending: ["preparing"], preparing: ["served"], ready: ["served"], served: ["bill_pending"], bill_pending: [], completed: [], cancelled: [] };
+const ACTION = { preparing: ["Accept Order", "Order accepted."], served: ["Serve", "Order served."], bill_pending: ["Bill Pending", "Marked Bill Pending."], completed: ["Mark Completed", "Order completed."] };
+const STATUSES = ["pending", "preparing", "served", "bill_pending", "completed", "cancelled"];
 
 // borderless icon buttons for the Action column
 const FLAT = { border: 0, background: "none", boxShadow: "none", padding: 4, margin: 0, minWidth: 0, height: "auto", cursor: "pointer", color: "inherit", display: "inline-flex", alignItems: "center" };
@@ -54,7 +56,7 @@ export function OrderDetail({ id, onClose, onChanged }) {
         <button className="btn pri" onClick={() => setPrint(true)}><Icon n="print" /> Print Bill</button>
         <button className="btn" onClick={() => setPrint(true)}><Icon n="refresh" /> Reprint</button>
         {o.is_open && can("pos") && <button className="btn" onClick={() => navigate(admin ? "/admin/pos" : "/", { orderId: o.id })}><Icon n="edit" /> Edit Order</button>}
-        {FLOW[o.status].length > 0 && can("pos") && (o.payment_status === "paid" ? FLOW[o.status] : FLOW[o.status].filter((s) => s !== "completed")).map((s) => <button key={s} className="btn" onClick={() => run(() => api(`/orders/${id}/status`, { method: "PATCH", body: { status: s } }), `Marked ${s}.`)}>Mark {cap(s)}</button>)}
+        {can("pos") && [...(FLOW[o.status] || []), ...(o.payment_status === "paid" && !["completed", "cancelled"].includes(o.status) ? ["completed"] : [])].map((s) => <button key={s} className="btn pri" onClick={() => run(() => api(`/orders/${id}/status`, { method: "PATCH", body: { status: s } }), ACTION[s][1])}>{ACTION[s][0]}</button>)}
         {o.status !== "cancelled" && can("orders.cancel") && <button className="btn dng" onClick={cancel}><Icon n="trash" /> Cancel Order</button>}
       </div>
       {print && <ReceiptModal order={{ ...o }} onClose={() => setPrint(false)} />}

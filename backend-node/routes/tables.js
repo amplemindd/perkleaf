@@ -55,8 +55,9 @@ async function billCalls() {
 function phaseOf(t, bills) {
   if (t.order_id) {
     const asked = bills && bills.get(t.id);
+    if (t.order_status === "bill_pending") return "bill"; // staff pressed "Bill Pending"
     if (asked && (!t.order_started || asked >= new Date(t.order_started))) return "bill";
-    return t.order_status === "ready" ? "served" : "occupied";
+    return ["ready", "served"].includes(t.order_status) ? "served" : "occupied";
   }
   if (t.status === "available" && t.party_guests) return "occupied";
   return t.status === "occupied" ? "available" : t.status;

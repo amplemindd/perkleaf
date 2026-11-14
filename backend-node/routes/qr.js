@@ -99,7 +99,7 @@ api.get("/api/public/qr/:token", null, async (ctx) => {
 });
 
 // Live status of the table's order (the customer page polls this).
-//  - open order            -> pending / preparing / ready
+//  - open order            -> pending / preparing / ready / served / bill_pending
 //  - just served (paid / completed in the last 10 minutes) -> "served"
 //  - just cancelled (last 10 minutes)                      -> "cancelled"
 api.get("/api/public/qr/:token/status", null, async (ctx) => {

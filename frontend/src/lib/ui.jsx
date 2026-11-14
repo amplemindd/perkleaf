@@ -17,7 +17,7 @@ export const Panel = ({ title, right, children, className = "", pad = true }) =>
     <div className={pad ? "card-b" : ""}>{children}</div>
   </section>
 );
-const KIND = { paid: "green", completed: "green", available: "green", active: "green", success: "green", ready: "blue", preparing: "blue", info: "blue", pending: "amber", unpaid: "amber", warning: "amber", high: "amber",
+const KIND = { paid: "green", completed: "green", available: "green", active: "green", success: "green", ready: "blue", preparing: "blue", served: "blue", bill_pending: "amber", info: "blue", pending: "amber", unpaid: "amber", warning: "amber", high: "amber",
   occupied: "red", cancelled: "red", refunded: "red", critical: "red", urgent: "red", inactive: "red", reserved: "amber", cleaning: "blue", out_of_service: "gray", normal: "gray" };
 export const Badge = ({ v, kind, children }) => <span className={`badge ${kind || KIND[String(v).toLowerCase()] || "gray"}`}>{children ?? cap(v)}</span>;
 function useCountUp(value) {

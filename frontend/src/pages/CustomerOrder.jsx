@@ -118,21 +118,16 @@ const REQUEST_OPTIONS = [
   },
 ];
 
-// order status (set by staff on the cashier screen) -> what the customer sees
-const TRACK_STATUSES = ["pending", "preparing", "ready", "served"];
+// order status (set by staff on the cashier screen) -> what the customer sees:
+//   waiting to be accepted -> accepted -> served
+const TRACK_STATUSES = ["pending", "preparing", "ready", "served", "bill_pending"];
 const TRACK_TITLE = {
-  pending: "Waiting to be served",
-  preparing: "Waiting to be served",
-  ready: "Waiting to be served",
+  pending: "Waiting to be accepted",
+  preparing: "Order accepted",
+  ready: "Order accepted",
   served: "Served",
+  bill_pending: "Served",
 };
-const TRACK_SUB = {
-  pending: "We have received your order.",
-  preparing: "Your order is being prepared fresh.",
-  ready: "Your order is ready and on its way to your table.",
-  served: "Enjoy your meal!",
-};
-const TRACK_PERCENT = { pending: 25, preparing: 55, ready: 80, served: 100 };
 
 const RATING_WORDS = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
 const FEEDBACK_TAGS = ["Food", "Service", "Ambience", "Cleanliness", "Value"];
@@ -263,7 +258,7 @@ function OrderTracker({ track, onOpen, onRate, onDismiss }) {
   }
 
   const status = TRACK_STATUSES.includes(track.status) ? track.status : "pending";
-  const served = status === "served";
+  const served = status === "served" || status === "bill_pending";
   const itemCount = (track.items || []).reduce((sum, i) => sum + i.qty, 0);
 
   return (
@@ -273,12 +268,6 @@ function OrderTracker({ track, onOpen, onRate, onDismiss }) {
         {track.created_at && <small className="cx-track-ago">Ordered {ago(track.created_at)}</small>}
       </div>
       <h2>{TRACK_TITLE[status]}</h2>
-
-      <div className="cx-track-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={TRACK_PERCENT[status]}>
-        <span style={{ width: `${TRACK_PERCENT[status]}%` }} />
-      </div>
-
-      <p className="cx-track-sub">{TRACK_SUB[status]}</p>
 
       {(onOpen || (served && onRate)) && (
         <div className="cx-track-foot">
@@ -426,6 +415,21 @@ export default function CustomerOrder({ token }) {
   // the guest picker shows 1..capacity of THIS table (8 if the table has no capacity set)
   const maxGuests = data?.table?.capacity > 0 ? Math.min(30, Number(data.table.capacity)) : 8;
   const pickedGuests = Math.min(guestCount, maxGuests);
+
+  // While a sheet / popup is open the page behind must not scroll (only the sheet itself scrolls)
+  const overlayOpen = showTrack || showMore || !!panel || askParty;
+  useEffect(() => {
+    if (!overlayOpen) return undefined;
+    const html = document.documentElement;
+    const prevHtml = html.style.overflow;
+    const prevBody = document.body.style.overflow;
+    html.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = prevHtml;
+      document.body.style.overflow = prevBody;
+    };
+  }, [overlayOpen]);
   const [partyBusy, setPartyBusy] = useState(false);
   const [partyErr, setPartyErr] = useState(false);
   const [fbBusy, setFbBusy] = useState(false);
@@ -817,7 +821,7 @@ export default function CustomerOrder({ token }) {
   // "Request Bill" only makes sense after an order is placed (and not cancelled)
   const canBill = !!track && track.status !== "cancelled";
   const showTracker =
-    !!track && !(["served", "cancelled"].includes(track.status) && dismissed === `${track.id}:${track.status}`);
+    !!track && !(["served", "bill_pending", "cancelled"].includes(track.status) && dismissed === `${track.id}:${track.status}`);
 
   const bell = (compact) => (
     <Bell
@@ -980,7 +984,7 @@ export default function CustomerOrder({ token }) {
                 track={track}
                 onOpen={openTrack}
                 onRate={openFeedback}
-                onDismiss={["served", "cancelled"].includes(track.status) ? dismissTrack : undefined}
+                onDismiss={["served", "bill_pending", "cancelled"].includes(track.status) ? dismissTrack : undefined}
               />
             )}
 
@@ -1612,8 +1616,8 @@ const RAW_CSS = `
 .cx-cart > button:active{opacity:.75;transform:translateX(2px)}
 
 /* checkout sheet */
-.cx-ov{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,20,14,.55)}
-.cx-sheet{width:100%;max-width:560px;max-height:92vh;max-height:92dvh;overflow-y:auto;padding:18px 16px 22px;background:var(--cx-card);animation:cx-up .25s ease-out}
+.cx-ov{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,20,14,.55);overscroll-behavior:contain}
+.cx-sheet{width:100%;max-width:560px;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px 16px 22px;background:var(--cx-card);animation:cx-up .25s ease-out}
 @keyframes cx-up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
 .cx-sheet-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
 .cx-sheet-h h2{font-size:21px;font-weight:800}
@@ -1808,7 +1812,7 @@ const RAW_CSS = `
 .cx-info a{color:var(--cx-g);font-weight:700}
 
 /* ---- how many people ---- */
-.cx-party{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;background:linear-gradient(160deg,#0e3a21,#1c7a42)}
+.cx-party{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;overscroll-behavior:contain;z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;background:linear-gradient(160deg,#0e3a21,#1c7a42)}
 .cx-party-card{position:relative;width:100%;max-width:420px;margin:auto;padding:26px 20px 20px;text-align:center;background:var(--cx-card);box-shadow:0 24px 60px rgba(0,0,0,.35);animation:cx-up .3s ease-out}
 .cx-party-x{position:absolute;top:10px;right:10px;width:34px;height:34px;display:grid;place-items:center;color:var(--cx-g);background:var(--cx-gl)}
 .cx-party-logo{width:64px;height:64px;object-fit:cover;margin:0 auto 8px;display:block;border:2px solid var(--cx-gl)}
