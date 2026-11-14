@@ -133,16 +133,18 @@ export default function Orders() {
                   <td>{o.customer_name}</td><td>{o.items}</td><td><b>{money(o.total)}</b></td>
                   <td><Badge v={o.payment_status} /> <small className="muted">{o.methods ? o.methods.split(",").map(cap).join(" + ") : ""}</small></td><td><Badge v={o.status} /></td>
                   <td onClick={(e) => e.stopPropagation()}>
-                    <div style={{ display: "flex", gap: 14, justifyContent: "center", alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: 4, justifyContent: "center", alignItems: "center" }}>
                       <button type="button" style={FLAT} title="View Details" aria-label="View Details" onClick={() => setSel(o.id)}><EyeIcon size={18} /></button>
-                      <span style={{ width: 132, display: "inline-flex", justifyContent: "center" }}>
-                        {canSettleRow(o) && can("pos") ? (
-                          <button type="button" className="btn sm pri" style={{ whiteSpace: "nowrap" }} title="Settle & Print" aria-label="Settle and Print" onClick={() => setSettleFor(o)}><Icon n="print" size={14} /> Settle &amp; Print</button>
-                        ) : (
-                          <button type="button" style={FLAT} title="Print Bill" aria-label="Print Bill" onClick={() => { setPrintAuto(false); setPrint(o.id); }}><Icon n="print" size={18} /></button>
-                        )}
-                      </span>
-                      {o.status !== "cancelled" && o.payment_status !== "paid" && can("orders.cancel") ? <button type="button" style={{ ...FLAT, color: "var(--err, #dc2626)" }} title="Cancel Order" aria-label="Cancel Order" onClick={() => cancelOrder(o)}><Icon n="x" size={20} /></button> : <span style={{ display: "inline-block", width: 28 }} />}
+                      {canSettleRow(o) && can("pos") ? (
+                        <button type="button" style={FLAT} title="Settle & Print" aria-label="Settle and Print" onClick={() => setSettleFor(o)}><Icon n="print" size={18} /></button>
+                      ) : (
+                        <button type="button" style={FLAT} title="Print Bill" aria-label="Print Bill" onClick={() => { setPrintAuto(false); setPrint(o.id); }}><Icon n="print" size={18} /></button>
+                      )}
+                      {can("orders.cancel") && (canSettleRow(o) ? (
+                        <button type="button" style={{ ...FLAT, color: "var(--err, #dc2626)" }} title="Cancel Order" aria-label="Cancel Order" onClick={() => cancelOrder(o)}><Icon n="x" size={20} /></button>
+                      ) : (
+                        <button type="button" disabled style={{ ...FLAT, color: "var(--err, #dc2626)", opacity: 0.3, cursor: "not-allowed" }} title={o.status === "cancelled" ? "Already cancelled" : "Paid / completed orders cannot be cancelled"} aria-label="Cancel not available"><Icon n="x" size={20} /></button>
+                      ))}
                     </div>
                   </td>
                 </tr>))}</tbody></table>
