@@ -84,14 +84,14 @@ export function Stepper({ qty, onChange, small }) {
   );
 }
 
-// Menu item card (2 per row)
+// Menu item card (2 per row). Name sits inside the picture.
 export function ItemCard({ p, qty, onChange, fav, onFav }) {
   return (
     <article className="cx-card">
       <div className="cx-card-img">
         <Pic
           src={p.image_url}
-          alt={p.name}
+          alt=""
           fallback={
             <span className="cx-card-noimg">
               <Icon n="coffee" size={34} stroke={1.5} />
@@ -102,15 +102,17 @@ export function ItemCard({ p, qty, onChange, fav, onFav }) {
           <Icon n="heart" size={20} fill={fav} />
         </button>
         {p.tag && <span className="cx-tag">{String(p.tag)}</span>}
-      </div>
-      <div className="cx-card-b">
-        <div className="cx-card-n">
-          <VegMark type={p.item_type} />
+        <div className="cx-ov-name">
           <b>{p.name}</b>
         </div>
+      </div>
+      <div className="cx-card-b">
         {p.description && <p>{p.description}</p>}
         <div className="cx-card-f">
-          <strong>{money(p.price)}</strong>
+          <span className="cx-price">
+            <VegMark type={p.item_type} />
+            <strong>{money(p.price)}</strong>
+          </span>
           {qty ? (
             <Stepper qty={qty} onChange={(q) => onChange(p.id, q)} small />
           ) : (
@@ -121,6 +123,30 @@ export function ItemCard({ p, qty, onChange, fav, onFav }) {
         </div>
       </div>
     </article>
+  );
+}
+
+// Category tile (3 per row). Name and item count sit inside the picture.
+export function CatTile({ cat, onOpen }) {
+  const n = cat.items.length;
+  return (
+    <button className="cx-cat" onClick={() => onOpen(cat.id)} aria-label={`${cat.name}, ${n} ${n === 1 ? "item" : "items"}`}>
+      <Pic
+        src={cat.cover}
+        className="cx-cat-img"
+        fallback={
+          <span className="cx-cat-ph">
+            <Icon n="coffee" size={34} stroke={1.5} />
+          </span>
+        }
+      />
+      <span className="cx-ov-name">
+        <b>{cat.name}</b>
+        <small>
+          {n} {n === 1 ? "item" : "items"}
+        </small>
+      </span>
+    </button>
   );
 }
 
@@ -239,13 +265,12 @@ export function NeedAnything({ picked, onToggle, otherText, onOtherText, left, b
         {REQUESTS.map((o) => {
           const on = picked.includes(o.key);
           return (
-            <button key={o.key} type="button" className={`cx-tile ${on ? "on" : ""}`} aria-pressed={on} onClick={() => onToggle(o.key)}>
-              <Icon n={o.icon} size={26} stroke={1.6} />
+            <button key={o.key} type="button" className={`cx-tile ${on ? "on" : ""}`} aria-pressed={on} title={o.hint} onClick={() => onToggle(o.key)}>
+              <Icon n={o.icon} size={24} stroke={1.6} />
               <b>{o.label}</b>
-              <small>{o.hint}</small>
               {on && (
                 <span className="cx-tick" aria-hidden="true">
-                  <Icon n="check" size={14} stroke={3} />
+                  <Icon n="check" size={13} stroke={3} />
                 </span>
               )}
             </button>

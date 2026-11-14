@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Icon from "./Icons";
 import { money } from "../../lib/api";
 import {
-  Header, ItemCard, NeedAnything, OrderCard, OrderStatusCard, Pic, Timeline,
+  CatTile, Header, ItemCard, NeedAnything, OrderCard, OrderStatusCard, Pic, Timeline,
   STATUS_LABEL, billNo, countItems, fmtWhen,
 } from "./parts";
 
@@ -74,7 +74,7 @@ export function HomeTab({ c }) {
   const { data, categories, track } = c;
   return (
     <>
-      <Header data={data} home bell={c.bell} onHelp={c.openHelp} onGuests={() => c.setAskParty(true)} />
+      <Header data={data} home bell={c.bell} onHelp={c.openHelp} onGuests={() => c.setAskParty("guests")} />
       <div className="cx-body">
         {c.callNote}
         {c.showTracker && (
@@ -92,20 +92,14 @@ export function HomeTab({ c }) {
           <button onClick={c.requestBill} disabled={c.callBlocked}>
             <Icon n="receipt" size={24} stroke={1.6} />
             <b>Request Bill</b>
-            <small>Ask for your bill</small>
-            <Icon n="chevr" size={18} className="go" />
           </button>
           <button onClick={c.openFeedback}>
             <Icon n="star" size={24} stroke={1.6} />
             <b>Rate Us</b>
-            <small>Share feedback</small>
-            <Icon n="chevr" size={18} className="go" />
           </button>
           <button onClick={c.openMore}>
             <Icon n="info" size={24} stroke={1.6} />
             <b>More</b>
-            <small>Requests and info</small>
-            <Icon n="chevr" size={18} className="go" />
           </button>
         </div>
 
@@ -125,23 +119,7 @@ export function HomeTab({ c }) {
         ) : (
           <div className="cx-grid">
             {categories.map((cat) => (
-              <button key={cat.id} className="cx-cat" onClick={() => c.openCategory(cat.id)} aria-label={`${cat.name}, ${plural(cat.items.length, "item")}`}>
-                <span className="cx-cat-media">
-                  <Pic
-                    src={cat.cover}
-                    className="cx-cat-img"
-                    fallback={
-                      <span className="cx-cat-ph">
-                        <Icon n="coffee" size={34} stroke={1.5} />
-                      </span>
-                    }
-                  />
-                </span>
-                <span className="cx-cat-t">
-                  <b>{cat.name}</b>
-                  <small>{plural(cat.items.length, "item")}</small>
-                </span>
-              </button>
+              <CatTile key={cat.id} cat={cat} onOpen={c.openCategory} />
             ))}
           </div>
         )}
@@ -195,55 +173,59 @@ export function MenuTab({ c }) {
           </button>
         </div>
 
-        <nav className="cx-chips" aria-label="Categories">
-          <button className={c.selCat === "all" ? "on" : ""} onClick={() => c.setSelCat("all")}>
-            <Icon n="grid" size={18} /> All
-          </button>
-          {categories.map((cat) => (
-            <button key={cat.id} className={String(c.selCat) === String(cat.id) ? "on" : ""} onClick={() => c.setSelCat(String(cat.id))}>
-              {cat.name}
-            </button>
-          ))}
-        </nav>
-
-        {grouped && c.offers.length > 0 && (
-          <div className="cx-offers">
-            {c.offers.map((o, i) => (
-              <OfferBanner key={o.id || i} o={o} c={c} />
-            ))}
-          </div>
-        )}
-
-        {grouped && c.recommended.length > 0 && (
-          <section>
-            <div className="cx-sec-h spaced">
-              <h3>Recommended</h3>
-            </div>
-            <ItemGrid items={c.recommended} c={c} />
-          </section>
-        )}
-
-        {items.length === 0 ? (
-          <Empty icon="search" title="No items found" text="Try another word, or clear the filters." action="Clear search and filters" onAction={c.clearFilters} />
-        ) : grouped ? (
-          categories.map((cat) => (
-            <section key={cat.id}>
-              <div className="cx-sec-h spaced">
-                <h3>{cat.name}</h3>
-                <button className="cx-linkbtn" onClick={() => c.setSelCat(String(cat.id))}>
-                  {plural(cat.items.length, "item")} <Icon n="chevr" size={16} />
-                </button>
+        {grouped ? (
+          <>
+            {c.offers.length > 0 && (
+              <div className="cx-offers">
+                {c.offers.map((o, i) => (
+                  <OfferBanner key={o.id || i} o={o} c={c} />
+                ))}
               </div>
-              <ItemGrid items={cat.items} c={c} />
-            </section>
-          ))
+            )}
+
+            <div className="cx-sec-h spaced">
+              <h3>Categories</h3>
+              <span>{categories.length} to explore</span>
+            </div>
+            <div className="cx-grid">
+              {categories.map((cat) => (
+                <CatTile key={cat.id} cat={cat} onOpen={(id) => c.setSelCat(String(id))} />
+              ))}
+            </div>
+
+            {c.recommended.length > 0 && (
+              <section>
+                <div className="cx-sec-h spaced">
+                  <h3>Recommended</h3>
+                </div>
+                <ItemGrid items={c.recommended} c={c} />
+              </section>
+            )}
+          </>
         ) : (
           <>
-            <div className="cx-sec-h spaced">
-              <h3>{q ? "Search results" : "Items"}</h3>
-              <span>{plural(items.length, "item")}</span>
-            </div>
-            <ItemGrid items={items} c={c} />
+            <nav className="cx-chips" aria-label="Categories">
+              <button onClick={() => c.setSelCat("all")}>
+                <Icon n="grid" size={18} /> All
+              </button>
+              {categories.map((cat) => (
+                <button key={cat.id} className={String(c.selCat) === String(cat.id) ? "on" : ""} onClick={() => c.setSelCat(String(cat.id))}>
+                  {cat.name}
+                </button>
+              ))}
+            </nav>
+
+            {items.length === 0 ? (
+              <Empty icon="search" title="No items found" text="Try another word, or clear the filters." action="Clear search and filters" onAction={c.clearFilters} />
+            ) : (
+              <>
+                <div className="cx-sec-h spaced">
+                  <h3>{q ? "Search results" : categories.find((x) => String(x.id) === String(c.selCat))?.name || "Items"}</h3>
+                  <span>{plural(items.length, "item")}</span>
+                </div>
+                <ItemGrid items={items} c={c} />
+              </>
+            )}
           </>
         )}
       </div>
@@ -253,7 +235,7 @@ export function MenuTab({ c }) {
 
 /* ---------------- MY ORDERS ---------------- */
 const FILTERS = [
-  ["all", "All Orders"],
+  ["all", "All"],
   ["current", "Current"],
   ["completed", "Completed"],
   ["cancelled", "Cancelled"],
@@ -272,7 +254,7 @@ export function OrdersTab({ c }) {
     <>
       <Header data={c.data} title="My Orders" sub="Track and view your orders from this visit" bell={c.bell} onHelp={c.openHelp} />
       <div className="cx-body">
-        <nav className="cx-chips wrap" aria-label="Order filter">
+        <nav className="cx-seg" aria-label="Order filter">
           {FILTERS.map(([k, l]) => (
             <button key={k} className={f === k ? "on" : ""} onClick={() => setF(k)}>
               {l}
@@ -435,16 +417,19 @@ export function AccountTab({ c }) {
         <section className="cx-guestcard">
           <Icon n="user" size={40} stroke={1.4} />
           <div>
-            <h3>Guest Customer</h3>
+            <h3>{c.profile.name || "Guest Customer"}</h3>
             <span className="cx-tablepill dark">
               <Icon n="table" size={16} /> Table {c.data.table.name}
             </span>
+            {c.profile.phone && <small className="cx-phone">{c.profile.phone}</small>}
           </div>
           <div className="cx-session">
             <span className="cx-live">
               <i /> Active session
             </span>
-            <small>Till you leave this table</small>
+            <button className="cx-textbtn" onClick={() => c.setAskParty("name")}>
+              <Icon n="note" size={15} /> Edit details
+            </button>
           </div>
         </section>
 

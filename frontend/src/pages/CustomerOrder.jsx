@@ -96,9 +96,13 @@ export default function CustomerOrder({ token }) {
   const [notice, setNotice] = useState("");
   const [showCheckout, setShowCheckout] = useState(false);
   const [placed, setPlaced] = useState(null);
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
   const [note, setNote] = useState("");
+
+  // customer details asked right after scanning (name required, phone optional)
+  const profileKey = `bb_customer_${token}`;
+  const [profile, setProfile] = useState(() => readJson(profileKey, { name: "", phone: "" }));
+  const [nameDraft, setNameDraft] = useState("");
+  const [phoneDraft, setPhoneDraft] = useState("");
 
   // favorites + local order history (this phone, this table)
   const favKey = `bb_fav_${token}`;
@@ -144,7 +148,7 @@ export default function CustomerOrder({ token }) {
   const [fbBusy, setFbBusy] = useState(false);
 
   // "How many people are you?"
-  const [askParty, setAskParty] = useState(false);
+  const [askParty, setAskParty] = useState(false); // false | "name" | "guests"
   const [guestCount, setGuestCount] = useState(() => Math.min(30, Math.max(1, readNumber("bb_guests") || 2)));
   const maxGuests = data?.table?.capacity > 0 ? Math.min(30, Number(data.table.capacity)) : 8;
   const pickedGuests = Math.min(guestCount, maxGuests);
@@ -224,13 +228,25 @@ export default function CustomerOrder({ token }) {
   }, [track]);
   useEffect(() => writeJson(ordersKey, saved), [saved, ordersKey]);
   useEffect(() => writeJson(favKey, favs), [favs, favKey]);
+  useEffect(() => writeJson(profileKey, profile), [profile, profileKey]);
 
   // ---- ask party size first ----
   useEffect(() => {
     if (!data) return;
     if (data.party) setGuestCount(data.party.guests);
-    else setAskParty(true);
+    if (!profile.name) setAskParty("name");
+    else if (!data.party) setAskParty("guests");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
+
+  // fill the details form with what is already saved
+  useEffect(() => {
+    if (askParty === "name") {
+      setNameDraft(profile.name || "");
+      setPhoneDraft(profile.phone || "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askParty]);
 
   // ---- toast auto hide ----
   useEffect(() => {
@@ -357,15 +373,17 @@ export default function CustomerOrder({ token }) {
   // ---- place order ----
   const place = async () => {
     if (!count || busy) return;
-    if (!customerName.trim()) return setNotice("Please enter your name to place the order.");
-    if (customerPhone && !/^[0-9]{10}$/.test(customerPhone)) return setNotice("Please enter a valid 10-digit mobile number.");
+    if (!profile.name.trim()) {
+      setShowCheckout(false);
+      return setAskParty("name");
+    }
     setBusy(true);
     try {
       const result = await request(`/public/qr/${token}/order`, {
         method: "POST",
         body: {
-          customer_name: customerName.trim(),
-          customer_phone: customerPhone.trim(),
+          customer_name: profile.name.trim(),
+          customer_phone: (profile.phone || "").trim(),
           note: note.trim(),
           guests: data.party ? data.party.guests : undefined,
           items: lines.map((p) => ({ product_id: p.id, qty: p.qty })),
@@ -386,6 +404,14 @@ export default function CustomerOrder({ token }) {
     } finally {
       setBusy(false);
     }
+  };
+
+  const submitName = () => {
+    const name = nameDraft.trim();
+    if (name.length < 2) return setNotice("Please enter your name.");
+    if (phoneDraft && !/^[0-9]{10}$/.test(phoneDraft)) return setNotice("Please enter a valid 10-digit mobile number, or leave it empty.");
+    setProfile({ name, phone: phoneDraft });
+    setAskParty(data.party ? false : "guests");
   };
 
   const submitParty = async () => {
@@ -466,7 +492,7 @@ export default function CustomerOrder({ token }) {
     try {
       await request(`/public/qr/${token}/feedback`, {
         method: "POST",
-        body: { rating, tags: fbTags, comment: fbText.trim(), order_id: track?.id || undefined, customer_name: customerName.trim() },
+        body: { rating, tags: fbTags, comment: fbText.trim(), order_id: track?.id || undefined, customer_name: profile.name.trim() },
       });
       setFbDone(true);
     } catch (e) {
@@ -550,7 +576,7 @@ export default function CustomerOrder({ token }) {
     ) : null;
 
   const c = {
-    data, tab, categories, products, offers, recommended, cart, change, count, total, favs, toggleFav,
+    data, profile, tab, categories, products, offers, recommended, cart, change, count, total, favs, toggleFav,
     track, orders, showTracker, dismissTrack, search, setSearch, searchRef, selCat, setSelCat, filters,
     setTab: changeTab, openDeep, goBack, openCategory, focusSearch, clearFilters, notify,
     openCart: () => (count ? setShowCheckout(true) : setNotice("Your cart is empty. Add some items first.")),
@@ -625,39 +651,55 @@ export default function CustomerOrder({ token }) {
 
       <BottomNav tab={navTab} onTab={changeTab} live={hasLive} />
 
-      {/* ===== how many people ===== */}
+      {/* ===== scan welcome: 1) your name  2) how many people ===== */}
       {askParty && (
-        <div className="cx-party" role="dialog" aria-modal="true" aria-label="Number of guests">
+        <div className="cx-party" role="dialog" aria-modal="true" aria-label={askParty === "name" ? "Your details" : "Number of guests"}>
           <div className="cx-party-card">
-            {data.party && (
+            {((askParty === "name" && profile.name) || (askParty === "guests" && data.party)) && (
               <button className="cx-xbtn corner" aria-label="Close" onClick={() => setAskParty(false)}>
                 <Icon n="x" size={20} />
               </button>
             )}
             {data.logo_url && <img className="cx-party-logo" src={img(data.logo_url)} alt="" />}
             <small>{data.restaurant}</small>
-            <h2>Welcome!</h2>
+            <h2>{profile.name && askParty === "guests" ? `Welcome, ${profile.name}!` : "Welcome!"}</h2>
             <p className="cx-tablepill dark">
               <Icon n="table" size={16} /> Table {data.table.name}
             </p>
-            <h3>How many people are you?</h3>
-            <div className="cx-guests" role="radiogroup" aria-label="Number of people">
-              {Array.from({ length: maxGuests }, (_, i) => i + 1).map((n) => (
-                <button key={n} type="button" role="radio" aria-checked={n === pickedGuests} className={n === pickedGuests ? "on" : ""} onClick={() => setGuestCount(n)}>
-                  {n}
+
+            {askParty === "name" ? (
+              <>
+                <h3>Tell us about you</h3>
+                <div className="cx-form tight">
+                  <input className="cx-input" type="text" aria-label="Your name" placeholder="Your name *" maxLength={100} autoComplete="name" value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} />
+                  <input className="cx-input" type="tel" inputMode="numeric" aria-label="Mobile number" placeholder="Mobile number (optional)" maxLength={10} autoComplete="tel" value={phoneDraft} onChange={(e) => setPhoneDraft(e.target.value.replace(/\D/g, "").slice(0, 10))} />
+                </div>
+                <button className="cx-primary" onClick={submitName}>
+                  Continue <Icon n="arrowr" size={20} />
                 </button>
-              ))}
-            </div>
-            <p className="cx-hint">
-              {data.table.capacity ? `This table seats ${maxGuests}. ` : ""}Tap the number of people sitting.
-            </p>
-            <button className="cx-primary" onClick={submitParty} disabled={partyBusy}>
-              {partyBusy ? "Please wait..." : "Continue"} <Icon n="arrowr" size={20} />
-            </button>
-            {partyErr && (
-              <button className="cx-linkbtn center" onClick={() => setAskParty(false)}>
-                Skip for now
-              </button>
+              </>
+            ) : (
+              <>
+                <h3>How many people are you?</h3>
+                <div className="cx-guests" role="radiogroup" aria-label="Number of people">
+                  {Array.from({ length: maxGuests }, (_, i) => i + 1).map((n) => (
+                    <button key={n} type="button" role="radio" aria-checked={n === pickedGuests} className={n === pickedGuests ? "on" : ""} onClick={() => setGuestCount(n)}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <p className="cx-hint">
+                  {data.table.capacity ? `This table seats ${maxGuests}. ` : ""}Tap the number of people sitting.
+                </p>
+                <button className="cx-primary" onClick={submitParty} disabled={partyBusy}>
+                  {partyBusy ? "Please wait..." : "Continue"} <Icon n="arrowr" size={20} />
+                </button>
+                {partyErr && (
+                  <button className="cx-linkbtn center" onClick={() => setAskParty(false)}>
+                    Skip for now
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -665,7 +707,7 @@ export default function CustomerOrder({ token }) {
 
       {/* ===== checkout ===== */}
       {showCheckout && (
-        <Sheet title="Your order" sub={`Table ${data.table.name}`} onClose={() => setShowCheckout(false)}>
+        <Sheet title="Your order" sub={`Table ${data.table.name}${profile.name ? " · " + profile.name : ""}`} onClose={() => setShowCheckout(false)}>
           {lines.length === 0 ? (
             <p className="cx-note">Your cart is empty.</p>
           ) : (
@@ -685,9 +727,6 @@ export default function CustomerOrder({ token }) {
             </div>
           )}
           <div className="cx-form">
-            <h3>Your details</h3>
-            <input className="cx-input" type="text" aria-label="Your name" placeholder="Your name *" maxLength={100} value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
-            <input className="cx-input" type="tel" inputMode="numeric" aria-label="Mobile number" placeholder="10-digit mobile number (optional)" maxLength={10} value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} />
             <h3>Special instructions (optional)</h3>
             <textarea className="cx-input" rows={2} maxLength={200} placeholder="e.g. Less sugar, extra spicy, no onion..." value={note} onChange={(e) => setNote(e.target.value)} />
             <small className="cx-cnt">{note.length}/200</small>
