@@ -4,7 +4,7 @@ import { api, fmtDate, fmtTime, TYPES, img, cap } from "../lib/api";
 import { useAuth } from "../lib/store";
 import { Modal, Loading } from "../lib/ui";
 import { printReceipt } from "../lib/printReceipt";
-import { edEnabled, edPrintKot } from "../lib/edprint";
+import { edEnabled, edPrintBill, edPrintKot } from "../lib/edprint";
 import "../styles/receipt.css";
 
 // KOT printing: straight to the thermal printer via EDPrintTool when it is switched on (Settings > Receipt),
@@ -12,6 +12,14 @@ import "../styles/receipt.css";
 function printKotSmart(o, restaurant, el) {
   if (edEnabled()) {
     edPrintKot(o, restaurant).catch((e) => { console.warn("EDPrintTool failed, using browser print:", e.message); printReceipt(el || undefined); });
+  } else printReceipt(el || undefined);
+}
+
+// Customer bill: straight to the thermal printer (no Windows print window) when EDPrintTool is switched on,
+// otherwise (or if EDPrintTool cannot be reached) through the normal browser print.
+function printBillSmart(o, S, el) {
+  if (edEnabled() && o) {
+    edPrintBill(o, S).catch((e) => { console.warn("EDPrintTool failed, using browser print:", e.message); printReceipt(el || undefined); });
   } else printReceipt(el || undefined);
 }
 
@@ -97,9 +105,9 @@ export function ReceiptModal({ order, orderId, onClose, auto, onSettle }) {
     api(`/orders/${orderId}/receipt`).then((r) => setD({ order: r.order, S: { ...settings, ...r.receipt_settings } })).catch((e) => setErr(e.message));
   }, [order, orderId, settings]);
   useEffect(() => { document.body.classList.add("print-receipt"); return () => document.body.classList.remove("print-receipt"); }, []);
-  useEffect(() => { if (auto && d) { const t = setTimeout(() => printReceipt(), 400); return () => clearTimeout(t); } }, [auto, d]);
+  useEffect(() => { if (auto && d) { const t = setTimeout(() => printBillSmart(d.order, d.S), 400); return () => clearTimeout(t); } }, [auto, d]);
   return (
-    <Modal title="Bill / Receipt" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Close</button><button className={`btn ${onSettle ? "" : "pri"}`} onClick={() => printReceipt()}><Icon n="print" /> Print Bill</button>{onSettle && <button className="btn pri" onClick={onSettle}>Settle</button>}</>}>
+    <Modal title="Bill / Receipt" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Close</button><button className={`btn ${onSettle ? "" : "pri"}`} onClick={() => printBillSmart(d && d.order, d && d.S)}><Icon n="print" /> Print Bill</button>{onSettle && <button className="btn pri" onClick={onSettle}>Settle</button>}</>}>
       {err ? <div className="errbox"><Icon n="alert" /> {err}</div> : d ? <Receipt order={d.order} settings={d.S} /> : <Loading />}
     </Modal>
   );
