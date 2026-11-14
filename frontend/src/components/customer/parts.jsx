@@ -126,6 +126,48 @@ export function ItemCard({ p, qty, onChange, fav, onFav }) {
   );
 }
 
+// Menu item row (one per line): picture on the left, name / description / price in the middle, Add on the right.
+export function ItemRow({ p, qty, onChange, fav, onFav }) {
+  return (
+    <article className="cx-row">
+      <div className="cx-row-img">
+        <Pic
+          src={p.image_url}
+          alt=""
+          fallback={
+            <span className="cx-card-noimg">
+              <Icon n="coffee" size={28} stroke={1.5} />
+            </span>
+          }
+        />
+        {p.tag && <span className="cx-tag">{String(p.tag)}</span>}
+      </div>
+
+      <div className="cx-row-b">
+        <div className="cx-row-n">
+          <VegMark type={p.item_type} />
+          <b>{p.name}</b>
+        </div>
+        {p.description && <p>{p.description}</p>}
+        <strong className="cx-row-pr">{money(p.price)}</strong>
+      </div>
+
+      <div className="cx-row-act">
+        <button className="cx-rowfav" aria-label={fav ? `Remove ${p.name} from favorites` : `Save ${p.name} to favorites`} aria-pressed={fav} onClick={() => onFav(p.id)}>
+          <Icon n="heart" size={20} fill={fav} />
+        </button>
+        {qty ? (
+          <Stepper qty={qty} onChange={(q) => onChange(p.id, q)} small />
+        ) : (
+          <button className="cx-add" aria-label={`Add ${p.name}`} onClick={() => onChange(p.id, 1)}>
+            Add <Icon n="plus" size={14} stroke={2.4} />
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
 // Category tile (3 per row). Name and item count sit inside the picture.
 export function CatTile({ cat, onOpen }) {
   const n = cat.items.length;

@@ -154,7 +154,24 @@ textarea.cx-input{height:auto;min-height:64px;padding:12px 14px;resize:none}
 .cx-cat-t b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em;font-size:12.5px;font-weight:700;line-height:1.25;overflow-wrap:anywhere}
 .cx-cat-t small{font-size:11px;font-weight:600;color:var(--mu)}
 
-/* ---------- menu items: 2 per row ---------- */
+/* ---------- menu items: one per line (list) ---------- */
+.cx-ilist{display:flex;flex-direction:column;gap:10px}
+.cx-row{display:flex;align-items:stretch;gap:12px;padding:10px;min-width:0;background:var(--card);border:1px solid var(--bd);border-radius:var(--r2);box-shadow:var(--sh)}
+.cx-row-img{position:relative;flex:0 0 88px;width:88px;height:88px;overflow:hidden;background:var(--gl);border-radius:var(--r1)}
+.cx-row-img img{width:100%;height:100%;object-fit:cover;display:block}
+.cx-row-img .cx-tag{left:4px;top:4px;padding:2px 6px;font-size:10px}
+.cx-row-b{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.cx-row-n{display:flex;align-items:flex-start;gap:6px}
+.cx-row-n .cx-veg{margin-top:1px}
+.cx-row-n b{font-size:14.5px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.cx-row-b p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;line-height:1.35;color:var(--mu)}
+.cx-row-pr{margin-top:2px;font-size:16px;font-weight:800;color:var(--g)}
+.cx-row-act{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:6px}
+.cx-rowfav{width:32px;height:32px;margin:-4px -4px 0 0;display:grid;place-items:center;color:var(--mu)}
+.cx-rowfav[aria-pressed="true"]{color:#e0245e}
+.cx-rowfav:active{transform:scale(.9)}
+
+/* ---------- menu items: 2 per row (older card style, not used now) ---------- */
 .cx-igrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .cx-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;background:var(--card);border:1px solid var(--bd);border-radius:var(--r2);box-shadow:var(--sh)}
 .cx-card-img{position:relative;aspect-ratio:4/3;background:var(--gl);overflow:hidden}

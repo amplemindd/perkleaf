@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Icon from "./Icons";
 import { money } from "../../lib/api";
 import {
-  CatTile, Header, ItemCard, NeedAnything, OrderCard, OrderStatusCard, Pic, Timeline,
+  CatTile, Header, ItemRow, NeedAnything, OrderCard, OrderStatusCard, Pic, Timeline,
   STATUS_LABEL, billNo, countItems, fmtWhen,
 } from "./parts";
 
@@ -39,9 +39,9 @@ function Empty({ icon, title, text, action, onAction }) {
 
 function ItemGrid({ items, c }) {
   return (
-    <div className="cx-igrid">
+    <div className="cx-ilist">
       {items.map((p) => (
-        <ItemCard key={p.id} p={p} qty={c.cart[p.id]} onChange={c.change} fav={c.favs.includes(p.id)} onFav={c.toggleFav} />
+        <ItemRow key={p.id} p={p} qty={c.cart[p.id]} onChange={c.change} fav={c.favs.includes(p.id)} onFav={c.toggleFav} />
       ))}
     </div>
   );
@@ -87,28 +87,6 @@ export function HomeTab({ c }) {
         )}
 
         <NeedAnything picked={c.picked} onToggle={c.toggleRequest} otherText={c.otherText} onOtherText={c.setOtherText} left={c.left} busy={c.bellBusy} onCall={() => c.callCashier(c.picked, c.otherText)} />
-
-        <div className="cx-quick">
-          <button onClick={c.requestBill} disabled={c.callBlocked}>
-            <Icon n="receipt" size={24} stroke={1.6} />
-            <b>Request Bill</b>
-          </button>
-          <button onClick={c.openFeedback}>
-            <Icon n="star" size={24} stroke={1.6} />
-            <b>Rate Us</b>
-          </button>
-          <button onClick={c.openMore}>
-            <Icon n="info" size={24} stroke={1.6} />
-            <b>More</b>
-          </button>
-        </div>
-
-        <h2 className="cx-h1">What would you like today?</h2>
-        <p className="cx-sub">Pick a category to see everything in it.</p>
-        <button className="cx-search fake" onClick={c.focusSearch} aria-label="Search the menu">
-          <Icon n="search" size={20} />
-          <span>Search food, drinks and more...</span>
-        </button>
 
         <div className="cx-sec-h spaced">
           <h3>Categories</h3>
