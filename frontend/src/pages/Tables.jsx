@@ -1,5 +1,5 @@
 import Icon from "../lib/icons";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, cap, elapsed, fmtDT, fmtTime, money } from "../lib/api";
 import { navigate } from "../lib/store";
@@ -7,80 +7,45 @@ import { useAuth, useFetch, useShell, useUI } from "../lib/store";
 import { Badge, Empty, ErrorBox, Field, Loading, Modal, Tabs } from "../lib/ui";
 import { ReceiptModal } from "../components/Receipt";
 import { QR_BRAND, downloadQrCard } from "../lib/qrcard";
+import { buildTableSvg, PHASES, T3D_CSS, tableShape } from "../lib/tableScene";
 import "../styles/table-qr.css";
 
-const ST = ["available", "occupied", "reserved", "cleaning", "out_of_service"];
+// what the floor plan shows (the server sends "phase"; older servers only send "status")
+const ST = ["available", "occupied", "served", "bill", "reserved", "cleaning", "out_of_service"];
+const phaseOf = (t) => t.phase || t.status;
+const labelOf = (k) => (PHASES[k] ? PHASES[k].label : cap(k));
 
-function TableTile({ t, on, onClick, i }) {
-  const n = Math.min(t.capacity || 4, 10),
-    base = Math.floor(n / 4),
-    rem = n % 4;
-  const top = base + (rem > 0 ? 1 : 0),
-    bottom = base + (rem > 1 ? 1 : 0),
-    left = base + (rem > 2 ? 1 : 0),
-    right = base;
-  const chairs = (k, cls) =>
-    Array.from({ length: k }, (_, x) => (
-      <i key={x} className={`chair ${cls}`} />
-    ));
+function FloorTile({ t, on, onClick, i }) {
+  const phase = phaseOf(t);
+  const seats = Math.min(t.capacity || 4, 10);
+  const guests = ["occupied", "served", "bill"].includes(phase) ? t.seated || t.order?.guests || 0 : 0;
+  const svg = useMemo(
+    () => buildTableSvg({ uid: `t${t.id}`, shape: tableShape(t.capacity, t.id), seats, guests, phase, label: t.name }),
+    [t.id, t.capacity, t.name, seats, guests, phase],
+  );
+  const name = /^\d+$/.test(String(t.name)) ? `Table ${t.name}` : t.name;
   return (
-    <button
-      className={`tile ${t.status} ${on ? "on" : ""}`}
-      style={{ "--i": Math.min(i, 30) }}
-      onClick={onClick}
-    >
-      <span className="tile-bar" />
-      <div className="seat">
-        <div className="srow">{chairs(top, "h")}</div>
-        <div className="smid">
-          <div className="scol">{chairs(left, "v")}</div>
-          <div className="sq">
-            <b>{t.name}</b>
-          </div>
-          <div className="scol">{chairs(right, "v")}</div>
-        </div>
-        <div className="srow">{chairs(bottom, "h")}</div>
-      </div>
-      <span className={`tile-st ${t.status}`}>{cap(t.status)}</span>
-      <div className="tile-info">
-        {t.status === "occupied" && t.order && (
+    <button className={`t3d ${phase} ${on ? "on" : ""}`} style={{ "--i": Math.min(i, 30) }} onClick={onClick} title={`${name} - ${labelOf(phase)}`}>
+      <span className="t3d-art" dangerouslySetInnerHTML={{ __html: svg }} />
+      <span className="t3d-name">{name}</span>
+      <span className={`t3d-pill ${phase}`}>
+        <i />
+        {labelOf(phase)}
+        {guests > 0 ? ` (${guests})` : ""}
+      </span>
+      <span className="t3d-sub">
+        {["occupied", "served", "bill"].includes(phase) && t.order && (
           <>
-            <span>
-              <Icon n="users" size={13} /> {t.order.guests || 1} guests
-            </span>
-            <span>
-              <Icon n="clock" size={13} /> {elapsed(t.status_since)}
-            </span>
-            <b>{money(t.order.total)}</b>
+            {elapsed(t.status_since)} · <b>{money(t.order.total)}</b>
           </>
         )}
-        {t.status === "reserved" && (
-          <>
-            <span>
-              <Icon n="user" size={13} /> {t.reserved_for || "Reserved"}
-            </span>
-            <span>
-              <Icon n="clock" size={13} />{" "}
-              {t.reserved_at ? fmtTime(t.reserved_at) : "-"}
-            </span>
-          </>
-        )}
-        {t.status === "cleaning" && (
-          <span>
-            <Icon n="sparkle" size={13} /> Est. 15 min
-          </span>
-        )}
-        {t.status === "out_of_service" && (
-          <span>
-            <Icon n="ban" size={13} /> Not in use
-          </span>
-        )}
-        {t.status === "available" && (
-          <span>
-            <Icon n="users" size={13} /> {t.capacity} seats · ready
-          </span>
-        )}
-      </div>
+        {phase === "occupied" && !t.order && "QR scanned · choosing"}
+        {phase === "reserved" && `${t.reserved_for || "Reserved"}${t.reserved_at ? ` · ${fmtTime(t.reserved_at)}` : ""}`}
+        {phase === "cleaning" && "Est. 15 min"}
+        {phase === "out_of_service" && "Not in use"}
+        {phase === "available" && `${t.capacity} seats`}
+        {guests > seats && ` · seats ${seats}`}
+      </span>
     </button>
   );
 }
@@ -185,6 +150,14 @@ const makeQr = () => {
           <Icon n="users" /> {t.capacity} seats
         </span>
       </div>
+      {t.party && !t.order && (
+        <div className="kv">
+          <span>
+            <Icon n="users" /> Guests seated
+          </span>
+          <b>{t.party} (scanned QR, no order yet)</b>
+        </div>
+      )}
       {t.status === "reserved" && (
         <div className="kv">
           <span>Reserved for</span>
@@ -408,10 +381,15 @@ export default function Tables() {
   const [res, setRes] = useState(null);
   const posPath = admin ? "/admin/pos" : "/";
   const all = list.data?.tables || [],
-    counts = list.data?.counts || {};
+    counts = all.reduce((m, t) => {
+      const k = phaseOf(t);
+      m[k] = (m[k] || 0) + 1;
+      return m;
+    }, {});
+  const busy = (counts.occupied || 0) + (counts.served || 0) + (counts.bill || 0);
   const shown = all.filter(
     (t) =>
-      (flt === "all" || t.status === flt) &&
+      (flt === "all" || phaseOf(t) === flt) &&
       t.name.toLowerCase().includes(search.trim().toLowerCase()),
   );
   const cur = all.find((t) => t.id === sel);
@@ -457,6 +435,7 @@ export default function Tables() {
   };
   return (
     <div className={`page split tables-page ${sel ? "has-panel" : ""}`}>
+      <style>{T3D_CSS}</style>
       <div className="split-main">
         <div className="ph">
           <div>
@@ -495,7 +474,7 @@ export default function Tables() {
               className={`tsum-i ${k} ${flt === k ? "on" : ""}`}
               onClick={() => setFlt(flt === k ? "all" : k)}
             >
-              <span>{cap(k)}</span>
+              <span>{labelOf(k)}</span>
               <b>{counts[k] || 0}</b>
             </button>
           ))}
@@ -504,7 +483,7 @@ export default function Tables() {
               Occupancy{" "}
               <b>
                 {all.length
-                  ? Math.round(((counts.occupied || 0) / all.length) * 100)
+                  ? Math.round((busy / all.length) * 100)
                   : 0}
                 %
               </b>
@@ -512,7 +491,7 @@ export default function Tables() {
             <div className="occ-bar">
               <i
                 style={{
-                  width: `${all.length ? ((counts.occupied || 0) / all.length) * 100 : 0}%`,
+                  width: `${all.length ? (busy / all.length) * 100 : 0}%`,
                 }}
               />
             </div>
@@ -523,7 +502,7 @@ export default function Tables() {
           onChange={setFlt}
           items={[
             ["all", `All Tables (${all.length})`],
-            ...ST.map((s) => [s, `${cap(s)} (${counts[s] || 0})`]),
+            ...ST.map((s) => [s, `${labelOf(s)} (${counts[s] || 0})`]),
           ]}
         />
         {list.error && !list.data ? (
@@ -533,17 +512,27 @@ export default function Tables() {
         ) : !shown.length ? (
           <Empty icon="table" text="No tables found." />
         ) : view === "floor" ? (
-          <div className="floor">
-            {shown.map((t, i) => (
-              <TableTile
-                key={t.id}
-                i={i}
-                t={t}
-                on={sel === t.id}
-                onClick={() => setSel(t.id)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="t3d-legend">
+              {[
+                ["available", "#22c55e"],
+                ["occupied", "#2563eb"],
+                ["served", "#f59e0b"],
+                ["bill", "#ef4444"],
+              ].map(([k, c]) => (
+                <span key={k} style={{ color: c }}>
+                  <i />
+                  <em style={{ fontStyle: "normal", color: "var(--tx2)" }}>{labelOf(k)}</em>
+                </span>
+              ))}
+              <span style={{ color: "var(--tx2)", fontWeight: 500 }}>Number in brackets = guests seated</span>
+            </div>
+            <div className="t3d-floor">
+              {shown.map((t, i) => (
+                <FloorTile key={t.id} i={i} t={t} on={sel === t.id} onClick={() => setSel(t.id)} />
+              ))}
+            </div>
+          </>
         ) : (
           <section className="card">
             <div className="table-wrap">

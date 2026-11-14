@@ -427,6 +427,12 @@ export default function CustomerOrder({ token }) {
   const [fbText, setFbText] = useState("");
   const [fbDone, setFbDone] = useState(false);
   const placedAtRef = useRef(0);
+
+  // "How many people are you?" (asked first, after the QR scan)
+  const [askParty, setAskParty] = useState(false);
+  const [guestCount, setGuestCount] = useState(() => Math.min(30, Math.max(1, readNumber("bb_guests") || 2)));
+  const [partyBusy, setPartyBusy] = useState(false);
+  const [partyErr, setPartyErr] = useState(false);
   const [fbBusy, setFbBusy] = useState(false);
 
   const pushedRef = useRef(false);
@@ -479,6 +485,13 @@ export default function CustomerOrder({ token }) {
       document.removeEventListener("visibilitychange", load);
     };
   }, [token]);
+
+  // ---- first thing after the scan: ask how many people are sitting ----
+  useEffect(() => {
+    if (!data) return;
+    if (data.party) setGuestCount(data.party.guests);
+    else setAskParty(true);
+  }, [data]);
 
   // ---- auto hide notice ----
   useEffect(() => {
@@ -594,6 +607,7 @@ export default function CustomerOrder({ token }) {
           customer_name: customerName.trim(),
           customer_phone: customerPhone.trim(),
           note: note.trim(),
+          guests: data.party ? data.party.guests : undefined,
           items: lines.map((p) => ({ product_id: p.id, qty: p.qty })),
         },
       });
@@ -626,6 +640,22 @@ export default function CustomerOrder({ token }) {
       setNotice(e.message);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const submitParty = async () => {
+    setPartyBusy(true);
+    try {
+      await request(`/public/qr/${token}/seat`, { method: "POST", body: { guests: guestCount } });
+      writeNumber("bb_guests", guestCount);
+      setData((d) => ({ ...d, party: { guests: guestCount, since: new Date().toISOString() } }));
+      setPartyErr(false);
+      setAskParty(false);
+    } catch (e) {
+      setNotice(e.message);
+      setPartyErr(true);
+    } finally {
+      setPartyBusy(false);
     }
   };
 
@@ -828,6 +858,59 @@ export default function CustomerOrder({ token }) {
         </div>
       )}
 
+      {/* ================= HOW MANY PEOPLE? ================= */}
+      {askParty && (
+        <div className="cx-party" role="dialog" aria-modal="true" aria-label="Number of guests">
+          <div className="cx-party-card">
+            {data.party && (
+              <button className="cx-party-x" aria-label="Close" onClick={() => setAskParty(false)}>
+                <Icon n="x" size={18} />
+              </button>
+            )}
+            {data.logo_url && <img className="cx-party-logo" src={img(data.logo_url)} alt="" />}
+            <small className="cx-party-rest">{data.restaurant}</small>
+            <h2>Welcome!</h2>
+            <p className="cx-party-table">
+              <Icon n="pin" size={14} /> Table {data.table.name}
+            </p>
+
+            <h3>How many people are you?</h3>
+            <div className="cx-stepper">
+              <button aria-label="One less" onClick={() => setGuestCount((c) => Math.max(1, c - 1))} disabled={guestCount <= 1}>
+                <Icon n="minus" size={22} />
+              </button>
+              <div className="cx-stepper-n">
+                <Icon n="users" size={22} />
+                <b>{guestCount}</b>
+                <small>{guestCount === 1 ? "person" : "people"}</small>
+              </div>
+              <button aria-label="One more" onClick={() => setGuestCount((c) => Math.min(30, c + 1))} disabled={guestCount >= 30}>
+                <Icon n="plus" size={22} />
+              </button>
+            </div>
+
+            <div className="cx-quickn">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <button key={n} className={n === guestCount ? "on" : ""} onClick={() => setGuestCount(n)}>
+                  {n}
+                </button>
+              ))}
+            </div>
+            {data.table.capacity ? <p className="cx-party-hint">This table seats {data.table.capacity}.</p> : null}
+
+            <button className="cx-place" onClick={submitParty} disabled={partyBusy}>
+              {partyBusy ? "Please wait..." : "Continue"}
+              <Icon n="arrowr" size={20} />
+            </button>
+            {partyErr && (
+              <button className="cx-linkbtn muted" onClick={() => setAskParty(false)}>
+                Skip for now
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ================= CATEGORY ITEMS VIEW ================= */}
       {current ? (
         <>
@@ -888,6 +971,11 @@ export default function CustomerOrder({ token }) {
                 <p>
                   <Icon n="pin" size={14} /> Table {data.table.name}
                 </p>
+                {data.party && (
+                  <button className="cx-party-chip" onClick={() => setAskParty(true)}>
+                    <Icon n="users" size={13} /> {data.party.guests} {data.party.guests === 1 ? "guest" : "guests"} · Change
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1726,6 +1814,27 @@ const RAW_CSS = `
 .cx-info > div svg{margin-top:2px;color:var(--cx-g)}
 .cx-info a{color:var(--cx-g);font-weight:700}
 
+/* ---- how many people ---- */
+.cx-party{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;background:linear-gradient(160deg,#0e3a21,#1c7a42)}
+.cx-party-card{position:relative;width:100%;max-width:420px;margin:auto;padding:26px 20px 20px;text-align:center;background:var(--cx-card);box-shadow:0 24px 60px rgba(0,0,0,.35);animation:cx-up .3s ease-out}
+.cx-party-x{position:absolute;top:10px;right:10px;width:34px;height:34px;display:grid;place-items:center;color:var(--cx-g);background:var(--cx-gl)}
+.cx-party-logo{width:64px;height:64px;object-fit:cover;margin:0 auto 8px;display:block;border:2px solid var(--cx-gl)}
+.cx-party-rest{display:block;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--cx-mu)}
+.cx-party-card h2{margin:2px 0 2px;font-size:28px;font-weight:800}
+.cx-party-table{display:inline-flex;align-items:center;gap:5px;font-size:13.5px;font-weight:700;color:var(--cx-g);background:var(--cx-gl);padding:4px 12px}
+.cx-party-card h3{margin:20px 0 14px;font-size:18px;font-weight:800}
+.cx-stepper{display:flex;align-items:center;justify-content:center;gap:14px}
+.cx-stepper > button{width:56px;height:56px;display:grid;place-items:center;flex:none;color:#fff;background:var(--cx-g)}
+.cx-stepper > button:disabled{opacity:.35}
+.cx-stepper > button:active:not(:disabled){transform:scale(.94)}
+.cx-stepper-n{min-width:110px;display:flex;flex-direction:column;align-items:center;color:var(--cx-g)}
+.cx-stepper-n b{font-size:56px;line-height:1;font-weight:800;color:var(--cx-tx)}
+.cx-stepper-n small{font-size:12.5px;font-weight:700;color:var(--cx-mu)}
+.cx-quickn{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;margin:16px 0 8px}
+.cx-quickn button{height:40px;font-weight:800;font-size:15px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);text-align:center}
+.cx-quickn button.on{color:#fff;background:var(--cx-g);border-color:var(--cx-g)}
+.cx-party-hint{margin:6px 0 14px;font-size:12.5px;color:var(--cx-mu)}
+.cx-party-chip{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:4px 10px;font-size:12px;font-weight:700;color:#fff;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35)}
 @media (min-width:700px){
   .cx{max-width:560px;margin:0 auto;box-shadow:0 0 0 1px var(--cx-bd)}
   .cx-head{}

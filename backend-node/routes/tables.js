@@ -5,28 +5,94 @@ const { api, q, one, tx, cq, fail, audit, notify, paging, like, str, bool, num, 
 const STATUSES = ["available", "occupied", "reserved", "cleaning", "out_of_service"];
 const OPEN = "o.payment_status = 'unpaid' AND o.status NOT IN ('cancelled','completed')";
 
+// Guests that scanned the table QR and told how many people are sitting (see routes/qr.js)
+let partyP = null;
+function partyReady() {
+  if (!partyP) {
+    partyP = pool
+      .query(
+        `CREATE TABLE IF NOT EXISTS bb_table_parties (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          table_id INT NOT NULL,
+          guests INT NOT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          ended_at DATETIME NULL,
+          INDEX idx_party_table (table_id, ended_at)
+        )`,
+      )
+      .catch((e) => {
+        partyP = null;
+        throw e;
+      });
+  }
+  return partyP;
+}
+// a party is "seated" until the table is freed, an order of the table is paid/completed, or 5 hours pass
+const PARTY = `FROM bb_table_parties p WHERE p.table_id = t.id AND p.ended_at IS NULL
+  AND p.created_at > DATE_SUB(NOW(), INTERVAL 5 HOUR)
+  AND NOT EXISTS (SELECT 1 FROM bb_orders x WHERE x.table_id = t.id AND x.completed_at IS NOT NULL AND x.completed_at > p.created_at)
+  ORDER BY p.id DESC LIMIT 1`;
+
 const SELECT = `SELECT t.*, o.id AS order_id, o.bill_no, o.total AS order_total, o.guests, o.customer_name, o.created_at AS order_started
   FROM bb_tables t LEFT JOIN bb_orders o ON o.table_id = t.id AND ${OPEN} WHERE t.is_active = 1`;
 
-function shape(t) {
+const SELECT_FULL = SELECT.replace(
+  "FROM bb_tables t",
+  `, o.status AS order_status, (SELECT p.guests ${PARTY}) AS party_guests FROM bb_tables t`,
+);
+
+// Newest "bill requested" call of each table (customer pressed Request Bill on the QR page)
+async function billCalls() {
+  const rows = await q(
+    `SELECT link_id, MAX(created_at) AS at FROM bb_notifications
+     WHERE link_type = 'table' AND is_archived = 0 AND title LIKE 'Customer Call · Table%· Bill'
+       AND created_at > DATE_SUB(NOW(), INTERVAL 5 HOUR) GROUP BY link_id`,
+  );
+  return new Map(rows.map((r) => [Number(r.link_id), new Date(r.at)]));
+}
+
+// What the floor plan shows: available / occupied / served / bill / reserved / cleaning / out_of_service
+function phaseOf(t, bills) {
+  if (t.order_id) {
+    const asked = bills && bills.get(t.id);
+    if (asked && (!t.order_started || asked >= new Date(t.order_started))) return "bill";
+    return t.order_status === "ready" ? "served" : "occupied";
+  }
+  if (t.status === "available" && t.party_guests) return "occupied";
+  return t.status === "occupied" ? "available" : t.status;
+}
+
+function shape(t, bills) {
   const status = t.order_id ? "occupied" : t.status === "occupied" ? "available" : t.status;
-  return { id: t.id, name: t.name, capacity: t.capacity, qr_token: t.qr_token, status, status_since: t.order_started || t.status_since, reserved_for: t.reserved_for, reserved_phone: t.reserved_phone,
+  const party = Number(t.party_guests) || 0;
+  const orderGuests = Number(t.guests) || 0;
+  const seated = t.order_id ? (orderGuests > 1 ? orderGuests : party || orderGuests || 1) : party;
+  return { phase: phaseOf(t, bills), seated, party: party || null, order_status: t.order_id ? t.order_status || null : null,
+    id: t.id, name: t.name, capacity: t.capacity, qr_token: t.qr_token, status, status_since: t.order_started || t.status_since, reserved_for: t.reserved_for, reserved_phone: t.reserved_phone,
     reserved_at: t.reserved_at, order: t.order_id ? { id: t.order_id, bill_no: t.bill_no, total: t.order_total, guests: t.guests, customer_name: t.customer_name } : null };
 }
 
 api.get("/api/tables", "auth", async (ctx) => {
-  const rows = await q(`${SELECT} ORDER BY t.sort_order, t.id`);
-  let tables = rows.map(shape);
+  await partyReady();
+  const rows = await q(`${SELECT_FULL} ORDER BY t.sort_order, t.id`);
+  const bills = await billCalls();
+  const all = rows.map((r) => shape(r, bills));
+  let tables = all;
   if (ctx.query.status) tables = tables.filter((t) => t.status === ctx.query.status);
   const counts = {};
-  for (const t of rows.map(shape)) counts[t.status] = (counts[t.status] || 0) + 1;
-  return { tables, counts, total: rows.length };
+  const phases = {};
+  for (const t of all) {
+    counts[t.status] = (counts[t.status] || 0) + 1;
+    phases[t.phase] = (phases[t.phase] || 0) + 1;
+  }
+  return { tables, counts, phases, total: rows.length };
 });
 
 api.get("/api/tables/:id", "auth", async (ctx) => {
-  const t = await one(`${SELECT} AND t.id = ?`, [Number(ctx.params.id)]);
+  await partyReady();
+  const t = await one(`${SELECT_FULL} AND t.id = ?`, [Number(ctx.params.id)]);
   if (!t) throw fail(404, "Table not found.");
-  const out = shape(t);
+  const out = shape(t, await billCalls());
   if (t.order_id) {
     out.items = await q("SELECT product_name, unit_price, qty, line_total, (SELECT image_url FROM products WHERE id = product_id) image_url FROM bb_order_items WHERE order_id = ? ORDER BY id", [t.order_id]);
     const [o] = await q("SELECT subtotal, discount_amount, tax_amount, round_off, total, order_type, customer_name FROM bb_orders WHERE id = ?", [t.order_id]);
@@ -83,6 +149,8 @@ api.patch("/api/tables/:id/status", "tables", async (ctx) => {
   } else {
     await q("UPDATE bb_tables SET status=?, status_since=NOW(), reserved_for=NULL, reserved_phone=NULL, reserved_at=NULL WHERE id=?", [status, id]);
   }
+  await partyReady();
+  await q("UPDATE bb_table_parties SET ended_at = NOW() WHERE table_id = ? AND ended_at IS NULL", [id]);
   await audit(ctx, { action: "Updated", module: "Tables", details: `Table ${t.name} marked ${status.replace("_", " ")}`, record_id: id });
   return { message: `${t.name} is now ${status.replace("_", " ")}.` };
 });
@@ -96,6 +164,7 @@ api.post("/api/tables/:id/move", "pos", async (ctx) => {
     if (!a.order_id) throw fail(400, "This table has no active order to move.");
     if (b.order_id || !["available", "cleaning"].includes(b.status)) throw fail(409, `${b.name} is not available.`);
     await c.query("UPDATE bb_orders SET table_id = ?, table_name = ? WHERE id = ?", [b.id, b.name, a.order_id]);
+    await c.query("UPDATE bb_table_parties SET table_id = ? WHERE table_id = ? AND ended_at IS NULL", [b.id, a.id]).catch(() => {});
     await c.query("UPDATE bb_tables SET status='available', status_since=NOW() WHERE id = ?", [a.id]);
     await c.query("UPDATE bb_tables SET status='occupied', status_since=NOW() WHERE id = ?", [b.id]);
     await audit(ctx, { action: "Updated", module: "Tables", details: `Moved order ${a.bill_no} from ${a.name} to ${b.name}`, record_id: a.order_id }, c);

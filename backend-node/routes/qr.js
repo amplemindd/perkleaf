@@ -8,6 +8,34 @@ const SERVED_VISIBLE_MIN = 10; // "Served" / "Cancelled" stays visible on the cu
 const FEEDBACK_GAP_SEC = 20; // one feedback per table every 20 seconds (spam protection)
 const FEEDBACK_TAGS = ["Food", "Service", "Ambience", "Cleanliness", "Value"];
 
+// Guests that scanned the QR code and said how many people are sitting (the POS floor plan seats them)
+let partyP = null;
+function partyReady() {
+  if (!partyP) {
+    partyP = pool
+      .query(
+        `CREATE TABLE IF NOT EXISTS bb_table_parties (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          table_id INT NOT NULL,
+          guests INT NOT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          ended_at DATETIME NULL,
+          INDEX idx_party_table (table_id, ended_at)
+        )`,
+      )
+      .catch((e) => {
+        partyP = null;
+        throw e;
+      });
+  }
+  return partyP;
+}
+const ACTIVE_PARTY = `SELECT guests, created_at FROM bb_table_parties p
+  WHERE p.table_id = ? AND p.ended_at IS NULL AND p.created_at > DATE_SUB(NOW(), INTERVAL 5 HOUR)
+    AND NOT EXISTS (SELECT 1 FROM bb_orders x WHERE x.table_id = p.table_id AND x.completed_at IS NOT NULL AND x.completed_at > p.created_at)
+  ORDER BY p.id DESC LIMIT 1`;
+const MAX_GUESTS = 30;
+
 const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 
 // Customer feedback table (created automatically the first time it is needed)
@@ -46,6 +74,8 @@ api.get("/api/public/qr/:token", null, async (ctx) => {
   );
   if (!table) throw fail(404, "This table QR code is invalid or inactive.");
   const S = await getSettings();
+  await partyReady();
+  const party = await one(ACTIVE_PARTY, [table.id]);
   const categories = await q(
     "SELECT id, name, icon, image_url FROM categories WHERE is_archived = 0 AND is_active = 1 AND show_in_pos = 1 ORDER BY display_order, name",
   );
@@ -55,7 +85,8 @@ api.get("/api/public/qr/:token", null, async (ctx) => {
     WHERE p.is_archived = 0 AND p.is_active = 1 AND p.show_in_pos = 1 AND c.is_archived = 0 AND c.is_active = 1 AND c.show_in_pos = 1
     ORDER BY c.display_order, p.name`);
   return {
-    table: { id: table.id, name: table.name },
+    table: { id: table.id, name: table.name, capacity: table.capacity },
+    party: party ? { guests: party.guests, since: party.created_at } : null,
     restaurant: S.restaurant_name || "Restaurant",
     tagline: S.tagline || "",
     show_tagline: S.show_tagline !== false,
@@ -111,6 +142,23 @@ api.get("/api/public/qr/:token/status", null, async (ctx) => {
   };
 });
 
+// Customer tells how many people are sitting. The POS floor plan shows that many guests at the table.
+api.post("/api/public/qr/:token/seat", null, async (ctx) => {
+  const table = await one(
+    "SELECT id, name, capacity FROM bb_tables WHERE qr_token = ? AND is_active = 1",
+    [str(ctx.params.token, 36)],
+  );
+  if (!table) throw fail(404, "This table QR code is invalid or inactive.");
+  const guests = Math.floor(Number(ctx.body.guests));
+  if (!(guests >= 1 && guests <= MAX_GUESTS)) throw fail(400, `Please choose between 1 and ${MAX_GUESTS} people.`);
+  await partyReady();
+  await q("UPDATE bb_table_parties SET ended_at = NOW() WHERE table_id = ? AND ended_at IS NULL", [table.id]);
+  await q("INSERT INTO bb_table_parties (table_id, guests) VALUES (?, ?)", [table.id, guests]);
+  // an order that is already open on this table gets the new head count too
+  await q(`UPDATE bb_orders SET guests = ? WHERE table_id = ? AND ${OPEN_SQL}`, [guests, table.id]);
+  return { message: `Welcome! ${guests} ${guests === 1 ? "guest" : "guests"} at Table ${table.name}.`, guests };
+});
+
 api.post("/api/public/qr/:token/order", null, async (ctx) => {
   const token = str(ctx.params.token, 36);
   const table = await one(
@@ -146,6 +194,11 @@ api.post("/api/public/qr/:token/order", null, async (ctx) => {
           Math.min(99, (incoming.get(row.product_id) || 0) + row.qty),
         );
   }
+  await partyReady();
+  const party = await one(ACTIVE_PARTY, [table.id]);
+  const guestCount = party
+    ? Number(party.guests)
+    : Math.min(MAX_GUESTS, Math.max(1, Math.floor(Number(ctx.body.guests)) || 1));
   const fakeUser = {
     id: null,
     name: "QR Customer",
@@ -158,7 +211,7 @@ api.post("/api/public/qr/:token/order", null, async (ctx) => {
     table_id: table.id,
     customer_name: str(ctx.body.customer_name, 100) || "QR Customer",
     customer_phone: str(ctx.body.customer_phone, 20),
-    guests: 1,
+    guests: guestCount,
     items: [...incoming].map(([product_id, qty]) => ({ product_id, qty })),
     idempotency_key: existing ? undefined : crypto.randomUUID(),
     source: "qr",
