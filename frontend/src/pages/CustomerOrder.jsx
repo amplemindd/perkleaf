@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import Icon from "../lib/icons";
 import { API_URL, ago, img, money } from "../lib/api";
 
 /* ------------------------------------------------------------------ */
 /*  Customer QR ordering page                                          */
-/*  Flow: all categories (with pictures)  ->  tap one  ->  its items   */
+/*  Flow: all categories (3 per row)  ->  tap one  ->  its items       */
 /* ------------------------------------------------------------------ */
 
 const CALL_COOLDOWN_SEC = 15; // customer can ring the bell once every 15 seconds
@@ -62,60 +61,189 @@ const writeJson = (key, value) => {
 const STATUS_POLL_MS = 5000; // order tracker refreshes every 5 seconds
 const TRACK_HIDE_KEY = "bb_track_hide_"; // "Served"/"Cancelled" card can be dismissed
 
-// small line icons (same style as the rest of the app)
-const svg = (children) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {children}
-  </svg>
-);
+/* ------------------------------------------------------------------ */
+/*  Icon set for this page: one style everywhere                       */
+/*  24x24 grid, 1.8 stroke, round caps and joins                       */
+/* ------------------------------------------------------------------ */
+const PATHS = {
+  bell: (
+    <>
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+    </>
+  ),
+  pin: (
+    <>
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </>
+  ),
+  users: (
+    <>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </>
+  ),
+  check: <path d="M20 6 9 17l-5-5" />,
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </>
+  ),
+  x: (
+    <>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </>
+  ),
+  arrowr: (
+    <>
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </>
+  ),
+  arrowl: (
+    <>
+      <path d="M19 12H5" />
+      <path d="m12 19-7-7 7-7" />
+    </>
+  ),
+  chevr: <path d="m9 18 6-6-6-6" />,
+  plus: (
+    <>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </>
+  ),
+  minus: <path d="M5 12h14" />,
+  search: (
+    <>
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </>
+  ),
+  water: <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" />,
+  utensils: (
+    <>
+      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+      <path d="M7 2v20" />
+      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7" />
+    </>
+  ),
+  tissue: (
+    <>
+      <path d="M4 13h16v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+      <path d="M8 13c0-3 1.5-6 4-8 2.5 2 4 5 4 8" />
+      <path d="M10 17h4" />
+    </>
+  ),
+  chat: (
+    <>
+      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" />
+      <path d="M8 12h.01" />
+      <path d="M12 12h.01" />
+      <path d="M16 12h.01" />
+    </>
+  ),
+  receipt: (
+    <>
+      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z" />
+      <path d="M8 8h8" />
+      <path d="M8 12h8" />
+      <path d="M8 16h5" />
+    </>
+  ),
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.4" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" />
+      <circle cx="19" cy="12" r="1.4" fill="currentColor" />
+    </>
+  ),
+  note: (
+    <>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </>
+  ),
+  refresh: (
+    <>
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+      <path d="M8 16H3v5" />
+    </>
+  ),
+  info: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </>
+  ),
+  phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" />,
+  alert: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 8v4" />
+      <path d="M12 16h.01" />
+    </>
+  ),
+  bag: (
+    <>
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <path d="M3 6h18" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </>
+  ),
+  coffee: (
+    <>
+      <path d="M6 2v2" />
+      <path d="M10 2v2" />
+      <path d="M14 2v2" />
+      <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" />
+    </>
+  ),
+};
+
+function Ic({ n, size = 20, stroke = 1.8, className = "" }) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {PATHS[n] || PATHS.info}
+    </svg>
+  );
+}
+
+// star icon (can be filled)
+function Star({ size = 20, filled = false }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
 
 // "Need anything?" quick requests (key is sent to the server)
 const REQUEST_OPTIONS = [
-  {
-    key: "water",
-    label: "Water",
-    hint: "Glass of water",
-    tone: "blue",
-    icon: svg(<path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z" />),
-  },
-  {
-    key: "cutlery",
-    label: "Cutlery",
-    hint: "Fork, spoon, knife",
-    tone: "amber",
-    icon: svg(
-      <>
-        <path d="M3 2v7a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V2" />
-        <path d="M7 2v20" />
-        <path d="M21 15V2a5 5 0 0 0-5 5v6a2 2 0 0 0 2 2h3zm0 0v7" />
-      </>,
-    ),
-  },
-  {
-    key: "tissues",
-    label: "Tissues",
-    hint: "Napkins / tissues",
-    tone: "teal",
-    icon: svg(
-      <>
-        <path d="M4 12h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
-        <path d="M8 12c-.3-3 1-6 4-8 3 2 4.3 5 4 8" />
-        <path d="M9.5 16.5h5" />
-      </>,
-    ),
-  },
-  {
-    key: "other",
-    label: "Other",
-    hint: "Something else",
-    tone: "violet",
-    icon: svg(
-      <>
-        <path d="M21 12a8 8 0 0 1-11.5 7.2L4 20.5l1.3-4.4A8 8 0 1 1 21 12z" />
-        <path d="M8.5 12h.01M12 12h.01M15.5 12h.01" strokeWidth="2.6" />
-      </>,
-    ),
-  },
+  { key: "water", label: "Water", hint: "Glass of water", tone: "blue", icon: "water" },
+  { key: "cutlery", label: "Cutlery", hint: "Fork, spoon, knife", tone: "amber", icon: "utensils" },
+  { key: "tissues", label: "Tissues", hint: "Napkins / tissues", tone: "teal", icon: "tissue" },
+  { key: "other", label: "Other", hint: "Something else", tone: "violet", icon: "chat" },
 ];
 
 // order status (set by staff on the cashier screen) -> what the customer sees:
@@ -133,18 +261,10 @@ const TRACK_NOTE = {
   preparing: "Your order was accepted. Please wait for it to be served.",
   ready: "Your order was accepted. Please wait for it to be served.",
 };
+const TRACK_STEPS = ["Placed", "Accepted", "Served"];
 
 const RATING_WORDS = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
 const FEEDBACK_TAGS = ["Food", "Service", "Ambience", "Cleanliness", "Value"];
-
-// star icon (the shared icon set has no star)
-function Star({ size = 20, filled = false }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  );
-}
 
 // colours for categories that have no picture
 const TILE_COLORS = [
@@ -187,7 +307,7 @@ function ItemRow({ p, qty, onChange }) {
         className="cx-item-img"
         fallback={
           <div className="cx-item-img cx-item-noimg">
-            <Icon n="utensils" size={28} />
+            <Ic n="utensils" size={26} />
           </div>
         }
       />
@@ -201,17 +321,17 @@ function ItemRow({ p, qty, onChange }) {
       <div className="cx-item-act">
         {qty ? (
           <div className="cx-qty">
-            <button aria-label="Decrease quantity" onClick={() => onChange(p.id, qty - 1)}>
-              <Icon n="minus" size={16} />
+            <button aria-label={`Decrease ${p.name}`} onClick={() => onChange(p.id, qty - 1)}>
+              <Ic n="minus" size={16} stroke={2.2} />
             </button>
             <b>{qty}</b>
-            <button aria-label="Increase quantity" onClick={() => onChange(p.id, qty + 1)}>
-              <Icon n="plus" size={16} />
+            <button aria-label={`Increase ${p.name}`} onClick={() => onChange(p.id, qty + 1)}>
+              <Ic n="plus" size={16} stroke={2.2} />
             </button>
           </div>
         ) : (
-          <button className="cx-add" onClick={() => onChange(p.id, 1)}>
-            ADD
+          <button className="cx-add" aria-label={`Add ${p.name}`} onClick={() => onChange(p.id, 1)}>
+            <Ic n="plus" size={14} stroke={2.6} /> Add
           </button>
         )}
       </div>
@@ -219,7 +339,7 @@ function ItemRow({ p, qty, onChange }) {
   );
 }
 
-// Call-cashier bell: icon only, without background, border or label
+// Call-staff bell: icon only, without background, border or box
 function Bell({ left, ringing, busy, onPress, compact }) {
   const waiting = left > 0;
 
@@ -232,21 +352,21 @@ function Bell({ left, ringing, busy, onPress, compact }) {
       title={waiting ? `Call again in ${left} seconds` : "Call staff"}
     >
       <span className="cx-bell-ic">
-        <Icon n="bell" size={compact ? 25 : 28} />
+        <Ic n="bell" size={compact ? 24 : 26} />
       </span>
       <span className="cx-bell-label">{waiting ? `${left}s` : "Call staff"}</span>
     </button>
   );
 }
 
-// Live order tracker (title + progress bar, no step list)
+// Live order tracker (badge + title + 3-step progress)
 function OrderTracker({ track, onOpen, onRate, onDismiss }) {
   if (track.status === "cancelled") {
     return (
       <section className="cx-track bad">
         <div className="cx-track-cancel">
           <span className="cx-track-ic">
-            <Icon n="alert" size={20} />
+            <Ic n="alert" size={22} />
           </span>
           <div>
             <b>Order cancelled · #{String(track.bill_no || "").replace(/^#/, "")}</b>
@@ -255,7 +375,7 @@ function OrderTracker({ track, onOpen, onRate, onDismiss }) {
         </div>
         {onDismiss && (
           <button className="cx-track-x" aria-label="Dismiss" onClick={onDismiss}>
-            <Icon n="x" size={16} />
+            <Ic n="x" size={16} />
           </button>
         )}
       </section>
@@ -266,23 +386,33 @@ function OrderTracker({ track, onOpen, onRate, onDismiss }) {
   const served = status === "served" || status === "bill_pending";
   const stage = served ? "served" : status === "pending" ? "pending" : "accepted";
   const stageIcon = { pending: "clock", accepted: "check", served: "utensils" }[stage];
+  const stepNo = { pending: 0, accepted: 1, served: 2 }[stage];
   const itemCount = (track.items || []).reduce((sum, i) => sum + i.qty, 0);
 
   return (
     <section className={`cx-track ${stage}`} aria-live="polite">
       <div className="cx-track-main">
         <span className="cx-track-badge">
-          <Icon n={stageIcon} size={24} />
+          <Ic n={stageIcon} size={24} />
         </span>
         <div className="cx-track-body">
           <div className="cx-track-top">
-            <small className="cx-track-no">ORDER #{String(track.bill_no || "").replace(/^#/, "")}</small>
+            <small className="cx-track-no">Order #{String(track.bill_no || "").replace(/^#/, "")}</small>
             {track.created_at && <small className="cx-track-ago">{ago(track.created_at)}</small>}
           </div>
           <h2>{TRACK_TITLE[status]}</h2>
           {TRACK_NOTE[status] && <p className="cx-track-sub">{TRACK_NOTE[status]}</p>}
         </div>
       </div>
+
+      <ol className="cx-prog" aria-label="Order progress">
+        {TRACK_STEPS.map((label, i) => (
+          <li key={label} className={i < stepNo ? "done" : i === stepNo ? "now" : ""}>
+            <span />
+            <small>{label}</small>
+          </li>
+        ))}
+      </ol>
 
       {(onOpen || (served && onRate)) && (
         <div className="cx-track-foot">
@@ -292,13 +422,13 @@ function OrderTracker({ track, onOpen, onRate, onDismiss }) {
                 {itemCount} item{itemCount === 1 ? "" : "s"} · {money(track.total)}
               </b>
               <span>
-                View details <Icon n="arrowr" size={14} />
+                View details <Ic n="chevr" size={15} />
               </span>
             </button>
           )}
           {served && onRate && (
             <button className="cx-track-rate" onClick={onRate}>
-              <Star size={16} filled /> Rate your visit
+              <Star size={15} filled /> Rate visit
             </button>
           )}
         </div>
@@ -306,7 +436,7 @@ function OrderTracker({ track, onOpen, onRate, onDismiss }) {
 
       {served && onDismiss && (
         <button className="cx-track-x" aria-label="Dismiss" onClick={onDismiss}>
-          <Icon n="x" size={16} />
+          <Ic n="x" size={16} />
         </button>
       )}
     </section>
@@ -319,7 +449,7 @@ function NeedAnything({ picked, onToggle, otherText, onOtherText, left, busy, on
 
   return (
     <section className="cx-need">
-      <div className="cx-need-head">
+      <div className="cx-card-h">
         <h3>Need anything?</h3>
         <span>Tap to select</span>
       </div>
@@ -331,17 +461,17 @@ function NeedAnything({ picked, onToggle, otherText, onOtherText, left, busy, on
             <button
               key={o.key}
               type="button"
-              className={`cx-need-btn tone-${o.tone} ${on ? "on" : ""}`}
+              className={`cx-tile tone-${o.tone} ${on ? "on" : ""}`}
               aria-pressed={on}
+              title={o.hint}
               onClick={() => onToggle(o.key)}
             >
-              <span className="cx-need-ic">{o.icon}</span>
-              <span className="cx-need-tx">
-                <b>{o.label}</b>
-                <small>{o.hint}</small>
+              <span className="cx-tile-ic">
+                <Ic n={o.icon} size={22} />
               </span>
-              <span className="cx-need-tick" aria-hidden="true">
-                <Icon n="check" size={11} />
+              <b>{o.label}</b>
+              <span className="cx-tile-tick" aria-hidden="true">
+                <Ic n="check" size={11} stroke={3} />
               </span>
             </button>
           );
@@ -360,7 +490,7 @@ function NeedAnything({ picked, onToggle, otherText, onOtherText, left, busy, on
       )}
 
       <button type="button" className="cx-callstaff" onClick={onCall} disabled={busy || waiting}>
-        <Icon n="bell" size={18} />
+        <Ic n="bell" size={18} />
         <span>
           {waiting
             ? `Call again in ${left}s`
@@ -808,7 +938,7 @@ export default function CustomerOrder({ token }) {
     return (
       <div className="cx">
         <Styles />
-        <div className="cx-center">
+        <div className="cx-center" role="status">
           <div className="cx-spinner" />
           <p>Loading menu...</p>
         </div>
@@ -821,11 +951,11 @@ export default function CustomerOrder({ token }) {
       <div className="cx">
         <Styles />
         <div className="cx-center">
-          <Icon n="alert" size={40} />
+          <Ic n="alert" size={40} />
           <h2>Unable to open this table menu</h2>
           <p>{error}</p>
           <button className="cx-btn" onClick={() => window.location.reload()}>
-            Try Again
+            Try again
           </button>
         </div>
       </div>
@@ -851,7 +981,7 @@ export default function CustomerOrder({ token }) {
   const callNote =
     left > 0 ? (
       <div className="cx-callnote" role="status">
-        <Icon n="check" size={16} />
+        <Ic n="check" size={16} stroke={2.4} />
         <span>
           Staff has been called. You can call again in <b>{left}s</b>
         </span>
@@ -867,7 +997,7 @@ export default function CustomerOrder({ token }) {
         <div className="cx-toast" role="status">
           <span>{notice}</span>
           <button aria-label="Close" onClick={() => setNotice("")}>
-            <Icon n="x" size={16} />
+            <Ic n="x" size={16} />
           </button>
         </div>
       )}
@@ -878,14 +1008,14 @@ export default function CustomerOrder({ token }) {
           <div className="cx-party-card">
             {data.party && (
               <button className="cx-party-x" aria-label="Close" onClick={() => setAskParty(false)}>
-                <Icon n="x" size={18} />
+                <Ic n="x" size={18} />
               </button>
             )}
             {data.logo_url && <img className="cx-party-logo" src={img(data.logo_url)} alt="" />}
             <small className="cx-party-rest">{data.restaurant}</small>
             <h2>Welcome!</h2>
             <p className="cx-party-table">
-              <Icon n="pin" size={14} /> Table {data.table.name}
+              <Ic n="pin" size={14} /> Table {data.table.name}
             </p>
 
             <h3>How many people are you?</h3>
@@ -909,7 +1039,7 @@ export default function CustomerOrder({ token }) {
 
             <button className="cx-place" onClick={submitParty} disabled={partyBusy}>
               {partyBusy ? "Please wait..." : "Continue"}
-              <Icon n="arrowr" size={20} />
+              <Ic n="arrowr" size={20} />
             </button>
             {partyErr && (
               <button className="cx-linkbtn muted" onClick={() => setAskParty(false)}>
@@ -926,13 +1056,13 @@ export default function CustomerOrder({ token }) {
           <div className="cx-bar">
             <div className="cx-bar-top">
               <button className="cx-back" onClick={goHome} aria-label="Back to categories">
-                <Icon n="arrowl" size={20} />
+                <Ic n="arrowl" size={20} />
               </button>
 
               <div className="cx-bar-title">
                 <h2>{current.name}</h2>
                 <small>
-                  {current.items.length} items · Table {data.table.name}
+                  {current.items.length} {current.items.length === 1 ? "item" : "items"} · Table {data.table.name}
                 </small>
               </div>
 
@@ -944,6 +1074,7 @@ export default function CustomerOrder({ token }) {
                 <button
                   key={c.id}
                   className={`cx-chip ${String(c.id) === String(current.id) ? "on" : ""}`}
+                  aria-current={String(c.id) === String(current.id) ? "true" : undefined}
                   onClick={() => openCategory(c.id)}
                 >
                   <Pic
@@ -974,15 +1105,15 @@ export default function CustomerOrder({ token }) {
               {data.logo_url && (
                 <img src={img(data.logo_url)} alt="" className="cx-logo" />
               )}
-              <div>
+              <div className="cx-brand-tx">
                 <small>{data.restaurant}</small>
                 {data.show_tagline !== false && <h1>{data.tagline || "CAFÉ & RESTAURANT"}</h1>}
                 <p>
-                  <Icon n="pin" size={14} /> Table {data.table.name}
+                  <Ic n="pin" size={14} /> Table {data.table.name}
                 </p>
                 {data.party && (
                   <button className="cx-party-chip" onClick={() => setAskParty(true)}>
-                    <Icon n="users" size={13} /> {data.party.guests} {data.party.guests === 1 ? "guest" : "guests"} · Change
+                    <Ic n="users" size={13} /> {data.party.guests} {data.party.guests === 1 ? "guest" : "guests"} · Change
                   </button>
                 )}
               </div>
@@ -1015,27 +1146,24 @@ export default function CustomerOrder({ token }) {
 
             <div className="cx-quick" style={{ gridTemplateColumns: `repeat(${canBill ? 3 : 2}, minmax(0, 1fr))` }}>
               {canBill && (
-                <button className="tone-bill" onClick={requestBill} disabled={callBlocked}>
-                  <span className="cx-q-ic">
-                    <Icon n="receipt" size={24} />
+                <button className="cx-tile tone-bill" onClick={requestBill} disabled={callBlocked}>
+                  <span className="cx-tile-ic">
+                    <Ic n="receipt" size={22} />
                   </span>
-                  <b>Request Bill</b>
-                  <small>Ask for your bill</small>
+                  <b>Request bill</b>
                 </button>
               )}
-              <button className="tone-rate" onClick={openFeedback}>
-                <span className="cx-q-ic">
-                  <Star size={24} filled />
+              <button className="cx-tile tone-rate" onClick={openFeedback}>
+                <span className="cx-tile-ic">
+                  <Star size={22} filled />
                 </span>
-                <b>Rate Us</b>
-                <small>Share feedback</small>
+                <b>Rate us</b>
               </button>
-              <button className="tone-more" onClick={() => setShowMore(true)}>
-                <span className="cx-q-ic">
-                  <Icon n="dots" size={24} />
+              <button className="cx-tile tone-more" onClick={() => setShowMore(true)}>
+                <span className="cx-tile-ic">
+                  <Ic n="more" size={22} />
                 </span>
                 <b>More</b>
-                <small>Requests and info</small>
               </button>
             </div>
 
@@ -1043,16 +1171,17 @@ export default function CustomerOrder({ token }) {
             <p className="cx-hello-sub">Pick a category to see everything in it.</p>
 
             <div className="cx-search">
-              <Icon n="search" size={19} />
+              <Ic n="search" size={20} />
               <input
                 type="search"
+                aria-label="Search the menu"
                 placeholder="Search food, drinks and more..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               {search && (
                 <button aria-label="Clear search" onClick={() => setSearch("")}>
-                  <Icon n="x" size={16} />
+                  <Ic n="x" size={16} />
                 </button>
               )}
             </div>
@@ -1062,12 +1191,12 @@ export default function CustomerOrder({ token }) {
               <section className="cx-section">
                 <div className="cx-sec-h">
                   <b>Search results</b>
-                  <span>{searchResults.length} items</span>
+                  <span>{searchResults.length} {searchResults.length === 1 ? "item" : "items"}</span>
                 </div>
 
                 {searchResults.length === 0 ? (
                   <div className="cx-empty">
-                    <Icon n="search" size={34} />
+                    <Ic n="search" size={34} />
                     <h3>No items found</h3>
                     <p>Try another word, or browse the categories.</p>
                     <button className="cx-btn" onClick={() => setSearch("")}>
@@ -1083,7 +1212,7 @@ export default function CustomerOrder({ token }) {
                 )}
               </section>
             ) : (
-              /* ---- category grid ---- */
+              /* ---- category grid: 3 per row ---- */
               <section className="cx-section">
                 <div className="cx-sec-h">
                   <b>Categories</b>
@@ -1092,7 +1221,7 @@ export default function CustomerOrder({ token }) {
 
                 {categories.length === 0 ? (
                   <div className="cx-empty">
-                    <Icon n="utensils" size={34} />
+                    <Ic n="utensils" size={34} />
                     <h3>Menu is not available right now</h3>
                     <p>Please ask our staff for help.</p>
                   </div>
@@ -1103,31 +1232,30 @@ export default function CustomerOrder({ token }) {
                         key={c.id}
                         className="cx-cat"
                         onClick={() => openCategory(c.id)}
+                        aria-label={`${c.name}, ${c.items.length} items`}
                       >
-                        <Pic
-                          src={c.cover}
-                          alt={c.name}
-                          className="cx-cat-img"
-                          fallback={
-                            <span
-                              className="cx-cat-tile"
-                              style={{
-                                background: `linear-gradient(135deg, ${c.color[0]}, ${c.color[1]})`,
-                              }}
-                            >
-                              <Icon n="utensils" size={40} />
-                            </span>
-                          }
-                        />
-                        <span className="cx-cat-shade" />
+                        <span className="cx-cat-media">
+                          <Pic
+                            src={c.cover}
+                            alt=""
+                            className="cx-cat-img"
+                            fallback={
+                              <span
+                                className="cx-cat-tile"
+                                style={{
+                                  background: `linear-gradient(135deg, ${c.color[0]}, ${c.color[1]})`,
+                                }}
+                              >
+                                <Ic n="coffee" size={34} stroke={1.6} />
+                              </span>
+                            }
+                          />
+                        </span>
                         <span className="cx-cat-t">
                           <b>{c.name}</b>
                           <small>
                             {c.items.length} {c.items.length === 1 ? "item" : "items"}
                           </small>
-                        </span>
-                        <span className="cx-cat-go">
-                          <Icon n="arrowr" size={16} />
                         </span>
                       </button>
                     ))}
@@ -1143,14 +1271,20 @@ export default function CustomerOrder({ token }) {
       {count > 0 && (
         <div className="cx-cart">
           <div className="cx-cart-info">
-            <b>
-              {count} item{count > 1 ? "s" : ""} added
-            </b>
-            <span>{money(total)}</span>
+            <span className="cx-cart-ic">
+              <Ic n="bag" size={22} />
+              <i>{count}</i>
+            </span>
+            <div>
+              <b>
+                {count} item{count > 1 ? "s" : ""} added
+              </b>
+              <span>{money(total)}</span>
+            </div>
           </div>
 
           <button onClick={() => setShowCheckout(true)} disabled={busy}>
-            View Cart <Icon n="arrowr" size={18} />
+            View cart <Ic n="arrowr" size={18} />
           </button>
         </div>
       )}
@@ -1158,14 +1292,14 @@ export default function CustomerOrder({ token }) {
       {/* ================= CHECKOUT ================= */}
       {showCheckout && (
         <div className="cx-ov" onClick={() => setShowCheckout(false)}>
-          <section className="cx-sheet" onClick={(e) => e.stopPropagation()}>
+          <section className="cx-sheet" role="dialog" aria-modal="true" aria-label="Your order" onClick={(e) => e.stopPropagation()}>
             <div className="cx-sheet-h">
               <div>
-                <h2>Your Order</h2>
+                <h2>Your order</h2>
                 <p>Table {data.table.name}</p>
               </div>
               <button aria-label="Close" onClick={() => setShowCheckout(false)}>
-                <Icon n="x" size={20} />
+                <Ic n="x" size={20} />
               </button>
             </div>
 
@@ -1180,12 +1314,12 @@ export default function CustomerOrder({ token }) {
                   </div>
 
                   <div className="cx-qty sm">
-                    <button aria-label="Decrease quantity" onClick={() => change(p.id, p.qty - 1)}>
-                      <Icon n="minus" size={14} />
+                    <button aria-label={`Decrease ${p.name}`} onClick={() => change(p.id, p.qty - 1)}>
+                      <Ic n="minus" size={14} stroke={2.2} />
                     </button>
                     <b>{p.qty}</b>
-                    <button aria-label="Increase quantity" onClick={() => change(p.id, p.qty + 1)}>
-                      <Icon n="plus" size={14} />
+                    <button aria-label={`Increase ${p.name}`} onClick={() => change(p.id, p.qty + 1)}>
+                      <Ic n="plus" size={14} stroke={2.2} />
                     </button>
                   </div>
 
@@ -1198,6 +1332,7 @@ export default function CustomerOrder({ token }) {
               <h3>Your details</h3>
               <input
                 type="text"
+                aria-label="Your name"
                 placeholder="Your name *"
                 required
                 aria-required="true"
@@ -1207,6 +1342,8 @@ export default function CustomerOrder({ token }) {
               />
               <input
                 type="tel"
+                inputMode="numeric"
+                aria-label="Mobile number"
                 placeholder="10-digit mobile number (optional)"
                 maxLength={10}
                 value={customerPhone}
@@ -1228,13 +1365,13 @@ export default function CustomerOrder({ token }) {
               <small className="cx-cnt">{note.length}/200</small>
             </div>
             <div className="cx-total">
-              <span>Total Amount</span>
+              <span>Total amount</span>
               <b>{money(total)}</b>
             </div>
 
             <button className="cx-place" onClick={place} disabled={busy || count === 0}>
-              {busy ? "Sending order..." : "Place Order"}
-              <Icon n="check" size={20} />
+              {busy ? "Sending order..." : "Place order"}
+              <Ic n="check" size={20} stroke={2.4} />
             </button>
 
             <p className="cx-note">Please pay at the cashier after your meal.</p>
@@ -1245,21 +1382,21 @@ export default function CustomerOrder({ token }) {
       {/* ================= ORDER DETAILS / ORDER PLACED ================= */}
       {showTrack && (
         <div className="cx-ov" onClick={closeTrack}>
-          <section className="cx-sheet" onClick={(e) => e.stopPropagation()}>
+          <section className="cx-sheet" role="dialog" aria-modal="true" aria-label="Order details" onClick={(e) => e.stopPropagation()}>
             <div className="cx-sheet-h">
               <div>
-                <h2>{justPlaced ? "Order Placed!" : "Order Details"}</h2>
+                <h2>{justPlaced ? "Order placed!" : "Order details"}</h2>
                 <p>Table {data.table.name}</p>
               </div>
               <button aria-label="Close" onClick={closeTrack}>
-                <Icon n="x" size={20} />
+                <Ic n="x" size={20} />
               </button>
             </div>
 
             {justPlaced && (
               <div className="cx-okbox">
                 <span className="cx-okmark">
-                  <Icon n="check" size={30} />
+                  <Ic n="check" size={30} stroke={2.6} />
                 </span>
                 <p>Thank you! We have received your order.</p>
               </div>
@@ -1297,16 +1434,16 @@ export default function CustomerOrder({ token }) {
             )}
 
             <button className="cx-place cx-more-btn" onClick={closeTrack}>
-              <Icon n="plus" size={18} /> Order more items
+              <Ic n="plus" size={18} stroke={2.4} /> Order more items
             </button>
 
             <div className="cx-two" style={{ gridTemplateColumns: canBill ? "1fr 1fr" : "1fr" }}>
               <button onClick={() => callCashier()} disabled={callBlocked}>
-                <Icon n="bell" size={18} /> {left > 0 ? `Wait ${left}s` : "Call Waiter"}
+                <Ic n="bell" size={18} /> {left > 0 ? `Wait ${left}s` : "Call waiter"}
               </button>
               {canBill && (
                 <button onClick={requestBill} disabled={callBlocked}>
-                  <Icon n="receipt" size={18} /> Request Bill
+                  <Ic n="receipt" size={18} /> Request bill
                 </button>
               )}
             </div>
@@ -1318,23 +1455,23 @@ export default function CustomerOrder({ token }) {
       {/* ================= MORE OPTIONS ================= */}
       {showMore && (
         <div className="cx-ov" onClick={() => setShowMore(false)}>
-          <section className="cx-sheet" onClick={(e) => e.stopPropagation()}>
+          <section className="cx-sheet" role="dialog" aria-modal="true" aria-label="More options" onClick={(e) => e.stopPropagation()}>
             <div className="cx-sheet-h">
               <div>
-                <h2>More Options</h2>
+                <h2>More options</h2>
                 <p>Table {data.table.name}</p>
               </div>
               <button aria-label="Close" onClick={() => setShowMore(false)}>
-                <Icon n="x" size={20} />
+                <Ic n="x" size={20} />
               </button>
             </div>
 
             <div className="cx-more">
               {[
-                ["note", <Icon key="i" n="edit" size={20} />, "Add Special Request", "Extra sauce, no spice, etc.", () => { setShowMore(false); setPanel("request"); }],
-                ["again", <Icon key="i" n="refresh" size={20} />, "Reorder", "Order again from your last order", reorder],
-                ["rate", <Star key="i" size={20} filled />, "Feedback / Rate", "Share your experience", openFeedback],
-                ["info", <Icon key="i" n="pin" size={20} />, "Restaurant Info", "Contact and location", () => { setShowMore(false); setPanel("info"); }],
+                ["note", <Ic key="i" n="note" size={20} />, "Add special request", "Extra sauce, no spice, etc.", () => { setShowMore(false); setPanel("request"); }],
+                ["again", <Ic key="i" n="refresh" size={20} />, "Reorder", "Order again from your last order", reorder],
+                ["rate", <Star key="i" size={20} filled />, "Feedback / rate", "Share your experience", openFeedback],
+                ["info", <Ic key="i" n="info" size={20} />, "Restaurant info", "Contact and location", () => { setShowMore(false); setPanel("info"); }],
               ].map(([key, icon, title, sub, fn]) => (
                 <button key={key} className={`tone-${key}`} onClick={fn}>
                   <span className="cx-more-ic">{icon}</span>
@@ -1342,7 +1479,7 @@ export default function CustomerOrder({ token }) {
                     <b>{title}</b>
                     <small>{sub}</small>
                   </span>
-                  <Icon n="arrowr" size={16} />
+                  <Ic n="chevr" size={18} />
                 </button>
               ))}
             </div>
@@ -1353,22 +1490,22 @@ export default function CustomerOrder({ token }) {
       {/* ================= REQUEST / FEEDBACK / INFO ================= */}
       {panel && (
         <div className="cx-ov" onClick={() => setPanel("")}>
-          <section className="cx-sheet" onClick={(e) => e.stopPropagation()}>
+          <section className="cx-sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="cx-sheet-h">
               <div>
                 <h2>
                   {panel === "request"
-                    ? "Special Request"
+                    ? "Special request"
                     : panel === "feedback"
-                      ? "Rate Your Experience"
-                      : "Restaurant Info"}
+                      ? "Rate your experience"
+                      : "Restaurant info"}
                 </h2>
                 <p>
                   {panel === "feedback" ? "Your feedback helps us serve you better" : `Table ${data.table.name}`}
                 </p>
               </div>
               <button aria-label="Close" onClick={() => setPanel("")}>
-                <Icon n="x" size={20} />
+                <Ic n="x" size={20} />
               </button>
             </div>
 
@@ -1377,6 +1514,7 @@ export default function CustomerOrder({ token }) {
                 <textarea
                   rows={3}
                   maxLength={200}
+                  aria-label="Your request"
                   placeholder="e.g. Extra sauce, less spicy, please bring a high chair..."
                   value={reqText}
                   onChange={(e) => setReqText(e.target.value)}
@@ -1391,7 +1529,7 @@ export default function CustomerOrder({ token }) {
               (fbDone ? (
                 <div className="cx-okbox">
                   <span className="cx-okmark">
-                    <Icon n="check" size={30} />
+                    <Ic n="check" size={30} stroke={2.6} />
                   </span>
                   <b>Thank you for your feedback!</b>
                   <p>We are glad to have you with us.</p>
@@ -1422,8 +1560,8 @@ export default function CustomerOrder({ token }) {
                   <h3 className="cx-fb-h">What stood out?</h3>
                   <div className="cx-tags">
                     {FEEDBACK_TAGS.map((t) => (
-                      <button key={t} className={fbTags.includes(t) ? "on" : ""} onClick={() => toggleTag(t)}>
-                        {fbTags.includes(t) && <Icon n="check" size={12} />}
+                      <button key={t} className={fbTags.includes(t) ? "on" : ""} aria-pressed={fbTags.includes(t)} onClick={() => toggleTag(t)}>
+                        {fbTags.includes(t) && <Ic n="check" size={13} stroke={2.6} />}
                         {t}
                       </button>
                     ))}
@@ -1433,13 +1571,14 @@ export default function CustomerOrder({ token }) {
                     <textarea
                       rows={3}
                       maxLength={300}
+                      aria-label="Your comment"
                       placeholder="Tell us more (optional)"
                       value={fbText}
                       onChange={(e) => setFbText(e.target.value)}
                     />
                   </div>
                   <button className="cx-place" onClick={submitFeedback} disabled={fbBusy}>
-                    {fbBusy ? "Sending..." : "Submit Feedback"}
+                    {fbBusy ? "Sending..." : "Submit feedback"}
                   </button>
                 </div>
               ))}
@@ -1450,12 +1589,12 @@ export default function CustomerOrder({ token }) {
                 {data.tagline && <p>{data.tagline}</p>}
                 {data.address && (
                   <div>
-                    <Icon n="pin" size={17} /> <span>{data.address}</span>
+                    <Ic n="pin" size={18} /> <span>{data.address}</span>
                   </div>
                 )}
                 {data.phone && (
                   <div>
-                    <Icon n="phone" size={17} />{" "}
+                    <Ic n="phone" size={18} />{" "}
                     <a href={`tel:${data.phone}`}>{data.phone}</a>
                   </div>
                 )}
@@ -1476,13 +1615,17 @@ export default function CustomerOrder({ token }) {
 
 /* ------------------------------------------------------------------ */
 /*  Styles (kept in this file). Square corners, like the rest of the app */
+/*  Spacing scale: 4 / 8 / 12 / 16 / 24                                  */
+/*  Type scale:    11 / 12 / 13 / 15 / 17 / 22                           */
 /* ------------------------------------------------------------------ */
 const RAW_CSS = `
 .cx{
   --cx-g:var(--co-green,#14532d);--cx-gd:var(--co-green-dark,#103f25);--cx-gl:var(--co-green-light,#eaf4ec);
   --cx-bg:var(--co-mint,#f3f8f4);--cx-card:var(--co-white,#fff);--cx-tx:var(--co-text,#202923);
-  --cx-mu:var(--co-muted,#7d8980);--cx-bd:var(--co-border,#e8eee9);
-  min-height:100vh;min-height:100dvh;padding-bottom:120px;background:var(--cx-bg);color:var(--cx-tx);
+  --cx-mu:var(--co-muted,#6b776e);--cx-bd:var(--co-border,#e3eae5);
+  --cx-sh:0 2px 10px rgba(20,83,45,.07);
+  --cx-pad:16px;
+  min-height:100vh;min-height:100dvh;padding-bottom:110px;background:var(--cx-bg);color:var(--cx-tx);
   font-family:var(--font,inherit);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;
   -webkit-tap-highlight-color:transparent;overflow-x:clip;
 }
@@ -1492,48 +1635,37 @@ const RAW_CSS = `
 :where(.cx) h1,:where(.cx) h2,:where(.cx) h3,:where(.cx) p{margin:0}
 :where(.cx) small{color:inherit}
 :where(.cx) svg{flex:none}
+.cx button:focus-visible,.cx input:focus-visible,.cx textarea:focus-visible,.cx a:focus-visible{outline:2px solid var(--cx-g);outline-offset:2px}
+
+/* square corners throughout (round only where marked) */
+.cx,.cx *,.cx *::before,.cx *::after{border-radius:0!important}
 
 /* centered states */
 .cx-center{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;color:var(--cx-mu)}
 .cx-center h2{color:var(--cx-tx);font-size:20px}
-.cx-spinner{width:34px;height:34px;border:3px solid var(--cx-gl);border-top-color:var(--cx-g);animation:cx-spin .8s linear infinite}
+.cx .cx-spinner{width:34px;height:34px;border:3px solid var(--cx-gl);border-top-color:var(--cx-g);border-radius:50%!important;animation:cx-spin .8s linear infinite}
 @keyframes cx-spin{to{transform:rotate(360deg)}}
 .cx-btn{padding:12px 22px;background:var(--cx-g);color:#fff!important;font-weight:700}
 
-/* header */
-.cx-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 16px 38px;color:#fff;background:linear-gradient(135deg,#103f25,#1c7a42)}
+/* ---------- header ---------- */
+.cx-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px var(--cx-pad) 44px;color:#fff;background:linear-gradient(135deg,#0f3b23,#1c7a42)}
 .cx-brand{display:flex;align-items:center;gap:12px;min-width:0}
-.cx-logo{width:52px;height:52px;flex:0 0 52px;object-fit:cover;border:2px solid rgba(255,255,255,.35)}
-.cx-brand small{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,.85)}
-.cx-brand h1{font-size:19px;font-weight:800;line-height:1.2;letter-spacing:.2px}
-.cx-brand p{display:flex;align-items:center;gap:5px;margin-top:4px;font-size:13px;font-weight:700;opacity:.95}
+.cx-logo{width:56px;height:56px;flex:0 0 56px;object-fit:cover;border:2px solid rgba(255,255,255,.4)}
+.cx-brand-tx{min-width:0}
+.cx-brand small{display:block;font-size:12px;font-weight:600;letter-spacing:.3px;color:rgba(255,255,255,.85)}
+.cx-brand h1{font-size:18px;font-weight:800;line-height:1.2}
+.cx-brand p{display:flex;align-items:center;gap:5px;margin-top:4px;font-size:13px;font-weight:700}
+.cx-party-chip{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:5px 10px;font-size:12px;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35)}
+.cx-party-chip:active{background:rgba(255,255,255,.28)}
 
 /* bell: icon only, transparent background, no border or box */
-.cx-bell{
-  position:relative;
-  flex:0 0 auto;
-  min-width:44px;
-  min-height:44px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:2px;
-  padding:0 2px!important;
-  color:#fff!important;
-  background:transparent!important;
-  border:0!important;
-  outline:0!important;
-  box-shadow:none!important;
-  cursor:pointer;
-}
+.cx-bell{position:relative;flex:0 0 auto;min-width:48px;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0 2px!important;color:#fff!important;background:transparent!important;border:0!important;outline:0;box-shadow:none!important}
 .cx-bell:active:not(:disabled){transform:scale(.92)}
-.cx-bell:disabled{background:transparent!important;opacity:.65}
+.cx-bell:disabled{background:transparent!important;opacity:.7}
 .cx-bell-ic{display:grid;place-items:center;transform-origin:50% 12%}
-.cx-bell-label{font-size:9px;font-weight:700;line-height:1;letter-spacing:.3px;white-space:nowrap;opacity:.9}
+.cx-bell-label{font-size:11px;font-weight:700;line-height:1;white-space:nowrap}
 .cx-bell.waiting{cursor:default}
-.cx-bell.waiting .cx-bell-ic{opacity:.6}
-/* idle: small vibration-like shake every couple of seconds so customers notice the bell */
+.cx-bell.waiting .cx-bell-ic{opacity:.65}
 .cx-bell:not(.waiting):not(.ringing) .cx-bell-ic{animation:cx-idle 2.6s ease-in-out infinite}
 @keyframes cx-idle{
   0%,60%,100%{transform:rotate(0)}
@@ -1548,59 +1680,55 @@ const RAW_CSS = `
 }
 .cx-bell.ringing .cx-bell-ic{animation:cx-ring .9s ease-in-out infinite}
 @keyframes cx-ring{0%,100%{transform:rotate(0)}10%{transform:rotate(18deg)}20%{transform:rotate(-18deg)}30%{transform:rotate(15deg)}40%{transform:rotate(-15deg)}50%{transform:rotate(10deg)}60%{transform:rotate(-10deg)}70%{transform:rotate(5deg)}80%{transform:rotate(-5deg)}90%{transform:rotate(2deg)}}
-@media (prefers-reduced-motion:reduce){.cx-bell:not(.waiting):not(.ringing) .cx-bell-ic{animation:none}}
+@media (prefers-reduced-motion:reduce){.cx-bell .cx-bell-ic,.cx-bell.ringing .cx-bell-ic{animation:none!important}}
 .cx-bell.compact{color:var(--cx-g)!important}
 
-/* Square corners throughout the customer QR ordering page */
-.cx,
-.cx *,
-.cx *::before,
-.cx *::after{
-  border-radius:0!important;
-}
+.cx-callnote{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:10px 12px;font-size:13px;color:var(--cx-g);background:var(--cx-gl);border:1px solid var(--cx-bd)}
+.cx-bar + .cx-callnote{margin:12px var(--cx-pad) 0}
 
-.cx-callnote{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:9px 12px;font-size:13px;color:var(--cx-g);background:var(--cx-gl);border:1px solid var(--cx-bd)}
-.cx-bar + .cx-callnote{margin:12px 14px 0}
+/* ---------- home ---------- */
+.cx-sheet-top{position:relative;margin-top:-24px;padding:var(--cx-pad) var(--cx-pad) 8px;background:var(--cx-bg)}
+.cx-hello{margin-top:0;font-size:22px;font-weight:800;line-height:1.25}
+.cx-hello-sub{margin:2px 0 12px;color:var(--cx-mu);font-size:14px}
 
-/* home */
-.cx-sheet-top{position:relative;margin-top:-22px;padding:20px 16px 8px;background:var(--cx-bg)}
-.cx-hello{font-size:22px;font-weight:800;line-height:1.25}
-.cx-hello-sub{margin:2px 0 14px;color:var(--cx-mu);font-size:14px}
-.cx-confirm{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:12px 14px;color:var(--cx-g);background:var(--cx-gl);border:1px solid var(--cx-bd)}
-.cx-confirm b{display:block;font-size:15px}
-.cx-confirm span{font-size:13px;color:var(--cx-mu)}
+/* card header, shared by every card */
+.cx-card-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:12px}
+.cx-card-h h3{font-size:17px;font-weight:800;line-height:1.2}
+.cx-card-h span{font-size:12px;font-weight:600;color:var(--cx-mu)}
 
+/* search */
 .cx-search{display:flex;align-items:center;gap:10px;height:50px;padding:0 14px;color:var(--cx-mu);background:var(--cx-card);border:1px solid var(--cx-bd);transition:border-color .2s,box-shadow .2s}
-.cx-search:focus-within{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.1)}
-.cx-search input,.cx-search input:focus{flex:1;min-width:0;width:100%;height:100%;padding:0;margin:0;border:0;outline:0;box-shadow:none;background:transparent;color:var(--cx-tx);font:inherit;font-size:15px}
-.cx-search input::placeholder{color:var(--cx-mu);opacity:.8}
-.cx-search button{display:grid;place-items:center;width:28px;height:28px;color:var(--cx-mu)}
+.cx-search:focus-within{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.12)}
+.cx-search input,.cx-search input:focus,.cx-search input:focus-visible{flex:1;min-width:0;width:100%;height:100%;padding:0;margin:0;border:0;outline:0;box-shadow:none;background:transparent;color:var(--cx-tx);font:inherit;font-size:15px;-webkit-appearance:none;appearance:none}
+.cx-search input::placeholder{color:var(--cx-mu);opacity:.85}
+.cx-search input::-webkit-search-cancel-button{display:none}
+.cx-search button{display:grid;place-items:center;width:32px;height:32px;color:var(--cx-mu)}
 
-.cx-section{margin-top:20px}
-.cx-sec-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
-.cx-sec-h b{font-size:18px;font-weight:800}
-.cx-sec-h span{font-size:12.5px;font-weight:700;color:var(--cx-g);background:var(--cx-gl);padding:3px 10px}
+/* section header */
+.cx-section{margin-top:24px}
+.cx-sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cx-sec-h b{font-size:17px;font-weight:800}
+.cx-sec-h span{font-size:12px;font-weight:700;color:var(--cx-g);background:var(--cx-gl);padding:4px 10px}
 
-/* category grid */
-.cx-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.cx-cat{position:relative;display:block;width:100%;aspect-ratio:1/1.08;overflow:hidden;background:var(--cx-gl);box-shadow:0 6px 18px rgba(20,83,45,.12);transition:transform .15s,box-shadow .15s}
+/* ---------- category grid: 3 per row ---------- */
+.cx-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.cx-cat{display:flex;flex-direction:column;width:100%;min-width:0;overflow:hidden;text-align:left;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:var(--cx-sh);transition:transform .15s,border-color .15s}
 .cx-cat:active{transform:scale(.97)}
-.cx-cat-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .4s}
-.cx-cat:hover .cx-cat-img{transform:scale(1.05)}
-.cx-cat-tile{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.75)}
-.cx-cat-shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.78) 0%,rgba(0,0,0,.28) 45%,rgba(0,0,0,0) 70%)}
-.cx-cat-t{position:absolute;left:12px;right:42px;bottom:11px;color:#fff;display:block}
-.cx-cat-t b{display:block;font-size:15.5px;font-weight:800;line-height:1.2;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow-wrap:anywhere}
-.cx-cat-t small{display:block;margin-top:2px;font-size:12px;font-weight:600;color:rgba(255,255,255,.92)}
-.cx-cat-go{position:absolute;right:10px;bottom:10px;width:30px;height:30px;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4);backdrop-filter:blur(4px)}
+.cx-cat:hover{border-color:#b9d3c1}
+.cx-cat-media{position:relative;display:block;width:100%;aspect-ratio:1/1;overflow:hidden;background:var(--cx-gl)}
+.cx-cat-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cx-cat-tile{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.85)}
+.cx-cat-t{display:flex;flex-direction:column;gap:2px;padding:8px 8px 10px}
+.cx-cat-t b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em;font-size:12.5px;font-weight:700;line-height:1.25;overflow-wrap:anywhere;color:var(--cx-tx)}
+.cx-cat-t small{font-size:11px;font-weight:600;color:var(--cx-mu)}
 
-/* category view */
-.cx-bar{position:sticky;top:0;z-index:20;padding:10px 14px 0;background:var(--cx-card);border-bottom:1px solid var(--cx-bd);box-shadow:0 4px 14px rgba(20,83,45,.06)}
-.cx-bar-top{display:flex;align-items:center;gap:10px;padding-bottom:10px}
-.cx-back{flex:0 0 42px;width:42px;height:42px;display:grid;place-items:center;color:var(--cx-g);background:var(--cx-gl)}
+/* ---------- category view ---------- */
+.cx-bar{position:sticky;top:0;z-index:20;padding:10px var(--cx-pad) 0;background:var(--cx-card);border-bottom:1px solid var(--cx-bd);box-shadow:0 4px 14px rgba(20,83,45,.06)}
+.cx-bar-top{display:flex;align-items:center;gap:12px;padding-bottom:10px}
+.cx-back{flex:0 0 44px;width:44px;height:44px;display:grid;place-items:center;color:var(--cx-g);background:var(--cx-gl)}
 .cx-bar-title{flex:1;min-width:0}
 .cx-bar-title h2{font-size:19px;font-weight:800;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cx-bar-title small{display:block;color:var(--cx-mu);font-size:12.5px}
+.cx-bar-title small{display:block;color:var(--cx-mu);font-size:12px}
 .cx-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .cx-chips::-webkit-scrollbar{display:none}
 .cx-chip{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:4px 14px 4px 4px;font-size:13px;font-weight:700;white-space:nowrap;color:var(--cx-tx);background:var(--cx-card);border:1px solid var(--cx-bd)!important}
@@ -1608,256 +1736,84 @@ const RAW_CSS = `
 .cx-chip-img{width:30px;height:30px;object-fit:cover}
 .cx-chip-dot{display:inline-block;background:var(--cx-gl)}
 
-.cx-list{display:flex;flex-direction:column;gap:10px;padding:14px}
+.cx-list{display:flex;flex-direction:column;gap:10px;padding:var(--cx-pad)}
 .cx-list.tight{padding:0}
 
 /* item row */
-.cx-item{display:flex;align-items:center;gap:12px;padding:10px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 2px 10px rgba(20,83,45,.05)}
-.cx-item-img{width:80px;height:80px;flex:0 0 80px;object-fit:cover;background:var(--cx-gl)}
-.cx-item-noimg{display:grid;place-items:center;color:var(--cx-g);opacity:.7}
+.cx-item{display:flex;align-items:center;gap:12px;padding:10px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:var(--cx-sh)}
+.cx-item-img{width:84px;height:84px;flex:0 0 84px;object-fit:cover;background:var(--cx-gl)}
+.cx-item-noimg{display:grid;place-items:center;color:var(--cx-g);opacity:.6}
 .cx-item-info{flex:1;min-width:0}
 .cx-item-info b{display:block;font-size:15px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
-.cx-item-info p{margin-top:2px;font-size:12.5px;color:var(--cx-mu);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cx-item-info p{margin-top:2px;font-size:12px;color:var(--cx-mu);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cx-item-info strong{display:block;margin-top:6px;font-size:16px;font-weight:800;color:var(--cx-g)}
 .cx-item-act{flex:0 0 auto}
-.cx-add{padding:8px 20px;font-size:13px;font-weight:800;letter-spacing:.4px;color:var(--cx-g);background:var(--cx-card);border:1.5px solid var(--cx-g)!important}
+.cx-add{display:inline-flex;align-items:center;gap:4px;height:38px;padding:0 16px;font-size:13px;font-weight:800;color:var(--cx-g);background:var(--cx-card);border:1.5px solid var(--cx-g)!important}
 .cx-add:active{background:var(--cx-gl)}
-.cx-qty{display:inline-flex;align-items:center;color:#fff;background:var(--cx-g);overflow:hidden}
-.cx-qty button{width:34px;height:36px;display:grid;place-items:center;color:#fff}
-.cx-qty b{min-width:22px;text-align:center;font-size:14px}
-.cx-qty.sm button{width:30px;height:32px}
+.cx-qty{display:inline-flex;align-items:center;height:38px;color:#fff;background:var(--cx-g);overflow:hidden}
+.cx-qty button{width:36px;height:100%;display:grid;place-items:center;color:#fff}
+.cx-qty b{min-width:24px;text-align:center;font-size:14px}
+.cx-qty.sm{height:34px}
+.cx-qty.sm button{width:32px}
 
-.cx-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:34px 16px;text-align:center;color:var(--cx-mu);background:var(--cx-card);border:1px dashed var(--cx-bd)}
+.cx-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:32px var(--cx-pad);text-align:center;color:var(--cx-mu);background:var(--cx-card);border:1px dashed var(--cx-bd)}
 .cx-empty h3{color:var(--cx-tx);font-size:17px}
 
-/* cart bar */
-.cx-cart{position:fixed;left:12px;right:12px;bottom:12px;z-index:30;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 10px 10px 16px;color:#fff;background:var(--cx-gd);box-shadow:0 10px 28px rgba(0,0,0,.28)}
-.cx-cart-info b{display:block;font-size:14px}
-.cx-cart-info span{font-size:18px;font-weight:800}
-.cx-cart > button{display:flex;align-items:center;gap:6px;padding:10px 4px;font-weight:800;font-size:14px;color:#fff;background:transparent!important;border:0!important;box-shadow:none!important;text-decoration:none;white-space:nowrap}
-.cx-cart > button:active{opacity:.75;transform:translateX(2px)}
+/* ---------- cart bar ---------- */
+.cx-cart{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:30;max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px 10px 14px;color:#fff;background:var(--cx-gd);box-shadow:0 10px 28px rgba(0,0,0,.28)}
+.cx-cart-info{display:flex;align-items:center;gap:12px;min-width:0}
+.cx-cart-info b{display:block;font-size:13px;font-weight:600;opacity:.9}
+.cx-cart-info div > span{font-size:18px;font-weight:800;line-height:1.2}
+.cx-cart-ic{position:relative;display:grid;place-items:center;width:42px;height:42px;background:rgba(255,255,255,.14)}
+.cx .cx-cart-ic i{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:800;color:var(--cx-gd);background:#ffd24a;border-radius:10px!important}
+.cx-cart > button{display:flex;align-items:center;gap:6px;height:42px;padding:0 16px;font-weight:800;font-size:14px;color:var(--cx-gd);background:#fff!important;white-space:nowrap}
+.cx-cart > button:active{opacity:.85}
 
-/* checkout sheet */
+/* ---------- sheets ---------- */
 .cx-ov{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,20,14,.55);overscroll-behavior:contain}
-.cx-sheet{width:100%;max-width:560px;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px 16px 22px;background:var(--cx-card);animation:cx-up .25s ease-out}
+.cx-sheet{position:relative;width:100%;max-width:560px;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px var(--cx-pad) 24px;background:var(--cx-card);animation:cx-up .25s ease-out}
 @keyframes cx-up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
-.cx-sheet-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
-.cx-sheet-h h2{font-size:21px;font-weight:800}
+@media (prefers-reduced-motion:reduce){.cx-sheet,.cx-party-card,.cx-toast{animation:none}}
+.cx .cx-sheet::before{content:"";display:block;width:42px;height:4px;margin:-8px auto 12px;background:#d5ded8;border-radius:99px!important}
+.cx-sheet-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.cx-sheet-h h2{font-size:21px;font-weight:800;line-height:1.2}
 .cx-sheet-h p{color:var(--cx-mu);font-size:13px}
-.cx-sheet-h button{width:38px;height:38px;display:grid;place-items:center;background:var(--cx-gl);color:var(--cx-g)}
-.cx-co-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--cx-bd)}
+.cx-sheet-h button{flex:0 0 40px;width:40px;height:40px;display:grid;place-items:center;background:var(--cx-gl);color:var(--cx-g)}
+.cx-co-item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--cx-bd)}
 .cx-co-name{flex:1;min-width:0}
-.cx-co-name b{display:block;font-size:14.5px;line-height:1.3}
-.cx-co-name small{color:var(--cx-mu);font-size:12.5px}
-.cx-co-price{min-width:64px;text-align:right;font-size:14.5px}
+.cx-co-name b{display:block;font-size:14px;line-height:1.3}
+.cx-co-name small{color:var(--cx-mu);font-size:12px}
+.cx-co-price{min-width:64px;text-align:right;font-size:14px}
 .cx-details{margin-top:16px;display:flex;flex-direction:column;gap:10px}
-.cx-details h3{font-size:14px;color:var(--cx-mu);font-weight:700}
+.cx-details h3{font-size:13px;color:var(--cx-mu);font-weight:700}
 .cx-details input{width:100%;height:48px;padding:0 14px;font:inherit;font-size:15px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);outline:0}
 .cx-details textarea{width:100%;min-height:64px;padding:12px 14px;font:inherit;font-size:15px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);outline:0;resize:none}
-.cx-details textarea:focus{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.1)}
+.cx-details input:focus,.cx-details textarea:focus{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.12)}
 .cx-cnt{align-self:flex-end;color:var(--cx-mu);font-size:11px;margin-top:-6px}
-.cx-details input:focus{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.1)}
 .cx-total{display:flex;align-items:center;justify-content:space-between;margin:16px 0 12px;padding:14px 16px;background:var(--cx-gl)}
 .cx-total span{font-weight:700}
 .cx-total b{font-size:22px;color:var(--cx-g)}
-.cx-place{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:15px;font-size:16px;font-weight:800;color:#fff;background:var(--cx-g);text-align:center}
+.cx-place{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;height:52px;padding:0 16px;font-size:16px;font-weight:800;color:#fff;background:var(--cx-g);text-align:center}
+.cx-place:active:not(:disabled){background:var(--cx-gd)}
 .cx-place:disabled{opacity:.6}
 .cx-note{margin-top:10px;text-align:center;font-size:13px;color:var(--cx-mu)}
 
-/* toast + footer */
-.cx-toast{
-  position:fixed;
-  top:max(14px,env(safe-area-inset-top));
-  bottom:auto;
-  left:12px;
-  right:12px;
-  z-index:1000;
-  max-width:520px;
-  margin:0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:14px;
-  padding:15px 16px;
-  font-size:14px;
-  font-weight:700;
-  line-height:1.4;
-  color:#fff;
-  background:linear-gradient(135deg,#103f25,#17643a);
-  border-left:4px solid #83c99b;
-  box-shadow:0 8px 28px rgba(0,0,0,.24);
-  animation:cx-toast-in .28s ease-out;
-}
+/* ---------- toast + footer ---------- */
+.cx-toast{position:fixed;top:max(14px,env(safe-area-inset-top));left:12px;right:12px;z-index:1000;max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;font-size:14px;font-weight:700;line-height:1.4;color:#fff;background:linear-gradient(135deg,#103f25,#17643a);border-left:4px solid #83c99b;box-shadow:0 8px 28px rgba(0,0,0,.24);animation:cx-toast-in .28s ease-out}
 .cx-toast span{flex:1;min-width:0}
-.cx-toast button{
-  flex:0 0 28px;
-  width:28px;
-  height:28px;
-  display:grid;
-  place-items:center;
-  color:#fff;
-  background:transparent!important;
-  opacity:.85;
-}
+.cx-toast button{flex:0 0 32px;width:32px;height:32px;display:grid;place-items:center;color:#fff;background:transparent!important;opacity:.85}
 .cx-toast button:active{opacity:.6}
-@keyframes cx-toast-in{
-  from{transform:translateY(-14px);opacity:0}
-  to{transform:translateY(0);opacity:1}
-}
-.cx-foot{padding:22px 16px 8px;text-align:center;color:var(--cx-mu)}
-.cx-foot p{font-size:13.5px;font-weight:600}
-.cx-foot small{font-size:11.5px;opacity:.8}
+@keyframes cx-toast-in{from{transform:translateY(-14px);opacity:0}to{transform:translateY(0);opacity:1}}
+.cx-foot{padding:24px var(--cx-pad) 8px;text-align:center;color:var(--cx-mu)}
+.cx-foot p{font-size:13px;font-weight:600}
+.cx-foot small{font-size:11px;opacity:.85}
 
-
-/* ---- order tracker ---- */
-.cx-track{position:relative;margin-bottom:14px;padding:16px 16px 14px;background:var(--cx-card);border:1px solid var(--cx-bd);border-top:3px solid var(--cx-g);box-shadow:0 8px 24px rgba(20,83,45,.08)}
-.cx-track.served{border-top-color:#2f8f55;background:linear-gradient(180deg,#f1faf4,#fff 55%)}
-.cx-track.bad{border-top-color:#d92d20;background:#fff6f5}
-.cx-track-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.cx-track-no{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:1.5px;color:var(--cx-mu)}
-.cx-track-ago{font-size:12px;font-weight:600;color:var(--cx-mu)}
-.cx-track h2{margin:4px 0 12px;font-size:26px;font-weight:800;line-height:1.15}
-.cx-track-bar{height:6px;background:var(--cx-bd);overflow:hidden}
-.cx-track-bar span{display:block;height:100%;background:linear-gradient(90deg,#f5b301,#2f8f55);transition:width .6s ease}
-.cx-steps{list-style:none;margin:16px 0 0;padding:0}
-.cx-steps li{position:relative;display:flex;align-items:flex-start;gap:12px;padding-bottom:15px;color:#a9b3ac}
-.cx-steps li:last-child{padding-bottom:0}
-.cx-steps li::after{content:"";position:absolute;left:8px;top:22px;bottom:2px;width:2px;background:#dfe7e1}
-.cx-steps li:last-child::after{display:none}
-.cx-steps li.done::after{background:var(--cx-g)}
-.cx-steps li i{position:relative;z-index:1;flex:0 0 18px;width:18px;height:18px;margin-top:1px;display:grid;place-items:center;color:#fff;background:#fff;border:2px solid #cfd8d1;font-style:normal}
-.cx-steps li.done i{background:var(--cx-g);border-color:var(--cx-g)}
-.cx-steps li.now i{background:#f5b301;border-color:#f5b301;animation:cx-pulse 1.4s ease-in-out infinite}
-.cx-steps li b{display:block;font-size:15px;font-weight:700;line-height:1.3}
-.cx-steps li small{display:block;margin-top:1px;font-size:12px;font-weight:500;color:var(--cx-mu)}
-.cx-steps li.done,.cx-steps li.now{color:var(--cx-tx)}
-.cx-steps li.now b{font-weight:800}
-@keyframes cx-pulse{0%{box-shadow:0 0 0 0 rgba(245,179,1,.55)}70%{box-shadow:0 0 0 8px rgba(245,179,1,0)}100%{box-shadow:0 0 0 0 rgba(245,179,1,0)}}
-@media (prefers-reduced-motion:reduce){.cx-steps li.now i{animation:none}}
-.cx-track-foot{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--cx-bd)}
-.cx-track-more{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
-.cx-track-more b{font-weight:700}
-.cx-track-more span{display:flex;align-items:center;gap:4px;font-weight:700;color:var(--cx-g);white-space:nowrap}
-.cx-track-rate{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:9px 14px;font-size:13px;font-weight:800;color:#fff;background:var(--cx-g)}
-.cx-track-rate svg{color:#ffd24a}
-.cx-track-x{position:absolute;top:8px;right:8px;width:30px;height:30px;display:grid;place-items:center;color:var(--cx-mu)}
-.cx-track-cancel{display:flex;align-items:center;gap:12px;padding-right:26px;color:#b42318}
-.cx-track-cancel small{display:block;font-size:12.5px;color:#7a271a}
-.cx-track-ic{flex:0 0 auto;display:inline-flex;color:#d92d20}
-
-/* ---- need anything (compact, premium) ---- */
-.cx-need{margin-bottom:14px;padding:14px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 8px 24px rgba(20,83,45,.07)}
-.cx-need-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:10px}
-.cx-need-head h3{font-size:16.5px;font-weight:800;line-height:1.2;letter-spacing:.1px}
-.cx-need-head span{font-size:11.5px;font-weight:600;color:var(--cx-mu)}
-.cx-need-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.cx-need-btn{--t:#2b6cb0;position:relative;display:flex;align-items:center;gap:10px;height:54px;padding:0 12px;background:#fbfcfb;border:1px solid var(--cx-bd)!important;transition:background .15s,border-color .15s,box-shadow .15s,transform .1s}
-.cx-need-btn:active{transform:scale(.97)}
-.cx-need-btn.tone-blue{--t:#2b6cb0}
-.cx-need-btn.tone-amber{--t:#c47a12}
-.cx-need-btn.tone-teal{--t:#0f8a7e}
-.cx-need-btn.tone-violet{--t:#8a45c2}
-.cx-need-ic{flex:0 0 auto;display:grid;place-items:center;color:var(--t);background:none}
-.cx-need-ic svg{width:22px;height:22px}
-.cx-need-tx{min-width:0;display:block}
-.cx-need-tx b{display:block;font-size:14px;font-weight:700;line-height:1.15;color:var(--cx-tx)}
-.cx-need-tx small{display:block;margin-top:2px;font-size:11px;line-height:1.2;color:var(--cx-mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cx-need-tick{position:absolute;top:50%;right:9px;width:16px;height:16px;display:grid;place-items:center;color:#fff;background:var(--cx-g);transform:translateY(-50%) scale(0);transition:transform .15s}
-.cx-need-btn.on{background:var(--cx-gl);border-color:var(--cx-g)!important;box-shadow:inset 3px 0 0 var(--cx-g)}
-.cx-need-btn.on .cx-need-tick{transform:translateY(-50%) scale(1)}
-.cx-need-other{width:100%;height:42px;margin-top:8px;padding:0 12px;font:inherit;font-size:14px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);outline:0}
-.cx-need-other:focus{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.1)}
-.cx-callstaff{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;height:46px;margin-top:10px;padding:0 14px;font-size:15px;font-weight:800;letter-spacing:.3px;color:#fff!important;background:linear-gradient(135deg,#145a33,#1f8a4c);box-shadow:0 6px 16px rgba(20,83,45,.22),inset 0 1px 0 rgba(255,255,255,.18)}
-.cx-callstaff:active:not(:disabled){opacity:.9;transform:translateY(1px)}
-.cx-callstaff:disabled{opacity:.6;box-shadow:none}
-
-/* ---- quick actions ---- */
-.cx-quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 20px}
-.cx-quick button{--t:#14532d;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:12px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:0 4px 14px rgba(20,83,45,.06);transition:transform .1s,box-shadow .15s}
-.cx-quick button:active:not(:disabled){transform:scale(.97)}
-.cx-quick button:disabled{opacity:.55}
-.cx-quick .tone-bill{--t:#b86a00}
-.cx-quick .tone-rate{--t:#c99700}
-.cx-quick .tone-more{--t:#14532d}
-.cx-q-ic{display:inline-flex;margin-bottom:4px;color:var(--t)}
-.cx-quick button b{font-size:13.5px;font-weight:800;line-height:1.2}
-.cx-quick button small{font-size:11px;line-height:1.25;color:var(--cx-mu)}
-
-/* ---- sheets: order placed, details, more, feedback ---- */
-.cx-okbox{display:flex;flex-direction:column;align-items:center;gap:8px;margin:2px 0 14px;text-align:center;color:var(--cx-mu);font-size:14px}
-.cx-okbox b{color:var(--cx-tx);font-size:17px}
-.cx-okbox .cx-place{margin-top:6px}
-.cx .cx-okmark{display:inline-grid;place-items:center;width:64px;height:64px;color:#fff;background:linear-gradient(135deg,#2f8f55,#14532d);border-radius:50%!important;box-shadow:0 8px 20px rgba(20,83,45,.3);animation:cx-pop .45s ease-out,cx-breathe 2s ease-in-out .45s infinite}
-.cx .cx-okmark svg{width:32px;height:32px;stroke-width:2.6}
-@keyframes cx-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
-@media (prefers-reduced-motion:reduce){.cx .cx-okmark{animation:none}}
-.cx-track-sub{margin:4px 0 0;font-size:13.5px;line-height:1.4;color:var(--cx-mu)}
-@keyframes cx-pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
-.cx-sheet .cx-track{box-shadow:none;border-color:var(--cx-bd)}
-.cx-sum{margin-top:12px;padding:10px 14px;border:1px solid var(--cx-bd);background:var(--cx-bg)}
-.cx-sum > div{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:14px}
-.cx-sum-t{margin-top:4px;padding-top:9px!important;border-top:1px dashed var(--cx-bd);font-weight:800}
-.cx-sum-t b{color:var(--cx-g);font-size:17px}
-.cx-two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
-.cx-two button{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 8px;font-weight:800;font-size:14px;text-align:center;color:var(--cx-g);background:var(--cx-gl);border:1px solid #cfe5d6}
-.cx-two button:disabled{opacity:.55}
-.cx-linkbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;padding:12px;font-weight:700;color:var(--cx-g)}
-.cx-more{display:flex;flex-direction:column}
-.cx-more > button{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid var(--cx-bd);color:var(--cx-mu)}
-.cx-more > button:last-child{border-bottom:0}
-.cx-more > button:active{background:var(--cx-bg)}
-.cx-more-ic{--t:#14532d;width:28px;display:inline-flex;justify-content:center;flex:none;color:var(--t)}
-.cx-more .tone-note .cx-more-ic{--t:#2b6cb0}
-.cx-more .tone-again .cx-more-ic{--t:#0f8a7e}
-.cx-more .tone-rate .cx-more-ic{--t:#c99700}
-.cx-more .tone-info .cx-more-ic{--t:#8a45c2}
-.cx-more-tx{flex:1;min-width:0}
-.cx-more-tx b{display:block;color:var(--cx-tx);font-size:15px}
-.cx-more-tx small{display:block;font-size:12px;color:var(--cx-mu)}
-.cx-fb{display:flex;flex-direction:column}
-.cx-stars{display:flex;justify-content:center;gap:4px;margin-top:4px}
-.cx-stars button{padding:2px;display:grid;place-items:center;color:#d3d9d5;transition:transform .12s,color .12s}
-.cx-stars button:active{transform:scale(.88)}
-.cx-stars button.on{color:#f5b301}
-.cx-fb-word{margin:6px 0 4px;text-align:center;font-size:15px;font-weight:700;color:var(--cx-mu)}
-.cx-fb-word.on{color:var(--cx-g)}
-.cx-fb-h{margin:14px 0 8px;font-size:14px;font-weight:700;color:var(--cx-mu)}
-.cx-tags{display:flex;flex-wrap:wrap;gap:8px}
-.cx-tags button{display:flex;align-items:center;gap:5px;padding:8px 14px;font-size:13px;font-weight:700;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd)}
-.cx-tags button.on{color:#fff;background:var(--cx-g);border-color:var(--cx-g)}
-.cx-fb .cx-details{margin:12px 0}
-.cx-info{display:flex;flex-direction:column;gap:12px;font-size:15px}
-.cx-info h3{font-size:19px;font-weight:800}
-.cx-info p{color:var(--cx-mu)}
-.cx-info > div{display:flex;align-items:flex-start;gap:10px}
-.cx-info > div svg{margin-top:2px;color:var(--cx-g)}
-.cx-info a{color:var(--cx-g);font-weight:700}
-
-/* ---- how many people ---- */
-.cx-party{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;overscroll-behavior:contain;z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;background:linear-gradient(160deg,#0e3a21,#1c7a42)}
-.cx-party-card{position:relative;width:100%;max-width:420px;margin:auto;padding:26px 20px 20px;text-align:center;background:var(--cx-card);box-shadow:0 24px 60px rgba(0,0,0,.35);animation:cx-up .3s ease-out}
-.cx-party-x{position:absolute;top:10px;right:10px;width:34px;height:34px;display:grid;place-items:center;color:var(--cx-g);background:var(--cx-gl)}
-.cx-party-logo{width:64px;height:64px;object-fit:cover;margin:0 auto 8px;display:block;border:2px solid var(--cx-gl)}
-.cx-party-rest{display:block;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--cx-mu)}
-.cx-party-card h2{margin:2px 0 2px;font-size:28px;font-weight:800}
-.cx-party-table{display:inline-flex;align-items:center;gap:5px;font-size:13.5px;font-weight:700;color:var(--cx-g);background:var(--cx-gl);padding:4px 12px}
-.cx-party-card h3{margin:20px 0 14px;font-size:18px;font-weight:800}
-.cx-guests{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));gap:10px;margin:18px 0 6px}
-.cx-guests button{height:58px;font-size:22px;font-weight:800;color:var(--cx-tx);background:var(--cx-bg);border:1.5px solid var(--cx-bd);text-align:center;transition:background .15s,border-color .15s,transform .1s}
-.cx-guests button:active{transform:scale(.94)}
-.cx-guests button.on{color:#fff;background:var(--cx-g);border-color:var(--cx-g);box-shadow:0 6px 14px rgba(20,83,45,.28)}
-.cx-party-hint{margin:6px 0 14px;font-size:12.5px;color:var(--cx-mu)}
-.cx-party-chip{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:4px 10px;font-size:12px;font-weight:700;color:#fff;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35)}
-@media (min-width:700px){
-  .cx{max-width:560px;margin:0 auto;box-shadow:0 0 0 1px var(--cx-bd)}
-  .cx-head{}
-}
-
-/* ---- order status card (home + order sheet) ---- */
-.cx-track{padding:16px 16px 14px}
+/* ---------- order status card ---------- */
+.cx-track{position:relative;margin-bottom:12px;padding:16px;background:var(--cx-card);border:1px solid var(--cx-bd);border-top:3px solid var(--cx-g);box-shadow:var(--cx-sh)}
 .cx-track.pending{border-top-color:#f5b301;background:linear-gradient(180deg,#fffaeb,#fff 60%)}
 .cx-track.accepted{border-top-color:#2f8f55;background:linear-gradient(180deg,#f1faf4,#fff 60%)}
 .cx-track.served{border-top-color:#14532d;background:linear-gradient(180deg,#e8f5ec,#fff 60%)}
+.cx-track.bad{border-top-color:#d92d20;background:#fff6f5}
 .cx-track-main{display:flex;align-items:flex-start;gap:14px}
 .cx-track-body{flex:1;min-width:0}
 .cx .cx-track-badge{position:relative;flex:0 0 auto;width:48px;height:48px;display:grid;place-items:center;border-radius:50%!important}
@@ -1867,14 +1823,73 @@ const RAW_CSS = `
 .cx .cx-track.pending .cx-track-badge::after{content:"";position:absolute;inset:-4px;border:2px solid #f5b301;border-radius:50%!important;opacity:0;animation:cx-wait 1.8s ease-out infinite}
 @keyframes cx-wait{0%{transform:scale(.9);opacity:.6}100%{transform:scale(1.25);opacity:0}}
 @media (prefers-reduced-motion:reduce){.cx .cx-track.pending .cx-track-badge::after{animation:none}}
-.cx-track h2{margin:2px 0 0;font-size:21px;line-height:1.2}
-.cx-track-top{justify-content:flex-start;gap:10px}
-.cx-track-no{font-size:11.5px;letter-spacing:1.2px}
-.cx-track-ago{font-size:11.5px}
-.cx-track-ago::before{content:"·";margin-right:10px}
+.cx-track-top{display:flex;align-items:center;gap:8px}
+.cx-track-no{font-size:12px;font-weight:600;letter-spacing:.4px;color:var(--cx-mu)}
+.cx-track-ago{font-size:12px;font-weight:600;color:var(--cx-mu)}
+.cx-track-ago::before{content:"·";margin-right:8px}
+.cx-track h2{margin:2px 0 0;font-size:21px;font-weight:800;line-height:1.2}
+.cx-track-sub{margin:4px 0 0;font-size:13px;line-height:1.4;color:var(--cx-mu)}
 
-/* ---- items card ---- */
-.cx-sum{margin-top:12px;padding:12px 14px 10px;border:1px solid var(--cx-bd);background:var(--cx-card);box-shadow:0 4px 14px rgba(20,83,45,.05)}
+/* 3-step progress */
+.cx-prog{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:14px 0 0;padding:0}
+.cx-prog li{display:flex;flex-direction:column;gap:5px}
+.cx-prog li span{display:block;height:4px;background:var(--cx-bd)}
+.cx-prog li small{font-size:11px;font-weight:600;color:var(--cx-mu)}
+.cx-prog li.done span{background:var(--cx-g)}
+.cx-prog li.now span{background:#f5b301}
+.cx-track.accepted .cx-prog li.now span,.cx-track.served .cx-prog li.now span{background:var(--cx-g)}
+.cx-prog li.done small,.cx-prog li.now small{color:var(--cx-tx);font-weight:700}
+
+.cx-track-foot{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--cx-bd)}
+.cx-track-more{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:36px;font-size:13px}
+.cx-track-more b{font-weight:700}
+.cx-track-more span{display:flex;align-items:center;gap:2px;font-weight:700;color:var(--cx-g);white-space:nowrap}
+.cx-track-rate{flex:0 0 auto;display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;font-size:13px;font-weight:800;color:#fff;background:var(--cx-g)}
+.cx-track-rate svg{color:#ffd24a}
+.cx-track-x{position:absolute;top:6px;right:6px;width:36px;height:36px;display:grid;place-items:center;color:var(--cx-mu)}
+.cx-track-cancel{display:flex;align-items:center;gap:12px;padding-right:28px;color:#b42318}
+.cx-track-cancel small{display:block;font-size:12px;color:#7a271a}
+.cx-track-ic{flex:0 0 auto;display:inline-flex;color:#d92d20}
+.cx-sheet .cx-track{box-shadow:none}
+
+/* ---------- action tiles (shared by "Need anything?" and shortcuts) ---------- */
+.cx-need{margin-bottom:12px;padding:16px;background:var(--cx-card);border:1px solid var(--cx-bd);box-shadow:var(--cx-sh)}
+.cx-need-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.cx-tile{--t:#14532d;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:84px;padding:12px 4px;text-align:center;background:#fbfcfb;border:1px solid var(--cx-bd)!important;transition:background .15s,border-color .15s,transform .1s}
+.cx-tile:active:not(:disabled){transform:scale(.97)}
+.cx-tile:disabled{opacity:.55}
+.cx-tile b{font-size:12px;font-weight:700;line-height:1.2;color:var(--cx-tx)}
+.cx-tile-ic{display:grid;place-items:center;width:40px;height:40px;color:var(--t);background:#eef5f0;background:color-mix(in srgb,var(--t) 11%,#fff)}
+.cx-tile.tone-blue{--t:#2b6cb0}
+.cx-tile.tone-amber{--t:#c47a12}
+.cx-tile.tone-teal{--t:#0f8a7e}
+.cx-tile.tone-violet{--t:#8a45c2}
+.cx-tile.tone-bill{--t:#b86a00}
+.cx-tile.tone-rate{--t:#c99700}
+.cx-tile.tone-more{--t:#14532d}
+.cx-tile-tick{position:absolute;top:6px;right:6px;width:16px;height:16px;display:grid;place-items:center;color:#fff;background:var(--cx-g);transform:scale(0);transition:transform .15s}
+.cx-tile.on{background:var(--cx-gl);border-color:var(--cx-g)!important;box-shadow:inset 0 -3px 0 var(--cx-g)}
+.cx-tile.on .cx-tile-tick{transform:scale(1)}
+.cx-need-other{width:100%;height:44px;margin-top:8px;padding:0 12px;font:inherit;font-size:14px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);outline:0}
+.cx-need-other:focus{border-color:var(--cx-g);box-shadow:0 0 0 3px rgba(20,83,45,.12)}
+.cx-callstaff{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;height:48px;margin-top:12px;padding:0 14px;font-size:15px;font-weight:800;color:#fff!important;background:linear-gradient(135deg,#145a33,#1f8a4c);box-shadow:0 6px 16px rgba(20,83,45,.22)}
+.cx-callstaff:active:not(:disabled){opacity:.9;transform:translateY(1px)}
+.cx-callstaff:disabled{opacity:.6;box-shadow:none}
+
+/* shortcuts: Request bill / Rate us / More (same tile as above) */
+.cx-quick{display:grid;gap:8px;margin:0 0 24px}
+.cx-quick .cx-tile{background:var(--cx-card);box-shadow:var(--cx-sh)}
+
+/* ---------- sheets: placed, details, more, feedback ---------- */
+.cx-okbox{display:flex;flex-direction:column;align-items:center;gap:10px;margin:0 0 12px;text-align:center;color:var(--cx-mu);font-size:14px}
+.cx-okbox b{color:var(--cx-tx);font-size:17px}
+.cx-okbox p{font-size:13px}
+.cx-okbox .cx-place{margin-top:6px}
+.cx .cx-okmark{display:inline-grid;place-items:center;width:64px;height:64px;color:#fff;background:linear-gradient(135deg,#2f8f55,#14532d);border-radius:50%!important;box-shadow:0 8px 20px rgba(20,83,45,.3);animation:cx-pop .45s ease-out}
+@keyframes cx-pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.cx .cx-okmark{animation:none}}
+
+.cx-sum{margin-top:12px;padding:12px 14px 10px;border:1px solid var(--cx-bd);background:var(--cx-card);box-shadow:var(--cx-sh)}
 .cx-sum-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;padding-bottom:8px;border-bottom:1px solid var(--cx-bd)}
 .cx-sum-h b{font-size:14px;font-weight:800}
 .cx-sum-h small{font-size:12px;font-weight:600;color:var(--cx-mu)}
@@ -1882,18 +1897,72 @@ const RAW_CSS = `
 .cx-sum-row i{flex:0 0 auto;min-width:32px;padding:3px 0;font-style:normal;font-size:12px;font-weight:800;text-align:center;color:var(--cx-g);background:var(--cx-gl)}
 .cx-sum-row span{flex:1;min-width:0}
 .cx-sum-row b{font-weight:700;white-space:nowrap}
-.cx-sum-t{margin-top:4px;padding-top:10px!important;border-top:1px dashed var(--cx-bd);font-weight:800}
-.cx-sum-t b{font-size:18px}
+.cx-sum-t{display:flex;justify-content:space-between;gap:10px;margin-top:4px;padding-top:10px;border-top:1px dashed var(--cx-bd);font-weight:800}
+.cx-sum-t b{font-size:18px;color:var(--cx-g)}
 
-/* ---- sheet actions + grabber ---- */
 .cx-more-btn{margin-top:14px;box-shadow:0 8px 18px rgba(20,83,45,.22)}
-.cx-two{margin-top:10px}
-.cx-two button{padding:12px 8px;font-size:13.5px;color:var(--cx-g);background:var(--cx-card);border:1.5px solid #cfe5d6}
+.cx-two{display:grid;gap:8px;margin-top:10px}
+.cx-two button{display:flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 8px;font-weight:800;font-size:13.5px;text-align:center;color:var(--cx-g);background:var(--cx-card);border:1.5px solid #cfe5d6}
 .cx-two button:active:not(:disabled){background:var(--cx-gl)}
-.cx-sheet{position:relative}
-.cx .cx-sheet::before{content:"";display:block;width:42px;height:4px;margin:-8px auto 12px;background:#d5ded8;border-radius:99px!important}
-.cx-okbox{gap:10px;margin:0 0 12px}
-.cx-okbox p{font-size:13.5px}
+.cx-two button:disabled{opacity:.55}
+.cx-linkbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;padding:12px;font-weight:700;color:var(--cx-g)}
+
+.cx-more{display:flex;flex-direction:column}
+.cx-more > button{display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 0;border-bottom:1px solid var(--cx-bd);color:var(--cx-mu)}
+.cx-more > button:last-child{border-bottom:0}
+.cx-more > button:active{background:var(--cx-bg)}
+.cx-more-ic{--t:#14532d;flex:0 0 40px;width:40px;height:40px;display:grid;place-items:center;color:var(--t);background:#eef5f0;background:color-mix(in srgb,var(--t) 11%,#fff)}
+.cx-more .tone-note .cx-more-ic{--t:#2b6cb0}
+.cx-more .tone-again .cx-more-ic{--t:#0f8a7e}
+.cx-more .tone-rate .cx-more-ic{--t:#c99700}
+.cx-more .tone-info .cx-more-ic{--t:#8a45c2}
+.cx-more-tx{flex:1;min-width:0}
+.cx-more-tx b{display:block;color:var(--cx-tx);font-size:15px}
+.cx-more-tx small{display:block;font-size:12px;color:var(--cx-mu)}
+
+.cx-fb{display:flex;flex-direction:column}
+.cx-stars{display:flex;justify-content:center;gap:4px;margin-top:4px}
+.cx-stars button{padding:2px;display:grid;place-items:center;color:#d3d9d5;transition:transform .12s,color .12s}
+.cx-stars button:active{transform:scale(.88)}
+.cx-stars button.on{color:#f5b301}
+.cx-fb-word{margin:6px 0 4px;text-align:center;font-size:15px;font-weight:700;color:var(--cx-mu)}
+.cx-fb-word.on{color:var(--cx-g)}
+.cx-fb-h{margin:14px 0 8px;font-size:13px;font-weight:700;color:var(--cx-mu)}
+.cx-tags{display:flex;flex-wrap:wrap;gap:8px}
+.cx-tags button{display:flex;align-items:center;gap:5px;height:38px;padding:0 14px;font-size:13px;font-weight:700;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd)}
+.cx-tags button.on{color:#fff;background:var(--cx-g);border-color:var(--cx-g)}
+.cx-fb .cx-details{margin:12px 0}
+.cx-info{display:flex;flex-direction:column;gap:12px;font-size:15px}
+.cx-info h3{font-size:19px;font-weight:800}
+.cx-info p{color:var(--cx-mu)}
+.cx-info > div{display:flex;align-items:flex-start;gap:10px}
+.cx-info > div svg{margin-top:2px;color:var(--cx-g)}
+.cx-info a{color:var(--cx-g);font-weight:700}
+
+/* ---------- how many people ---------- */
+.cx-party{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;overscroll-behavior:contain;z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;background:linear-gradient(160deg,#0e3a21,#1c7a42)}
+.cx-party-card{position:relative;width:100%;max-width:420px;margin:auto;padding:26px 20px 20px;text-align:center;background:var(--cx-card);box-shadow:0 24px 60px rgba(0,0,0,.35);animation:cx-up .3s ease-out}
+.cx-party-x{position:absolute;top:10px;right:10px;width:40px;height:40px;display:grid;place-items:center;color:var(--cx-g);background:var(--cx-gl)}
+.cx-party-logo{width:64px;height:64px;object-fit:cover;margin:0 auto 8px;display:block;border:2px solid var(--cx-gl)}
+.cx-party-rest{display:block;font-size:12px;font-weight:700;color:var(--cx-mu)}
+.cx-party-card h2{margin:2px 0 4px;font-size:28px;font-weight:800}
+.cx-party-table{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;color:var(--cx-g);background:var(--cx-gl);padding:4px 12px}
+.cx-party-card h3{margin:20px 0 14px;font-size:17px;font-weight:800}
+.cx-guests{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));gap:10px;margin:18px 0 6px}
+.cx-guests button{height:56px;font-size:22px;font-weight:800;color:var(--cx-tx);background:var(--cx-bg);border:1.5px solid var(--cx-bd);text-align:center;transition:background .15s,border-color .15s,transform .1s}
+.cx-guests button:active{transform:scale(.94)}
+.cx-guests button.on{color:#fff;background:var(--cx-g);border-color:var(--cx-g);box-shadow:0 6px 14px rgba(20,83,45,.28)}
+.cx-party-hint{margin:6px 0 14px;font-size:12px;color:var(--cx-mu)}
+
+@media (min-width:700px){
+  .cx{max-width:560px;margin:0 auto;box-shadow:0 0 0 1px var(--cx-bd)}
+}
+@media (max-width:340px){
+  .cx{--cx-pad:12px}
+  .cx-grid{gap:8px}
+  .cx-cat-t b{font-size:12px}
+  .cx-tile b{font-size:11.5px}
+}
 `;
 
 const CSS = RAW_CSS;
