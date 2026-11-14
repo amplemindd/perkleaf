@@ -250,7 +250,7 @@ export const T3D_CSS = `
 .t3d-legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin:0 0 12px;font-size:12.5px;font-weight:600;color:var(--tx2,#5b6b61)}
 .t3d-legend span{display:inline-flex;align-items:center;gap:6px}
 .t3d-legend i{width:11px;height:11px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 22%,transparent)}
-.t3d-floor{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:20px 12px;padding:20px 14px;border:1px solid var(--bd,#e1eae3);background:radial-gradient(ellipse at 50% -10%,#ffffff 0,var(--lg,#f2f7f3) 70%)}
+.t3d-floor{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:20px 12px;padding:20px 14px;border:1px solid var(--bd,#e1eae3);background:var(--w,#fff)}
 .t3d{display:flex;flex-direction:column;align-items:center;gap:0;padding:4px 6px 10px;background:transparent;border:2px solid transparent;cursor:pointer;color:inherit;font:inherit;transition:transform .2s ease,background .2s;animation:t3d-in .45s ease both;animation-delay:calc(var(--i,0) * 35ms)}
 .t3d:hover{transform:translateY(-5px)}
 .t3d:hover .t3d-art{filter:drop-shadow(0 12px 14px rgba(0,0,0,.28))}

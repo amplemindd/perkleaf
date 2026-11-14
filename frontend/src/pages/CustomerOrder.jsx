@@ -119,13 +119,19 @@ const REQUEST_OPTIONS = [
 ];
 
 // order status (set by staff on the cashier screen) -> what the customer sees
-const TRACK_STEPS = [
-  { key: "pending", label: "Order received", hint: "We have your order" },
-  { key: "preparing", label: "In the kitchen", hint: "Being prepared fresh" },
-  { key: "ready", label: "Ready to serve", hint: "On its way to your table" },
-  { key: "served", label: "Served", hint: "Enjoy your meal" },
-];
-const TRACK_TITLE = { pending: "Order received", preparing: "Preparing", ready: "Ready to serve", served: "Served" };
+const TRACK_STATUSES = ["pending", "preparing", "ready", "served"];
+const TRACK_TITLE = {
+  pending: "Waiting to be served",
+  preparing: "Waiting to be served",
+  ready: "Waiting to be served",
+  served: "Served",
+};
+const TRACK_SUB = {
+  pending: "We have received your order.",
+  preparing: "Your order is being prepared fresh.",
+  ready: "Your order is ready and on its way to your table.",
+  served: "Enjoy your meal!",
+};
 const TRACK_PERCENT = { pending: 25, preparing: 55, ready: 80, served: 100 };
 
 const RATING_WORDS = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
@@ -233,7 +239,7 @@ function Bell({ left, ringing, busy, onPress, compact }) {
   );
 }
 
-// Live order tracker: Order received -> In the kitchen -> Ready to serve -> Served
+// Live order tracker (title + progress bar, no step list)
 function OrderTracker({ track, onOpen, onRate, onDismiss }) {
   if (track.status === "cancelled") {
     return (
@@ -256,8 +262,7 @@ function OrderTracker({ track, onOpen, onRate, onDismiss }) {
     );
   }
 
-  const status = TRACK_STEPS.some((s) => s.key === track.status) ? track.status : "pending";
-  const at = TRACK_STEPS.findIndex((s) => s.key === status);
+  const status = TRACK_STATUSES.includes(track.status) ? track.status : "pending";
   const served = status === "served";
   const itemCount = (track.items || []).reduce((sum, i) => sum + i.qty, 0);
 
@@ -273,20 +278,7 @@ function OrderTracker({ track, onOpen, onRate, onDismiss }) {
         <span style={{ width: `${TRACK_PERCENT[status]}%` }} />
       </div>
 
-      <ol className="cx-steps">
-        {TRACK_STEPS.map((step, i) => {
-          const state = i < at || served ? "done" : i === at ? "now" : "todo";
-          return (
-            <li key={step.key} className={state}>
-              <i>{state === "done" ? <Icon n="check" size={11} /> : null}</i>
-              <span>
-                <b>{step.label}</b>
-                {state === "now" && <small>{step.hint}</small>}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
+      <p className="cx-track-sub">{TRACK_SUB[status]}</p>
 
       {(onOpen || (served && onRate)) && (
         <div className="cx-track-foot">
@@ -431,6 +423,9 @@ export default function CustomerOrder({ token }) {
   // "How many people are you?" (asked first, after the QR scan)
   const [askParty, setAskParty] = useState(false);
   const [guestCount, setGuestCount] = useState(() => Math.min(30, Math.max(1, readNumber("bb_guests") || 2)));
+  // the guest picker shows 1..capacity of THIS table (8 if the table has no capacity set)
+  const maxGuests = data?.table?.capacity > 0 ? Math.min(30, Number(data.table.capacity)) : 8;
+  const pickedGuests = Math.min(guestCount, maxGuests);
   const [partyBusy, setPartyBusy] = useState(false);
   const [partyErr, setPartyErr] = useState(false);
   const [fbBusy, setFbBusy] = useState(false);
@@ -646,9 +641,9 @@ export default function CustomerOrder({ token }) {
   const submitParty = async () => {
     setPartyBusy(true);
     try {
-      await request(`/public/qr/${token}/seat`, { method: "POST", body: { guests: guestCount } });
-      writeNumber("bb_guests", guestCount);
-      setData((d) => ({ ...d, party: { guests: guestCount, since: new Date().toISOString() } }));
+      await request(`/public/qr/${token}/seat`, { method: "POST", body: { guests: pickedGuests } });
+      writeNumber("bb_guests", pickedGuests);
+      setData((d) => ({ ...d, party: { guests: pickedGuests, since: new Date().toISOString() } }));
       setPartyErr(false);
       setAskParty(false);
     } catch (e) {
@@ -875,28 +870,23 @@ export default function CustomerOrder({ token }) {
             </p>
 
             <h3>How many people are you?</h3>
-            <div className="cx-stepper">
-              <button aria-label="One less" onClick={() => setGuestCount((c) => Math.max(1, c - 1))} disabled={guestCount <= 1}>
-                <Icon n="minus" size={22} />
-              </button>
-              <div className="cx-stepper-n">
-                <Icon n="users" size={22} />
-                <b>{guestCount}</b>
-                <small>{guestCount === 1 ? "person" : "people"}</small>
-              </div>
-              <button aria-label="One more" onClick={() => setGuestCount((c) => Math.min(30, c + 1))} disabled={guestCount >= 30}>
-                <Icon n="plus" size={22} />
-              </button>
-            </div>
-
-            <div className="cx-quickn">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                <button key={n} className={n === guestCount ? "on" : ""} onClick={() => setGuestCount(n)}>
+            <div className="cx-guests" role="radiogroup" aria-label="Number of people">
+              {Array.from({ length: maxGuests }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  role="radio"
+                  aria-checked={n === pickedGuests}
+                  className={n === pickedGuests ? "on" : ""}
+                  onClick={() => setGuestCount(n)}
+                >
                   {n}
                 </button>
               ))}
             </div>
-            {data.table.capacity ? <p className="cx-party-hint">This table seats {data.table.capacity}.</p> : null}
+            <p className="cx-party-hint">
+              {data.table.capacity ? `This table seats ${maxGuests}. ` : ""}Tap the number of people sitting.
+            </p>
 
             <button className="cx-place" onClick={submitParty} disabled={partyBusy}>
               {partyBusy ? "Please wait..." : "Continue"}
@@ -1771,8 +1761,11 @@ const RAW_CSS = `
 .cx-okbox{display:flex;flex-direction:column;align-items:center;gap:8px;margin:2px 0 14px;text-align:center;color:var(--cx-mu);font-size:14px}
 .cx-okbox b{color:var(--cx-tx);font-size:17px}
 .cx-okbox .cx-place{margin-top:6px}
-.cx-okmark{display:inline-flex;color:#2f8f55;animation:cx-pop .45s ease-out}
-.cx-okmark svg{width:64px;height:64px;stroke-width:2.2}
+.cx .cx-okmark{display:inline-grid;place-items:center;width:64px;height:64px;color:#fff;background:linear-gradient(135deg,#2f8f55,#14532d);border-radius:50%!important;box-shadow:0 8px 20px rgba(20,83,45,.3);animation:cx-pop .45s ease-out,cx-breathe 2s ease-in-out .45s infinite}
+.cx .cx-okmark svg{width:32px;height:32px;stroke-width:2.6}
+@keyframes cx-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+@media (prefers-reduced-motion:reduce){.cx .cx-okmark{animation:none}}
+.cx-track-sub{margin:2px 0 4px;font-size:14px;color:var(--cx-mu)}
 @keyframes cx-pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
 .cx-sheet .cx-track{box-shadow:none;border-color:var(--cx-bd)}
 .cx-sum{margin-top:12px;padding:10px 14px;border:1px solid var(--cx-bd);background:var(--cx-bg)}
@@ -1823,16 +1816,10 @@ const RAW_CSS = `
 .cx-party-card h2{margin:2px 0 2px;font-size:28px;font-weight:800}
 .cx-party-table{display:inline-flex;align-items:center;gap:5px;font-size:13.5px;font-weight:700;color:var(--cx-g);background:var(--cx-gl);padding:4px 12px}
 .cx-party-card h3{margin:20px 0 14px;font-size:18px;font-weight:800}
-.cx-stepper{display:flex;align-items:center;justify-content:center;gap:14px}
-.cx-stepper > button{width:56px;height:56px;display:grid;place-items:center;flex:none;color:#fff;background:var(--cx-g)}
-.cx-stepper > button:disabled{opacity:.35}
-.cx-stepper > button:active:not(:disabled){transform:scale(.94)}
-.cx-stepper-n{min-width:110px;display:flex;flex-direction:column;align-items:center;color:var(--cx-g)}
-.cx-stepper-n b{font-size:56px;line-height:1;font-weight:800;color:var(--cx-tx)}
-.cx-stepper-n small{font-size:12.5px;font-weight:700;color:var(--cx-mu)}
-.cx-quickn{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;margin:16px 0 8px}
-.cx-quickn button{height:40px;font-weight:800;font-size:15px;color:var(--cx-tx);background:var(--cx-bg);border:1px solid var(--cx-bd);text-align:center}
-.cx-quickn button.on{color:#fff;background:var(--cx-g);border-color:var(--cx-g)}
+.cx-guests{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));gap:10px;margin:18px 0 6px}
+.cx-guests button{height:58px;font-size:22px;font-weight:800;color:var(--cx-tx);background:var(--cx-bg);border:1.5px solid var(--cx-bd);text-align:center;transition:background .15s,border-color .15s,transform .1s}
+.cx-guests button:active{transform:scale(.94)}
+.cx-guests button.on{color:#fff;background:var(--cx-g);border-color:var(--cx-g);box-shadow:0 6px 14px rgba(20,83,45,.28)}
 .cx-party-hint{margin:6px 0 14px;font-size:12.5px;color:var(--cx-mu)}
 .cx-party-chip{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:4px 10px;font-size:12px;font-weight:700;color:#fff;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35)}
 @media (min-width:700px){

@@ -151,6 +151,10 @@ api.post("/api/public/qr/:token/seat", null, async (ctx) => {
   if (!table) throw fail(404, "This table QR code is invalid or inactive.");
   const guests = Math.floor(Number(ctx.body.guests));
   if (!(guests >= 1 && guests <= MAX_GUESTS)) throw fail(400, `Please choose between 1 and ${MAX_GUESTS} people.`);
+  // never more people than the table can seat
+  if (Number(table.capacity) > 0 && guests > Number(table.capacity)) {
+    throw fail(400, `Table ${table.name} seats only ${table.capacity} people.`);
+  }
   await partyReady();
   await q("UPDATE bb_table_parties SET ended_at = NOW() WHERE table_id = ? AND ended_at IS NULL", [table.id]);
   await q("INSERT INTO bb_table_parties (table_id, guests) VALUES (?, ?)", [table.id, guests]);
