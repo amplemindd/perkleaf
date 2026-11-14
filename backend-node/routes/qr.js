@@ -231,6 +231,14 @@ api.post("/api/public/qr/:token/order", null, async (ctx) => {
     existing ? existing.id : null,
   );
   const order = result.order;
+  // More items on a table that already has an order: it has to be accepted again, so the customer
+  // sees "Waiting to be accepted" until the cashier accepts the new items.
+  if (existing) {
+    await q(
+      "UPDATE bb_orders SET status = 'pending', updated_at = NOW() WHERE id = ? AND status IN ('preparing','ready','served','bill_pending')",
+      [order.id],
+    );
+  }
   // KOT for the kitchen printer (only the new items + customer's note). The cashier screen prints it automatically.
   try {
     const names = await q("SELECT id, name FROM products WHERE id IN (?)", [[...added.keys()]]);
