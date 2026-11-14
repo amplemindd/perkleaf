@@ -128,6 +128,11 @@ const TRACK_TITLE = {
   served: "Served",
   bill_pending: "Served",
 };
+// shown under the title only once the cashier has accepted the order
+const TRACK_NOTE = {
+  preparing: "Your order was accepted. Please wait for it to be served.",
+  ready: "Your order was accepted. Please wait for it to be served.",
+};
 
 const RATING_WORDS = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
 const FEEDBACK_TAGS = ["Food", "Service", "Ambience", "Cleanliness", "Value"];
@@ -268,6 +273,7 @@ function OrderTracker({ track, onOpen, onRate, onDismiss }) {
         {track.created_at && <small className="cx-track-ago">Ordered {ago(track.created_at)}</small>}
       </div>
       <h2>{TRACK_TITLE[status]}</h2>
+      {TRACK_NOTE[status] && <p className="cx-track-sub">{TRACK_NOTE[status]}</p>}
 
       {(onOpen || (served && onRate)) && (
         <div className="cx-track-foot">
