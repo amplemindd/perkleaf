@@ -5,9 +5,10 @@ import { navigate, takeHandoff, useAuth, useDebounced, useFetch, useShell, useUI
 import { Badge, Empty, ErrorBox, Loading, Pager, RangePicker, SafeImg, Tabs } from "../lib/ui";
 import { ReceiptModal } from "../components/Receipt";
 
-// buttons the cashier sees: Accept -> Serve -> Bill Pending (then payment closes the order)
-const FLOW = { pending: ["preparing"], preparing: ["served"], ready: ["served"], served: ["bill_pending"], bill_pending: [], completed: [], cancelled: [] };
-const ACTION = { preparing: ["Accept Order", "Order accepted."], served: ["Serve", "Order served."], bill_pending: ["Bill Pending", "Marked Bill Pending."], completed: ["Mark Completed", "Order completed."] };
+// buttons the cashier sees: Serve -> Bill Pending (then payment closes the order).
+// "Accept" is done from the bell's New Orders list (it tells the customer the order was accepted).
+const FLOW = { pending: ["served"], preparing: ["served"], ready: ["served"], served: ["bill_pending"], bill_pending: [], completed: [], cancelled: [] };
+const ACTION = { served: ["Serve", "Order served."], bill_pending: ["Bill Pending", "Marked Bill Pending."], completed: ["Mark Completed", "Order completed."] };
 const STATUSES = ["pending", "preparing", "served", "bill_pending", "completed", "cancelled"];
 
 // borderless icon buttons for the Action column
