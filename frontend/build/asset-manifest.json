@@ -1,12 +1,15 @@
 {
   "files": {
-    "main.css": "/static/css/main.bbc21682.css",
-    "main.js": "/static/js/main.40ab1bdd.js",
-    "static/js/206.2d5fc90f.chunk.js": "/static/js/206.2d5fc90f.chunk.js",
-    "index.html": "/index.html"
+    "main.css": "/static/css/main.5b362e73.css",
+    "main.js": "/static/js/main.ea7eec2b.js",
+    "static/js/453.3852239a.chunk.js": "/static/js/453.3852239a.chunk.js",
+    "index.html": "/index.html",
+    "main.5b362e73.css.map": "/static/css/main.5b362e73.css.map",
+    "main.ea7eec2b.js.map": "/static/js/main.ea7eec2b.js.map",
+    "453.3852239a.chunk.js.map": "/static/js/453.3852239a.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.bbc21682.css",
-    "static/js/main.40ab1bdd.js"
+    "static/css/main.5b362e73.css",
+    "static/js/main.ea7eec2b.js"
   ]
 }
