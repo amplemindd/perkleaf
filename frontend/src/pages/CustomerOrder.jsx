@@ -234,7 +234,17 @@ export default function CustomerOrder({ token }) {
   useEffect(() => {
     if (!data) return;
     if (data.party) setGuestCount(data.party.guests);
-    if (!profile.name) setAskParty("name");
+    // a returning customer (recognised by this phone) gets the saved name and the earlier orders back at once
+    const me = data.me;
+    let name = profile.name;
+    if (me) {
+      if (!name && me.name) {
+        name = me.name;
+        setProfile({ name: me.name, phone: me.phone || "" });
+      }
+      if (me.orders && me.orders.length) setSaved((prev) => me.orders.reduce((acc, o) => upsertOrder(acc, o), prev));
+    }
+    if (!name) setAskParty("name");
     else if (!data.party) setAskParty("guests");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);

@@ -36,6 +36,92 @@ const ACTIVE_PARTY = `SELECT guests, created_at FROM bb_table_parties p
   ORDER BY p.id DESC LIMIT 1`;
 const MAX_GUESTS = 30;
 
+// ---------------- Returning customers ----------------
+// A phone is recognised by a long-lived cookie (bb_cid) that this server sets, NOT by its IP address:
+// IPs change (mobile data) and are shared (the cafe WiFi), so an IP would show one guest the name and
+// orders of somebody else. The cookie stays on the same phone/browser and is sent automatically.
+const CID_COOKIE = "bb_cid";
+const CID_MAX_AGE = 400 * 24 * 3600; // 400 days (the longest a browser keeps a cookie)
+let customerP = null;
+function customerReady() {
+  if (!customerP) {
+    customerP = pool
+      .query(
+        `CREATE TABLE IF NOT EXISTS bb_qr_customers (
+          cid CHAR(32) PRIMARY KEY,
+          name VARCHAR(100) NULL,
+          phone VARCHAR(20) NULL,
+          first_seen TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          last_seen DATETIME NULL
+        )`,
+      )
+      .then(() =>
+        pool.query(
+          `CREATE TABLE IF NOT EXISTS bb_qr_customer_orders (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            cid CHAR(32) NOT NULL,
+            order_id INT NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_cid_order (cid, order_id),
+            INDEX idx_cid (cid, order_id)
+          )`,
+        ),
+      )
+      .catch((e) => {
+        customerP = null;
+        throw e;
+      });
+  }
+  return customerP;
+}
+// the phone's id from its cookie (or a brand new one)
+function customerId(ctx) {
+  const m = /(?:^|;\s*)bb_cid=([a-f0-9]{32})/.exec(String(ctx.req.headers.cookie || ""));
+  return m ? m[1] : crypto.randomBytes(16).toString("hex");
+}
+function sendCustomerCookie(ctx, cid) {
+  const https = String(ctx.req.headers["x-forwarded-proto"] || "").includes("https") || !!ctx.req.socket.encrypted;
+  ctx.res.setHeader(
+    "Set-Cookie",
+    `${CID_COOKIE}=${cid}; Path=/; Max-Age=${CID_MAX_AGE}; HttpOnly; SameSite=Lax${https ? "; Secure" : ""}`,
+  );
+}
+// name + phone + earlier orders of this phone (any table), oldest first
+async function loadCustomer(cid) {
+  const c = await one("SELECT name, phone FROM bb_qr_customers WHERE cid = ?", [cid]);
+  const rows = await q(
+    `SELECT o.id, o.bill_no, o.status, o.payment_status, o.total, o.created_at, o.guests, t.name AS table_name
+     FROM bb_qr_customer_orders l
+     JOIN bb_orders o ON o.id = l.order_id
+     LEFT JOIN bb_tables t ON t.id = o.table_id
+     WHERE l.cid = ? AND o.created_at > DATE_SUB(NOW(), INTERVAL 180 DAY)
+     ORDER BY o.id DESC LIMIT 30`,
+    [cid],
+  );
+  const items = rows.length
+    ? await q(
+        "SELECT order_id, product_id, product_name, qty, line_total FROM bb_order_items WHERE order_id IN (?) ORDER BY id",
+        [rows.map((r) => r.id)],
+      )
+    : [];
+  return {
+    name: (c && c.name) || "",
+    phone: (c && c.phone) || "",
+    orders: rows.reverse().map((o) => ({
+      id: o.id,
+      bill_no: o.bill_no,
+      status: o.status === "cancelled" ? "cancelled" : o.status === "completed" || o.payment_status === "paid" ? "completed" : o.status,
+      total: Number(o.total),
+      created_at: o.created_at,
+      guests: o.guests,
+      table: o.table_name,
+      items: items
+        .filter((i) => i.order_id === o.id)
+        .map((i) => ({ id: i.product_id, name: i.product_name, qty: i.qty, line_total: Number(i.line_total) })),
+    })),
+  };
+}
+
 const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 
 // Customer feedback table (created automatically the first time it is needed)
@@ -76,6 +162,17 @@ api.get("/api/public/qr/:token", null, async (ctx) => {
   const S = await getSettings();
   await partyReady();
   const party = await one(ACTIVE_PARTY, [table.id]);
+  // who is scanning? (cookie of this phone) -> saved name and earlier orders
+  let me = null;
+  try {
+    await customerReady();
+    const cid = customerId(ctx);
+    sendCustomerCookie(ctx, cid);
+    await q("UPDATE bb_qr_customers SET last_seen = NOW() WHERE cid = ?", [cid]);
+    me = await loadCustomer(cid);
+  } catch (e) {
+    console.error("QR customer lookup failed:", e.message);
+  }
   const categories = await q(
     "SELECT id, name, icon, image_url FROM categories WHERE is_archived = 0 AND is_active = 1 AND show_in_pos = 1 ORDER BY display_order, name",
   );
@@ -87,6 +184,7 @@ api.get("/api/public/qr/:token", null, async (ctx) => {
   return {
     table: { id: table.id, name: table.name, capacity: table.capacity },
     party: party ? { guests: party.guests, since: party.created_at } : null,
+    me,
     restaurant: S.restaurant_name || "Restaurant",
     tagline: S.tagline || "",
     show_tagline: S.show_tagline !== false,
@@ -238,6 +336,20 @@ api.post("/api/public/qr/:token/order", null, async (ctx) => {
       "UPDATE bb_orders SET status = 'pending', updated_at = NOW() WHERE id = ? AND status IN ('preparing','ready','served','bill_pending')",
       [order.id],
     );
+  }
+  // remember this phone: its name / phone number and this order (shown again on the next visit)
+  try {
+    await customerReady();
+    const cid = customerId(ctx);
+    sendCustomerCookie(ctx, cid);
+    await q(
+      `INSERT INTO bb_qr_customers (cid, name, phone, last_seen) VALUES (?,?,?,NOW())
+       ON DUPLICATE KEY UPDATE name = VALUES(name), phone = IF(VALUES(phone) = '', phone, VALUES(phone)), last_seen = NOW()`,
+      [cid, str(ctx.body.customer_name, 100) || null, str(ctx.body.customer_phone, 20)],
+    );
+    await q("INSERT IGNORE INTO bb_qr_customer_orders (cid, order_id) VALUES (?, ?)", [cid, order.id]);
+  } catch (e) {
+    console.error("QR customer could not be saved:", e.message);
   }
   // KOT for the kitchen printer (only the new items + customer's note). The cashier screen prints it automatically.
   try {
