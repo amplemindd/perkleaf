@@ -9,7 +9,7 @@ const DEFAULT_URL = "http://localhost:8189";
 export function getEdCfg() {
   try {
     const c = JSON.parse(localStorage.getItem(KEY) || "{}");
-    return { on: !!c.on, url: (c.url || DEFAULT_URL).replace(/\/+$/, ""), printer: c.printer || "" };
+    return { on: !!c.on, url: (c.url || DEFAULT_URL).replace(/\/+$/, ""), printer: c.printer || "", cols: Number(c.cols) || 0 };
   } catch {
     return { on: false, url: DEFAULT_URL, printer: "" };
   }
@@ -79,15 +79,72 @@ export function kotCommands(o, restaurant = "") {
 }
 export const edPrintKot = (o, restaurant) => edSend(kotCommands(o, restaurant));
 
-// ---- Customer bill / receipt (same details as the bill on the screen) ----
+// ---- Customer bill / receipt ----
+// Same look as the bill on the screen: big shop name, boxed sections, an Item / Qty. / Price / Amount table,
+// totals on the right and a big Grand Total. The columns are built with spaces (the printer font is fixed width).
 const money2 = (v) => Number(v || 0).toFixed(2);
 // "2026-11-06 20:19:00" -> "06/11/26 20:19"
 const dmy = (s) => {
   const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(s || ""));
   return m ? `${m[3]}/${m[2]}/${m[1].slice(2)} ${m[4]}:${m[5]}` : "";
 };
+// characters per line: 48 on 80 mm paper, 32 on 58 mm paper. A different value can be forced with
+// localStorage "perkleaf_edprint" -> { "cols": 42 }
+function billCols() {
+  const c = getEdCfg().cols;
+  if (c >= 24 && c <= 64) return c;
+  const w = parseFloat(getPrintCfg().width);
+  return w && w < 70 ? 32 : 48;
+}
+// break a text into lines of at most `w` characters (at spaces when possible)
+function wrapText(text, w) {
+  const out = [];
+  let cur = "";
+  String(text || "").split(/\s+/).filter(Boolean).forEach((word) => {
+    let rest = word;
+    while (rest.length > w) {
+      if (cur) { out.push(cur); cur = ""; }
+      out.push(rest.slice(0, w));
+      rest = rest.slice(w);
+    }
+    if (!cur) cur = rest;
+    else if (cur.length + 1 + rest.length <= w) cur += ` ${rest}`;
+    else { out.push(cur); cur = rest; }
+  });
+  if (cur) out.push(cur);
+  return out.length ? out : [""];
+}
+const fit = (t, w) => String(t).slice(0, w);
+
 // order = the order with items / payments (as the Bill screen gets it), S = receipt settings
 export function billCommands(o, S = {}) {
+  const COLS = billCols();
+  const wide = COLS >= 42;
+  // column widths: normal sizes, widened when a number is bigger (so the numbers never run together)
+  const wideEnough = (texts, base) => Math.max(base, ...texts.map((t) => String(t).length + 1));
+  const lines = o.items || [];
+  const taxAmts = (o.tax_breakdown || []).map((x) => money2(x.tax));
+  const qtyW = wideEnough(["Qty.", ...lines.map((i) => i.qty)], wide ? 5 : 4);
+  const priceW = wideEnough(["Price", ...lines.map((i) => money2(i.unit_price))], wide ? 9 : 8);
+  const amtW = wideEnough(
+    ["Amount", ...lines.map((i) => money2(i.line_subtotal)), money2(o.subtotal), `-${money2(o.discount_amount)}`, ...taxAmts],
+    wide ? 11 : 9,
+  );
+  const itemW = Math.max(8, COLS - qtyW - priceW - amtW);
+  // one row of the table: Item (wraps) | Qty. | Price | Amount
+  const itemRow = (name, qty, price, amt) => {
+    const parts = wrapText(name, itemW - 1);
+    return parts.map((t, i) => (i === 0
+      ? fit(t, itemW - 1).padEnd(itemW) + String(qty).padStart(qtyW) + price.padStart(priceW) + amt.padStart(amtW)
+      : t));
+  };
+  // left text, a label that ends before the Amount column, and the amount on the right edge
+  const totalRow = (left, label, amt) => {
+    const labelEnd = COLS - amtW;
+    const room = Math.max(0, labelEnd - label.length - 1);
+    return fit(left, room).padEnd(labelEnd - label.length) + label + amt.padStart(amtW);
+  };
+
   const inc = o.tax_mode === "inclusive";
   const methods = (o.payments || []).filter((p) => p.status !== "refunded" || o.payment_status === "refunded");
   const totalQty = (o.items || []).reduce((a, i) => a + Number(i.qty || 0), 0);
@@ -96,39 +153,71 @@ export function billCommands(o, S = {}) {
   const paid = o.payment_status === "paid";
   const status = o.status === "cancelled" ? "CANCELLED" : o.payment_status === "refunded" ? "REFUNDED" : paid ? "" : "UNPAID";
 
+  const name = latin(S.restaurant_name || "");
+  const bigName = name.length * 2 <= COLS;
   const cmds = [
     ["initialize"],
-    ["align", "center"], ["bold", true], ["textSize", 1, 2], ["line", latin(S.restaurant_name || "")], ["textSize", 1, 1], ["bold", false],
+    ["align", "center"], ["bold", true], ["textSize", bigName ? 2 : 1, 2], ["line", name], ["textSize", 1, 1], ["bold", false],
   ];
   if (S.show_restaurant_details && S.address) cmds.push(["line", latin(S.address)]);
   if (S.show_phone !== false && S.phone) cmds.push(["line", `Phone: ${latin(S.phone)}`]);
   if (S.show_gst_details && S.gstin) cmds.push(["line", `GSTIN: ${latin(S.gstin)}`]);
-  cmds.push(["rule"], ["align", "left"], ["line", `Name: ${latin(cust)}`], ["rule"]);
-  cmds.push(["pair", `Date: ${dmy(o.paid_at || o.created_at)}`, `Bill No: ${latin(o.bill_no)}`]);
-  if (o.created_by_name || where) cmds.push(["pair", o.created_by_name ? `Cashier: ${latin(o.created_by_name)}` : "", latin(where)]);
-  cmds.push(["rule"], ["bold", true], ["pair", "Item   Qty x Price", "Amount"], ["bold", false], ["rule"]);
+  cmds.push(["rule"], ["align", "left"]);
+
+  // customer name (only when there is one)
+  if (cust) cmds.push(["line", fit(`Name: ${latin(cust)}`, COLS)], ["rule"]);
+
+  // date on the left, order type + bill number on the right
+  const when = `Date: ${dmy(o.paid_at || o.created_at)}`;
+  const bill = `Bill No.: ${latin(o.bill_no)}`;
+  if (wide) {
+    const half = Math.floor(COLS / 2);
+    cmds.push(["line", fit(when, half - 1).padEnd(half) + fit(latin(where), COLS - half)]);
+    cmds.push(["line", " ".repeat(half) + fit(bill, COLS - half)]);
+  } else {
+    cmds.push(["line", fit(when, COLS)]);
+    if (where) cmds.push(["line", fit(latin(where), COLS)]);
+    cmds.push(["line", fit(bill, COLS)]);
+  }
+  cmds.push(["rule"]);
+
+  // items table
+  cmds.push(["bold", true], ["line", "Item".padEnd(itemW) + "Qty.".padStart(qtyW) + "Price".padStart(priceW) + "Amount".padStart(amtW)], ["bold", false], ["rule"]);
   (o.items || []).forEach((i) => {
-    cmds.push(["line", latin(i.product_name)], ["pair", `   ${i.qty} x ${money2(i.unit_price)}`, money2(i.line_subtotal)]);
+    itemRow(latin(i.product_name), i.qty, money2(i.unit_price), money2(i.line_subtotal)).forEach((l) => cmds.push(["line", l]));
   });
-  cmds.push(["rule"], ["pair", "Total Qty", String(totalQty)], ["pair", "Sub Total", money2(o.subtotal)]);
-  if (o.discount_amount > 0) cmds.push(["bold", true], ["pair", "Discount", `-${money2(o.discount_amount)}`], ["bold", false]);
+  cmds.push(["rule"]);
+
+  // totals
+  cmds.push(["line", totalRow(`Total Qty: ${totalQty}`, "Sub Total", money2(o.subtotal))]);
+  if (o.discount_amount > 0) cmds.push(["bold", true], ["line", totalRow("Discount", "", `-${money2(o.discount_amount)}`)], ["bold", false]);
   if (S.show_tax_on_bill && o.tax_amount > 0) {
     (o.tax_breakdown || []).forEach((b) => {
       if (S.show_gst_details) {
-        cmds.push(["pair", `${inc ? "Incl. " : ""}CGST ${b.rate / 2}%`, money2(b.tax / 2)], ["pair", `${inc ? "Incl. " : ""}SGST ${b.rate / 2}%`, money2(b.tax / 2)]);
+        cmds.push(["line", totalRow("", `${inc ? "Incl. " : ""}CGST ${b.rate / 2}%`, money2(b.tax / 2))]);
+        cmds.push(["line", totalRow("", `${inc ? "Incl. " : ""}SGST ${b.rate / 2}%`, money2(b.tax / 2))]);
       } else {
-        cmds.push(["pair", `${inc ? "Incl. " : ""}GST (${b.rate}%)`, money2(b.tax)]);
+        cmds.push(["line", totalRow("", `${inc ? "Incl. " : ""}GST (${b.rate}%)`, money2(b.tax))]);
       }
     });
   }
-  // the rupee sign cannot be printed on a thermal printer, so "Rs" is used
-  cmds.push(["rule"], ["bold", true], ["textSize", 1, 2], ["pair", "GRAND TOTAL", `Rs ${money2(o.total)}`], ["textSize", 1, 1], ["bold", false]);
+  cmds.push(["rule"]);
+
+  // Grand Total: big and bold (the rupee sign cannot be printed on a thermal printer, so "Rs" is used)
+  const label = "Grand Total";
+  const amount = `Rs ${money2(o.total)}`;
+  const half = Math.floor(COLS / 2);
+  cmds.push(["bold", true]);
+  if (label.length + amount.length + 1 <= half) cmds.push(["textSize", 2, 2], ["line", label.padEnd(half - amount.length) + amount]);
+  else cmds.push(["textSize", 1, 2], ["line", label.padEnd(COLS - amount.length) + amount]);
+  cmds.push(["textSize", 1, 1], ["bold", false]);
   if (methods.length) {
     const how = methods.map((p) => (methods.length > 1 ? `${String(p.method).toUpperCase()} ${money2(p.amount)}` : String(p.method).toUpperCase())).join(" + ");
-    cmds.push(["line", `Paid via ${latin(how)}`]);
+    cmds.push(["line", fit(`Paid via ${latin(how)}`, COLS)]);
   }
   if (status) cmds.push(["align", "center"], ["bold", true], ["textSize", 2, 2], ["line", status], ["textSize", 1, 1], ["bold", false], ["align", "left"]);
   cmds.push(["rule"]);
+
   if (S.show_thanks) {
     cmds.push(["align", "center"]);
     String(S.footer_message || "").split("\n").forEach((l) => { if (l.trim()) cmds.push(["line", latin(l)]); });
