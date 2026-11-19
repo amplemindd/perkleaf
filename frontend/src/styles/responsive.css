@@ -251,3 +251,61 @@ html body .app .page .perm-grid ~ .sp-actions .btn { flex: 0 0 auto; width: auto
   .app .dash .g3b { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .app .dash .g3b > :last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
+
+/* =====================================================================
+   TABLET FIXES v2 - header + sidebar + POS cart
+   ===================================================================== */
+
+/* ---------- Tablet landscape (901px - 1180px): header + sidebar ---------- */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .app { --sw: 240px; }
+  html body .app .side .nav { font-size: 14px; gap: 10px; padding-left: 14px; padding-right: 12px; }
+
+  /* Header: search box wapas dikhe, extra cheezein chhupe */
+  html body .app .hdr { gap: 10px; padding: 0 12px; }
+  html body .app .hdr .bname b { font-size: 16px; letter-spacing: .03em; }
+  html body .app .hdr .hsearch { flex: 1 1 150px; min-width: 150px; max-width: 260px; }
+  html body .app .hdr .uname { display: none; }
+  html body .app .hdr .hright { gap: 8px; }
+  html body .app .hdr .hright > a.hbtn[aria-label="Inbox"] { display: none; } /* bell se same kaam */
+
+  /* POS: products 60% / cart 40% */
+  .pos { grid-template-columns: minmax(0, 60%) minmax(0, 40%); }
+  .pgrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+
+/* ---------- POS tablet (701px - 1180px): product cards + cart ---------- */
+@media (min-width: 701px) and (max-width: 1180px) {
+  /* Product card: price aur "In Stock" tag wrap/overflow na ho */
+  .pcard { padding: 12px; gap: 14px; min-height: 96px; }
+  .pname { font-size: 15px; }
+  .pprice { font-size: 15px; }
+  .pfoot { flex-wrap: wrap; gap: 6px; }
+  .stk { white-space: nowrap; font-size: 11px; padding: 3px 8px; }
+
+  /* Order type tabs (Dine In / Take Away / Delivery): ek line me */
+  .cart .seg button { white-space: nowrap; padding: 12px 4px; font-size: 13px; gap: 0 !important; }
+  .cart .seg button svg { display: none; }
+
+  /* Cart rows: 2 line layout -> poora item name dikhega
+       [ Item name + "each" price ............ ]  [ trash ]
+       [ - 1 +  ............... line total   ]  [ trash ]   */
+  .ct-h { display: none; }
+  .ct-list { max-height: 36vh; }
+  .ct-r {
+    height: auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "n n a" "s p a";
+    gap: 6px 10px;
+    padding: 10px 12px;
+  }
+  .ct-r > :nth-child(1) { grid-area: n; min-width: 0; }
+  .ct-r > :nth-child(2) { grid-area: s; justify-self: start; }
+  .ct-r > :nth-child(3) { grid-area: p; text-align: right; align-self: center; }
+  .ct-r > :nth-child(4) { grid-area: a; align-self: center; }
+  .ct-n b {
+    white-space: normal; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .ct-n small { white-space: nowrap; }
+}
