@@ -186,3 +186,55 @@ html body .app .page .perm-grid ~ .sp-actions .btn { flex: 0 0 auto; width: auto
   margin: 0 !important;
   flex: 0 0 auto !important;
 }
+
+/* =====================================================================
+   TABLET RESPONSIVE (iPad / Android tab)
+   ===================================================================== */
+
+/* ---------- Tablet landscape / chhota laptop: 901px - 1180px (sidebar khula) ---------- */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .app { --sw: 220px; }
+  html body .app .hdr .hsearch { max-width: 280px; min-width: 0; }
+
+  /* POS */
+  .pos { grid-template-columns: minmax(0, 58%) minmax(0, 42%); }
+  .pgrid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .ct-h, .ct-r { grid-template-columns: minmax(0, 1fr) 96px 72px 64px; }
+
+  /* Tables page: 6 summary boxes -> 3 x 2 */
+  html body .app .page.tables-page .tsum { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  /* Online orders */
+  .ostats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .oogrid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+}
+
+/* ---------- Tablet portrait: 701px - 900px (sidebar drawer hai) ---------- */
+@media (min-width: 701px) and (max-width: 900px) {
+  .app .page { padding: 18px 20px 36px; }
+  .modal { max-width: 640px; }
+
+  /* POS: phone wali full-screen cart ki jagah, cart ab right side me sticky */
+  .pos { grid-template-columns: minmax(0, 1fr) 360px; }
+  .pos-l { padding: 14px 14px 24px; }
+  .cart {
+    position: sticky; inset: auto; top: var(--hh);
+    height: calc(100vh - var(--hh));
+    transform: none; visibility: visible; z-index: 1;
+    border-left: 1px solid var(--bd);
+  }
+  .cart-x, .mbar { display: none !important; }
+  .pgrid { grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); }
+  .ct-h, .ct-r { grid-template-columns: minmax(0, 1fr) 80px 56px 52px; }
+
+  /* Grids */
+  .oogrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* ---------- Touch devices (tablet/phone): bade tap targets ---------- */
+@media (min-width: 601px) and (max-width: 1180px) and (pointer: coarse) {
+  .btn { min-height: 40px; }
+  .hamb { padding: 10px; }
+  .app .nav { min-height: 44px; }
+}
