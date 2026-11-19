@@ -309,3 +309,54 @@ html body .app .page .perm-grid ~ .sp-actions .btn { flex: 0 0 auto; width: auto
   }
   .ct-n small { white-space: nowrap; }
 }
+
+/* =====================================================================
+   TABLET CART v3 - screenshot jaisa table layout (ITEMS | QTY | PRICE | ACTIONS)
+   ===================================================================== */
+
+/* Tablet landscape (901px - 1180px): cart ko thoda chauda */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .pos { grid-template-columns: minmax(0, 1fr) minmax(360px, 42%); }
+  .pgrid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+
+/* Tablet portrait (701px - 900px): cart 410px */
+@media (min-width: 701px) and (max-width: 900px) {
+  .pos { grid-template-columns: minmax(0, 1fr) 410px; }
+  .pgrid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+
+/* Dono tablet modes: cart ka andar ka UI */
+@media (min-width: 701px) and (max-width: 1180px) {
+  .cart-body { padding: 12px; }
+
+  /* Header row wapas: ITEMS | QTY | PRICE | ACTIONS */
+  .ct-h { display: grid; font-size: 11px; padding: 8px 10px; }
+  .ct-h, .ct-r {
+    grid-template-columns: minmax(0, 1fr) 80px 62px 36px;
+    gap: 6px;
+  }
+
+  /* Item rows: 2-line grid hatao, table jaisi ek row */
+  .ct-r {
+    grid-template-areas: none;
+    height: auto;
+    min-height: 58px;
+    padding: 8px 10px;
+  }
+  .ct-r > :nth-child(n) { grid-area: auto; justify-self: auto; align-self: center; text-align: inherit; }
+  .ct-r > :nth-child(2) { justify-self: center; }
+  .ct-r > :nth-child(3) { text-align: center; }
+
+  /* Chhote controls taaki sab fit ho */
+  .ct-n b { font-size: 13px; }
+  .ct-n small { font-size: 11.5px; }
+  .ct-pr { font-size: 13px; }
+  .ct-r .stepper button { width: 26px; height: 28px; }
+  .ct-r .stepper span { min-width: 24px; font-size: 13px; }
+  .ct-del { width: 32px; height: 32px; }
+  .ct-list { max-height: 34vh; }
+
+  /* Neeche ke buttons: Save / Save & Print / KOT / KOT & Print -> 2 x 2 */
+  .act4 { grid-template-columns: 1fr 1fr; gap: 8px; }
+}
