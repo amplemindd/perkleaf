@@ -360,3 +360,33 @@ html body .app .page .perm-grid ~ .sp-actions .btn { flex: 0 0 auto; width: auto
   /* Neeche ke buttons: Save / Save & Print / KOT / KOT & Print -> 2 x 2 */
   .act4 { grid-template-columns: 1fr 1fr; gap: 8px; }
 }
+
+/* =====================================================================
+   TABLET CART v4 - header alignment fix (ACTIONS cut + column mismatch)
+   ===================================================================== */
+@media (min-width: 701px) and (max-width: 1180px) {
+  /* Columns: Items | Qty | Price | Actions  (Actions ab 60px, text fit hoga) */
+  .ct-h, .ct-r {
+    grid-template-columns: minmax(0, 1fr) 84px 66px 60px;
+    gap: 6px;
+  }
+
+  /* Header: chhota text, sab ek hi line me, vertical center */
+  .ct-h {
+    align-items: center;
+    font-size: 10.5px;
+    letter-spacing: .03em;
+    white-space: nowrap;
+    padding: 9px 10px;
+    padding-right: 18px;          /* list ke scrollbar jitni jagah, taaki columns seedhe rahein */
+  }
+  .ct-h span { overflow: hidden; text-overflow: clip; line-height: 1.2; }
+  .ct-h span:first-child { text-align: left; }
+  .ct-h span:nth-child(n+2) { text-align: center; }
+
+  /* Rows: scrollbar ke liye jagah pehle se reserve, header se match */
+  .ct-list { scrollbar-gutter: stable; overflow-x: hidden; }
+  .ct-r { padding-right: 10px; }
+  .ct-act { justify-content: center; }
+  .ct-del { width: 34px; height: 34px; }
+}
