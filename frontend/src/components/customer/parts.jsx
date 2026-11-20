@@ -364,14 +364,6 @@ export function OrderStatusCard({ track, onOpen, onRate, onDismiss }) {
           {track.paid ? <p>Thank you! Your bill is paid.</p> : TRACK_NOTE[track.status] && <p>{TRACK_NOTE[track.status]}</p>}
         </div>
       </div>
-      <ol className="cx-bars" aria-label="Order progress">
-        {STEPS.map((s, i) => (
-          <li key={s} className={i <= st ? "on" : ""}>
-            <span />
-            <small>{s}</small>
-          </li>
-        ))}
-      </ol>
       <div className="cx-status-foot">
         <button onClick={onOpen}>
           <b>

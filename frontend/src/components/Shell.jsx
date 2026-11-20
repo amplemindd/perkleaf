@@ -634,7 +634,7 @@ export default function Shell({ admin, children }) {
                           );
                         })()}
                         <button
-                          className="no-accept"
+                          className="no-accept" style={{ marginRight: -12, flexShrink: 0 }}
                           onClick={(e) => {
                             e.stopPropagation();
                             acceptOrders([n]);
