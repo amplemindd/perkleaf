@@ -206,7 +206,7 @@ api.get("/api/public/qr/:token/status", null, async (ctx) => {
     [str(ctx.params.token, 36)],
   );
   if (!table) throw fail(404, "This table QR code is invalid or inactive.");
-  const cols = "id, bill_no, status, subtotal, total, created_at, cancel_reason";
+  const cols = "id, bill_no, status, payment_status, subtotal, total, created_at, cancel_reason";
   let o = await one(
     `SELECT ${cols} FROM bb_orders WHERE table_id = ? AND ${OPEN_SQL} ORDER BY id DESC LIMIT 1`,
     [table.id],
@@ -232,6 +232,7 @@ api.get("/api/public/qr/:token/status", null, async (ctx) => {
       id: o.id,
       bill_no: o.bill_no,
       status,
+      paid: o.payment_status === "paid" && status !== "cancelled",
       total: Number(o.total),
       created_at: o.created_at,
       cancel_reason: status === "cancelled" ? o.cancel_reason || "" : "",

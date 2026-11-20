@@ -219,7 +219,7 @@ export default function CustomerOrder({ token }) {
       upsertOrder(prev, {
         id: track.id,
         bill_no: track.bill_no,
-        status: track.status,
+        status: track.paid && track.status !== "cancelled" ? "completed" : track.status,
         total: track.total,
         created_at: track.created_at,
         items: track.items || [],
@@ -330,6 +330,8 @@ export default function CustomerOrder({ token }) {
       .sort((a, b) => Number(b.id) - Number(a.id))
       .map((o) => {
         let ui = track && track.id === o.id ? track.status : o.status;
+        // paid at the cashier -> show as Completed on the customer's phone
+        if (track && track.id === o.id && track.paid && ui !== "cancelled") ui = "completed";
         if (ui !== "cancelled") {
           if (Number(o.id) < maxId) ui = "completed";
           else if (trackLoaded && !track) ui = "completed";

@@ -9,7 +9,7 @@ export default function SettleModal({ order, onClose, onDone }) {
   const { settings: S } = useAuth();
   const { toast } = useUI();
   const [step, setStep] = useState("pick"); // pick | upi | split
-  const [ref, setRef] = useState("");
+  const ref = "";
   const [rows, setRows] = useState({});
   const [busy, setBusy] = useState(false);
   const total = Number(order.total || 0);
@@ -51,10 +51,6 @@ export default function SettleModal({ order, onClose, onDone }) {
         ) : (
           <p className="muted center">Ask the customer to pay by UPI.</p>
         )}
-        <label className="fld">
-          <span>Transaction reference (optional)</span>
-          <input value={ref} maxLength={100} onChange={(e) => setRef(e.target.value)} />
-        </label>
         <p className="muted">Confirm only after the payment has been received.</p>
       </Modal>
     );

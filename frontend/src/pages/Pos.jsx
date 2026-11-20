@@ -5,6 +5,9 @@ import { takeHandoff, useAuth, useDebounced, useFetch, useShell, useUI } from ".
 import { Empty, Loading, Modal } from "../lib/ui";
 import { ReceiptModal, KotModal } from "../components/Receipt";
 
+// whole rupees only (no paise) for the cart display
+const whole = (n) => "\u20B9" + Math.round(Number(n) || 0).toLocaleString("en-IN");
+
 // icons for the Dine In / Take Away / Delivery buttons
 const TYPE_ICON = { dine_in: "utensils", pickup: "bag", delivery: "truck" };
 
@@ -233,9 +236,9 @@ export default function Pos() {
             {!cart.length && <div className="ct-empty">Click on an item to add it</div>}
             {cart.map((c) => (
               <div className="ct-r" key={c.id}>
-                <div className="ct-n"><b title={c.name}>{c.name}</b><small>{money(c.price)} each</small></div>
+                <div className="ct-n"><b title={c.name}>{c.name}</b><small>{whole(c.price)} each</small></div>
                 <div className="stepper"><button onClick={() => step(c.id, -1)} aria-label="Decrease"><Icon n="minus" size={13} /></button><span>{c.qty}</span><button onClick={() => step(c.id, 1)} aria-label="Increase"><Icon n="plus" size={13} /></button></div>
-                <b className="ct-pr">{money(c.price * c.qty)}</b>
+                <b className="ct-pr">{whole(c.price * c.qty)}</b>
                 <div className="ct-act"><button className="ct-del" onClick={() => step(c.id, -c.qty)} aria-label={`Remove ${c.name}`} title="Delete item"><Icon n="trash" size={16} /></button></div>
               </div>
             ))}
@@ -257,7 +260,7 @@ export default function Pos() {
             </div>
           )}
           <div className="sums">
-            <div><span>Sub Total</span><b>{money(calc ? calc.subtotal : 0)}</b></div>
+            <div><span>Sub Total</span><b>{whole(calc ? calc.subtotal : 0)}</b></div>
             {calc && calc.discount_amount > 0 && <div><span>Discount</span><b>-{money(calc.discount_amount)}</b></div>}
             {S.tax_enabled && <div><span>{calc && calc.breakdown.length === 1 ? `GST (${calc.breakdown[0].rate}%)` : calc ? "GST" : "GST (0%)"}{calc && calc.mode === "inclusive" ? " (incl.)" : ""}</span><b>{money(calc ? calc.tax_amount : 0)}</b></div>}
           </div>
@@ -294,7 +297,6 @@ export default function Pos() {
         <Modal title="UPI Payment" onClose={() => setPayModal(null)} footer={<><button className="btn" onClick={() => setPayModal(null)}>Cancel</button><button className="btn pri" disabled={busy} onClick={() => checkout([{ method: "upi", amount: calc.total, reference: payModal.ref }])}>{busy ? "Processing…" : "Payment Received"}</button></>}>
           <div className="big-amt">{money(calc.total)}</div>
           {S.pm_qr && S.qr_image_url ? <img className="qr" src={img(S.qr_image_url)} alt="UPI QR code" /> : S.upi_id ? <p className="center">Pay to UPI ID: <b>{S.upi_id}</b></p> : <p className="muted center">Ask the customer to pay by UPI.</p>}
-          <label className="fld"><span>Transaction reference (optional)</span><input value={payModal.ref} maxLength={100} onChange={(e) => setPayModal({ ...payModal, ref: e.target.value })} /></label>
           <p className="muted">Confirm only after the payment has been received.</p>
         </Modal>
       )}

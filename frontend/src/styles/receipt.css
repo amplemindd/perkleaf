@@ -39,7 +39,7 @@
 .receipt .r-row, .receipt .r-kv { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 1px 3px 1px 0; }
 .receipt .r-kv span:first-child { flex: 1; }
 .receipt .r-sub { display: flex; gap: 12px; }
-.receipt .r-grand, .receipt .r-total { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 18px; font-weight: 700; padding: 2px 3px 2px 0; }
+.receipt .r-grand, .receipt .r-total { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; font-weight: 700; padding: 2px 3px 2px 0; }
 .receipt .r-pay { font-size: 12px; margin-top: 2px; }
 .receipt .r-status { text-align: center; font-size: 15px; font-weight: 700; letter-spacing: .06em; border: 1.5px solid #000; padding: 2px 6px; margin: 5px 0; }
 .receipt .r-foot { margin-top: 2px; }
@@ -47,7 +47,7 @@
 .receipt .r-code { margin-top: 4px; font-size: 12px; }
 /* 58mm paper: narrower, so stack things */
 .receipt.p58 .r-shop, .receipt.p58 .r-c h4 { font-size: 16px; }
-.receipt.p58 .r-grand, .receipt.p58 .r-total { font-size: 15px; }
+.receipt.p58 .r-grand, .receipt.p58 .r-total { font-size: 12px; }
 .receipt.p58 .r-meta { grid-template-columns: 1fr; gap: 0; }
 .receipt.p58 .r-addr, .receipt.p58 .r-c p { font-size: 10.5px; }
 .receipt.p58 .r-items { font-size: 10.5px; }

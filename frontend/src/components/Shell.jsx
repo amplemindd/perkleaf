@@ -606,11 +606,33 @@ export default function Shell({ admin, children }) {
                         <span className="dd-ic">
                           <Icon n="cart" />
                         </span>
-                        <span>
-                          <b>{n.title}</b>
-                          <small>{n.message}</small>
-                          <small>{ago(n.created_at)}</small>
-                        </span>
+                        {(() => {
+                          // message: "BB-1123 · Iced Americano x1, Coconut Cloud Espresso x1 · ₹298 · Note: ..."
+                          const parts = String(n.message || "").split(" · ");
+                          const bill = parts[0] || "";
+                          const items = (parts[1] || "").split(/,\s*/).filter(Boolean);
+                          const total = parts.find((x) => x.startsWith("\u20B9")) || "";
+                          const note = (parts.find((x) => x.startsWith("Note:")) || "").replace(/^Note:\s*/, "");
+                          return (
+                            <span style={{ flex: 1, minWidth: 0 }}>
+                              <b>{n.title}</b>
+                              <small>{bill} · {ago(n.created_at)}</small>
+                              <ul style={{ listStyle: "none", margin: "6px 0 0", padding: 0 }}>
+                                {items.map((it, k) => {
+                                  const m = /^(.*?)\s+x(\d+)$/.exec(it);
+                                  return (
+                                    <li key={k} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "3px 0", borderBottom: "1px dashed rgba(0,0,0,.12)", fontSize: 13 }}>
+                                      <span>{m ? m[1] : it}</span>
+                                      <b>{m ? `x${m[2]}` : ""}</b>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                              {note && <small style={{ display: "block", marginTop: 4 }}>Note: {note}</small>}
+                              {total && <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontWeight: 700 }}><span>Total</span><span>{total}</span></div>}
+                            </span>
+                          );
+                        })()}
                         <button
                           className="no-accept"
                           onClick={(e) => {

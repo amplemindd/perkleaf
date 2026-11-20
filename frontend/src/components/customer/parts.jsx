@@ -360,8 +360,8 @@ export function OrderStatusCard({ track, onOpen, onRate, onDismiss }) {
             Order #{billNo(track)}
             {track.created_at ? ` · ${ago(track.created_at)}` : ""}
           </small>
-          <h3>{TRACK_TITLE[track.status] || "Order placed"}</h3>
-          {TRACK_NOTE[track.status] && <p>{TRACK_NOTE[track.status]}</p>}
+          <h3>{track.paid ? "Payment received" : TRACK_TITLE[track.status] || "Order placed"}</h3>
+          {track.paid ? <p>Thank you! Your bill is paid.</p> : TRACK_NOTE[track.status] && <p>{TRACK_NOTE[track.status]}</p>}
         </div>
       </div>
       <ol className="cx-bars" aria-label="Order progress">

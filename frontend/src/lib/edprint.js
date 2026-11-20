@@ -51,26 +51,40 @@ const hhmm = (s) => {
 };
 // order shape (same as the KOT screen): { bill_no, created_at, table_name, source, kot_note, items:[{product_name, qty, note?}] }
 export function kotCommands(o, restaurant = "") {
+  const COLS = billCols();
+  const half = Math.floor(COLS / 2);
   const where = o.table_name ? `Table ${o.table_name}` : (o.order_type || "").replace("_", " ");
+  // left text + right text on one line (spaces, no dots)
+  const lr = (l, r) => {
+    const right = String(r || "");
+    return fit(l, Math.max(1, COLS - right.length - 1)).padEnd(COLS - right.length) + right;
+  };
   const cmds = [
     ["initialize"],
-    ["align", "center"], ["bold", true], ["textSize", 2, 2], ["line", "KITCHEN ORDER"], ["textSize", 1, 1], ["bold", false],
+    ["align", "center"], ["bold", true], ["textSize", COLS >= 32 ? 2 : 1, 2], ["line", "KITCHEN ORDER"], ["textSize", 1, 1], ["bold", false],
   ];
   if (restaurant) cmds.push(["line", latin(restaurant)]);
-  cmds.push(
-    ["rule", "="], ["align", "left"],
-    ["bold", true], ["pair", latin(o.bill_no || "KOT"), hhmm(o.created_at)], ["bold", false],
-    ["pair", latin(where), o.source === "qr" ? "QR ORDER" : ""],
-    ["rule"],
-  );
+  cmds.push(["rule"], ["align", "left"]);
+  // KOT number on the left, time + date on the right
+  cmds.push(["bold", true], ["line", lr(latin(o.bill_no || "KOT"), hhmm(o.created_at))], ["bold", false]);
+  // table / order type in big letters
+  if (where) {
+    wrapText(latin(where), half).forEach((t) => cmds.push(["bold", true], ["textSize", 2, 2], ["line", t], ["textSize", 1, 1], ["bold", false]));
+  }
+  if (o.source === "qr") cmds.push(["bold", true], ["line", "QR ORDER"], ["bold", false]);
+  cmds.push(["rule"]);
+  // items: "2 x Name", big and bold, long names wrap onto the next line
   (o.items || []).forEach((i) => {
-    cmds.push(["bold", true], ["textSize", 1, 2], ["line", `${i.qty} x ${latin(i.product_name || i.name)}`], ["textSize", 1, 1]);
+    wrapText(`${i.qty} x ${latin(i.product_name || i.name)}`, half).forEach((t, k) => {
+      cmds.push(["bold", true], ["textSize", 2, 2], ["line", k === 0 ? t : `   ${t}`], ["textSize", 1, 1], ["bold", false]);
+    });
     if (i.note) cmds.push(["line", `   >> ${latin(i.note)}`]);
-    cmds.push(["bold", false]);
   });
   cmds.push(["rule"]);
   if (o.kot_note) {
-    cmds.push(["invert", true], ["line", " NOTE "], ["invert", false], ["bold", true], ["line", latin(o.kot_note)], ["bold", false]);
+    cmds.push(["invert", true], ["line", " NOTE "], ["invert", false], ["bold", true]);
+    wrapText(latin(o.kot_note), COLS).forEach((t) => cmds.push(["line", t]));
+    cmds.push(["bold", false]);
     if (hasOther(o.kot_note)) cmds.push(["line", "(note has Hindi/Marathi text - see screen)"]);
     cmds.push(["rule"]);
   }
@@ -150,8 +164,7 @@ export function billCommands(o, S = {}) {
   const totalQty = (o.items || []).reduce((a, i) => a + Number(i.qty || 0), 0);
   const cust = o.customer_name && o.customer_name !== "Walk-in" ? o.customer_name : "";
   const where = `${TYPES[o.order_type] || ""}${o.table_name ? `: ${o.table_name}` : ""}`;
-  const paid = o.payment_status === "paid";
-  const status = o.status === "cancelled" ? "CANCELLED" : o.payment_status === "refunded" ? "REFUNDED" : paid ? "" : "UNPAID";
+  const status = o.status === "cancelled" ? "CANCELLED" : o.payment_status === "refunded" ? "REFUNDED" : "";
 
   const name = latin(S.restaurant_name || "");
   const bigName = name.length * 2 <= COLS;
@@ -206,11 +219,7 @@ export function billCommands(o, S = {}) {
   // Grand Total: big and bold (the rupee sign cannot be printed on a thermal printer, so "Rs" is used)
   const label = "Grand Total";
   const amount = `Rs ${money2(o.total)}`;
-  const half = Math.floor(COLS / 2);
-  cmds.push(["bold", true]);
-  if (label.length + amount.length + 1 <= half) cmds.push(["textSize", 2, 2], ["line", label.padEnd(half - amount.length) + amount]);
-  else cmds.push(["textSize", 1, 2], ["line", label.padEnd(COLS - amount.length) + amount]);
-  cmds.push(["textSize", 1, 1], ["bold", false]);
+  cmds.push(["bold", true], ["textSize", 1, 2], ["line", label.padEnd(COLS - amount.length) + amount], ["textSize", 1, 1], ["bold", false]);
   if (methods.length) {
     const how = methods.map((p) => (methods.length > 1 ? `${String(p.method).toUpperCase()} ${money2(p.amount)}` : String(p.method).toUpperCase())).join(" + ");
     cmds.push(["line", fit(`Paid via ${latin(how)}`, COLS)]);

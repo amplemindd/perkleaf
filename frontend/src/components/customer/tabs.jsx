@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Icon from "./Icons";
 import { money } from "../../lib/api";
 import {
-  CatTile, Header, ItemRow, NeedAnything, OrderCard, OrderStatusCard, Pic, Timeline,
+  CatTile, Header, ItemRow, NeedAnything, OrderCard, OrderStatusCard, Pic,
   STATUS_LABEL, billNo, countItems, fmtWhen,
 } from "./parts";
 
@@ -300,13 +300,11 @@ export function OrderDetail({ c, id }) {
             </div>
             <span className={`cx-badge ${st}`}>{STATUS_LABEL[st]}</span>
           </div>
-          {st === "cancelled" ? (
+          {st === "cancelled" && (
             <p className="cx-cancelnote">
               <Icon n="alert" size={20} />
               {live && c.track.cancel_reason ? `This order was cancelled. Reason: ${c.track.cancel_reason}` : "This order was cancelled. Please ask our staff if you need help."}
             </p>
-          ) : (
-            <Timeline status={st} created={o.created_at} />
           )}
         </section>
 

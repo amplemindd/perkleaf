@@ -38,8 +38,7 @@ export default function Receipt({ order: o, settings: S }) {
   const totalQty = (o.items || []).reduce((a, i) => a + Number(i.qty || 0), 0);
   const cust = o.customer_name && o.customer_name !== "Walk-in" ? o.customer_name : "";
   const where = `${TYPES[o.order_type] || ""}${o.table_name ? `: ${o.table_name}` : ""}`;
-  const paid = o.payment_status === "paid";
-  const status = o.status === "cancelled" ? "CANCELLED" : o.payment_status === "refunded" ? "REFUNDED" : paid ? "" : "UNPAID";
+  const status = o.status === "cancelled" ? "CANCELLED" : o.payment_status === "refunded" ? "REFUNDED" : "";
   return (
     <div className={`receipt r-bill ${S.paper_size === "58mm" ? "p58" : ""}`} id="receipt">
       <div className="r-c">
